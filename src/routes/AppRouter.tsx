@@ -23,6 +23,7 @@ import { LandingPage } from '../modules/landing/pages/LandingPage'
 import { DetalleProductoPage } from '../modules/productos/pages/DetalleProductoPage'
 import { CatalogoPage } from '../modules/productos/pages/CatalogoPage'
 import { PedidosProductorPage } from '../modules/productor/pages/PedidosProductorPage'
+import { PerfilProductorPublicoPage } from '../modules/productor/pages/PerfilProductorPublicoPage'
 import { ProductosProductorPage } from '../modules/productor/pages/ProductosProductorPage'
 import { ProductorDashboardPage } from '../modules/productor/pages/ProductorDashboardPage'
 
@@ -35,6 +36,7 @@ export function AppRouter() {
         <Route index element={<LandingPage />} />
         <Route path="productos" element={<CatalogoPage />} />
         <Route path="productos/:productoId" element={<DetalleProductoPage />} />
+        <Route path="productores/:productorId" element={<PerfilProductorPublicoPage />} />
         <Route path="carrito" element={<CarritoPage />} />
         <Route path="checkout" element={<CheckoutPage />} />
         <Route path="pedidos" element={<HistorialPedidosPage />} />

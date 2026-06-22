@@ -20,7 +20,8 @@ const product = {
   status: 'En stock',
   rating: 4.8,
   reviews: 24,
-  producer: 'Almazara de la Marina, Pego',
+  producer: 'Finca Alicante, Denia',
+  producerPath: '/productores/finca-alicante',
   mainImage:
     'https://lh3.googleusercontent.com/aida-public/AB6AXuCfuElsjdCbZS62hodzgbjhvWaO0oTi-YBHpgUaj2D2i_M2PkDO2dwKOTrxIh893pzaoNSsTHJulSPV2K5bCbO7aCqB9MMjlpVgR4tJFOdFIyx58_fYM4WKmDF4nXAJxLp943yqH3rQ2nFG9eNJjskyktFCGTCtxcyPtc8nCFOs6ih9ODCqh72z43T7gmtBez40v1MPSvk2N2cEffiUx3bxe6XjyGgn1TncR4OuE-DiW0af_H4AFF-Te-SZwk4C162CGmzEthwRxIeu',
   thumbnails: [
@@ -276,13 +277,13 @@ function ProductInfo() {
         <div className="flex items-center justify-between">
           <div>
             <span className="text-label-sm mb-1 block text-[var(--color-secondary)]">PRODUCIDO POR</span>
-            <a href="#" className="text-headline-md text-[var(--color-on-surface)] transition-colors group-hover:text-[var(--color-primary)]">
+            <Link to={product.producerPath} className="text-headline-md text-[var(--color-on-surface)] transition-colors group-hover:text-[var(--color-primary)]">
               {product.producer}
-            </a>
+            </Link>
           </div>
-          <a href="#" aria-label="Ver perfil del productor" className="flex size-10 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-outline)_20%,transparent)] text-[var(--color-secondary)] transition-colors group-hover:border-[var(--color-primary)] group-hover:text-[var(--color-primary)]">
+          <Link to={product.producerPath} aria-label="Ver perfil del productor" className="flex size-10 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-outline)_20%,transparent)] text-[var(--color-secondary)] transition-colors group-hover:border-[var(--color-primary)] group-hover:text-[var(--color-primary)]">
             <ArrowRight size={18} strokeWidth={1.8} />
-          </a>
+          </Link>
         </div>
       </div>
 
