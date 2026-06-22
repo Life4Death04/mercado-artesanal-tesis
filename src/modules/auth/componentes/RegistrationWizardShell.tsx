@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { ArrowLeft, X, UtensilsCrossed, Sparkle } from 'lucide-react'
+import { APP_NAME } from '../../../lib/branding'
 
 type RegistrationWizardShellProps = {
   children: ReactNode
@@ -18,7 +19,7 @@ export function RegistrationWizardShell({
     return (
       <div className="font-interface flex min-h-screen flex-col bg-[var(--color-surface)] text-[var(--color-on-surface)]">
         <header className="flex w-full justify-center py-8">
-          <h1 className="text-display-lg text-[var(--color-primary)]">Alacant Artisà</h1>
+          <h1 className="text-display-lg text-[var(--color-primary)]">{APP_NAME}</h1>
         </header>
         {children}
       </div>
@@ -31,7 +32,7 @@ export function RegistrationWizardShell({
         <header className="flex w-full items-center justify-between border-b border-[var(--color-outline-variant)] px-[var(--space-margin-mobile)] py-6 md:px-[var(--space-margin-desktop)]">
           <div className="flex items-center gap-3">
             <UtensilsCrossed size={28} />
-            <span className="text-headline-md text-[var(--color-on-background)]">Gourmet Editorial</span>
+            <span className="text-headline-md text-[var(--color-on-background)]">{APP_NAME}</span>
           </div>
           <button
             type="button"
@@ -53,7 +54,7 @@ export function RegistrationWizardShell({
         <div className="mx-auto flex w-full max-w-[var(--layout-container-max)] items-center justify-between px-[var(--space-margin-mobile)] py-6 md:px-[var(--space-margin-desktop)]">
           <div className="flex items-center gap-3">
             <Sparkle className="hidden text-[var(--color-primary-container)] sm:block" size={24} fill="currentColor" />
-            <h1 className="text-display-lg text-[var(--color-primary)]">Gourmet Artisanal</h1>
+            <h1 className="text-display-lg text-[var(--color-primary)]">{APP_NAME}</h1>
           </div>
           <button
             type="button"

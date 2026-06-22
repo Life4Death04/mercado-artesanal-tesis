@@ -1,9 +1,8 @@
-import { PendingDesignPage } from '../../../componentes/layout/PendingDesignPage'
+import { AdminPendingPage } from '../componentes/AdminPendingPage'
 
 export function PedidosAdminPage() {
   return (
-    <PendingDesignPage
-      actor="Administrador"
+    <AdminPendingPage
       title="Gestión global de pedidos pendiente de diseño"
       description="Ruta reservada para la referencia Stitch del control administrativo de pedidos."
     />

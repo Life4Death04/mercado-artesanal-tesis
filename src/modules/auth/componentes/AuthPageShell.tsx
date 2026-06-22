@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { HelpCircle } from 'lucide-react'
+import { APP_NAME } from '../../../lib/branding'
 
 type AuthPageShellProps = {
   children: ReactNode
@@ -13,7 +14,7 @@ export function AuthPageShell({ children }: AuthPageShellProps) {
       <header className="border-b border-[color-mix(in_srgb,var(--color-outline-variant)_70%,transparent)] bg-[var(--color-background)]">
         <nav className="mx-auto flex w-full max-w-[var(--layout-container-max)] items-center justify-between px-[var(--space-margin-mobile)] py-4 md:px-[var(--space-margin-desktop)]">
           <div className="font-editorial text-headline-md uppercase tracking-[0.18em] text-[var(--color-primary)]">
-            LA BOHÈME
+            {APP_NAME}
           </div>
           <button
             type="button"
@@ -31,7 +32,7 @@ export function AuthPageShell({ children }: AuthPageShellProps) {
 
       <footer className="mt-auto border-t border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-background)]">
         <div className="text-label-sm mx-auto flex w-full max-w-[var(--layout-container-max)] flex-col items-center justify-between gap-4 px-[var(--space-margin-mobile)] py-8 text-[var(--color-secondary)] md:flex-row md:px-[var(--space-margin-desktop)]">
-          <p>© 2024 La Bohème Artisanal. Acceso seguro gestionado por Auth0.</p>
+          <p>© 2024 {APP_NAME}. Acceso seguro gestionado por Auth0.</p>
           <nav className="flex gap-6 text-[var(--color-on-tertiary-fixed-variant)]">
             {footerLinks.map((link) => (
               <a key={link} href="#" className="transition-colors hover:text-[var(--color-primary)]">

@@ -1,4 +1,5 @@
 import { LockKeyhole } from 'lucide-react'
+import { APP_NAME } from '../../../lib/branding'
 import { GoogleIcon } from './GoogleIcon'
 
 export function LoginAccessCard() {
@@ -7,7 +8,7 @@ export function LoginAccessCard() {
       <div className="mx-auto w-full max-w-md">
         <header className="mb-10 text-center md:text-left">
           <h2 className="text-headline-lg mb-3 text-[var(--color-primary)]">
-            Bienvenido a Alacant Artisà
+            Bienvenido a {APP_NAME}
           </h2>
           <p className="text-body-md text-[var(--color-on-surface-variant)]">
             Acceda a su cuenta para gestionar sus pedidos o descubrir nuevos productos artesanos.
