@@ -8,6 +8,10 @@ import { CarritoPage } from '../modules/carrito/pages/CarritoPage'
 import { AdminDashboardPage } from '../modules/admin/pages/AdminDashboardPage'
 import { CategoriasAdminPage } from '../modules/admin/pages/CategoriasAdminPage'
 import { ConfiguracionAdminPage } from '../modules/admin/pages/ConfiguracionAdminPage'
+import { IncidenciaDetalleAdminPage } from '../modules/admin/pages/IncidenciaDetalleAdminPage'
+import { IncidenciasAdminPage } from '../modules/admin/pages/IncidenciasAdminPage'
+import { ModeracionContenidoAdminPage } from '../modules/admin/pages/ModeracionContenidoAdminPage'
+import { ModeracionDetalleAdminPage } from '../modules/admin/pages/ModeracionDetalleAdminPage'
 import { MetricasGlobalesPage } from '../modules/admin/pages/MetricasGlobalesPage'
 import { PedidosAdminPage } from '../modules/admin/pages/PedidosAdminPage'
 import { ProductosAdminPage } from '../modules/admin/pages/ProductosAdminPage'
@@ -42,8 +46,10 @@ export function AppRouter() {
         <Route element={<AdminLayout />}>
           <Route path="admin" element={<AdminDashboardPage />} />
           <Route path="admin/usuarios" element={<UsuariosAdminPage />} />
-          <Route path="admin/moderacion" element={<ProductosAdminPage />} />
-          <Route path="admin/incidencias" element={<PedidosAdminPage />} />
+          <Route path="admin/moderacion" element={<ModeracionContenidoAdminPage />} />
+          <Route path="admin/moderacion/:publicacionId" element={<ModeracionDetalleAdminPage />} />
+          <Route path="admin/incidencias" element={<IncidenciasAdminPage />} />
+          <Route path="admin/incidencias/:incidenciaId" element={<IncidenciaDetalleAdminPage />} />
           <Route path="admin/categorias" element={<CategoriasAdminPage />} />
           <Route path="admin/metricas-globales" element={<MetricasGlobalesPage />} />
           <Route path="admin/configuracion" element={<ConfiguracionAdminPage />} />
