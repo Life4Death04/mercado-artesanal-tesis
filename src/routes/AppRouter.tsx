@@ -19,9 +19,12 @@ import { UsuariosAdminPage } from '../modules/admin/pages/UsuariosAdminPage'
 import { CheckoutPage } from '../modules/pedidos/pages/CheckoutPage'
 import { HistorialPedidosPage } from '../modules/pedidos/pages/HistorialPedidosPage'
 import { PerfilPage } from '../modules/perfil/pages/PerfilPage'
+import { MisIncidenciasPage } from '../modules/perfil/pages/MisIncidenciasPage'
+import { LandingPage } from '../modules/landing/pages/LandingPage'
 import { DetalleProductoPage } from '../modules/productos/pages/DetalleProductoPage'
 import { CatalogoPage } from '../modules/productos/pages/CatalogoPage'
 import { PedidosProductorPage } from '../modules/productor/pages/PedidosProductorPage'
+import { PerfilProductorPublicoPage } from '../modules/productor/pages/PerfilProductorPublicoPage'
 import { ProductosProductorPage } from '../modules/productor/pages/ProductosProductorPage'
 import { ProductorDashboardPage } from '../modules/productor/pages/ProductorDashboardPage'
 
@@ -31,13 +34,15 @@ export function AppRouter() {
       <Route path="login" element={<LoginPage />} />
       <Route path="registro" element={<RegistroWizardPage />} />
       <Route element={<AppLayout />}>
-        <Route index element={<CatalogoPage />} />
+        <Route index element={<LandingPage />} />
         <Route path="productos" element={<CatalogoPage />} />
         <Route path="productos/:productoId" element={<DetalleProductoPage />} />
+        <Route path="productores/:productorId" element={<PerfilProductorPublicoPage />} />
         <Route path="carrito" element={<CarritoPage />} />
         <Route path="checkout" element={<CheckoutPage />} />
         <Route path="pedidos" element={<HistorialPedidosPage />} />
         <Route path="perfil" element={<PerfilPage />} />
+        <Route path="incidencias" element={<MisIncidenciasPage />} />
         <Route element={<DashboardLayout />}>
           <Route path="productor" element={<ProductorDashboardPage />} />
           <Route path="productor/productos" element={<ProductosProductorPage />} />
