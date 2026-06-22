@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gourmet Artisanal - Finalizar Registro</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-surface": "#313030",
+                    "on-primary-fixed-variant": "#792d39",
+                    "primary-fixed-dim": "#ffb2b9",
+                    "outline-variant": "#d9c1c2",
+                    "on-primary-container": "#ff99a5",
+                    "on-primary-fixed": "#3f0110",
+                    "on-background": "#1c1b1b",
+                    "primary": "#5d1825",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-container": "#6e634d",
+                    "surface-dim": "#dcd9d9",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#eae7e7",
+                    "primary-container": "#7a2e3a",
+                    "surface-container-low": "#f6f3f2",
+                    "tertiary": "#363126",
+                    "secondary-fixed-dim": "#d4c5aa",
+                    "tertiary-container": "#4d473c",
+                    "inverse-primary": "#ffb2b9",
+                    "surface-container-highest": "#e5e2e1",
+                    "error-container": "#ffdad6",
+                    "surface-tint": "#964450",
+                    "on-secondary-fixed": "#221b09",
+                    "secondary-container": "#f1e1c4",
+                    "on-tertiary-fixed": "#201b12",
+                    "outline": "#877273",
+                    "secondary": "#685d47",
+                    "error": "#ba1a1a",
+                    "on-tertiary-container": "#bfb5a7",
+                    "on-surface-variant": "#544244",
+                    "on-tertiary-fixed-variant": "#4c463b",
+                    "on-primary": "#ffffff",
+                    "background": "#fcf9f8",
+                    "surface-container": "#f0eded",
+                    "inverse-on-surface": "#f3f0ef",
+                    "surface-variant": "#e5e2e1",
+                    "on-surface": "#1c1b1b",
+                    "secondary-fixed": "#f1e1c4",
+                    "tertiary-fixed": "#ece1d2",
+                    "primary-fixed": "#ffdadc",
+                    "surface": "#fcf9f8",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-fixed-variant": "#504631",
+                    "surface-bright": "#fcf9f8",
+                    "tertiary-fixed-dim": "#cfc5b7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-mobile": "20px",
+                    "gutter": "24px",
+                    "unit": "8px",
+                    "container-max": "1280px",
+                    "margin-desktop": "64px"
+            },
+            "fontFamily": {
+                    "display-lg-mobile": [
+                            "Playfair Display"
+                    ],
+                    "label-md": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "label-sm": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Playfair Display"
+                    ],
+                    "display-lg": [
+                            "Playfair Display"
+                    ],
+                    "headline-lg": [
+                            "Playfair Display"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "display-lg-mobile": [
+                            "36px",
+                            {
+                                    "lineHeight": "44px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "display-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- Minimal Header -->
+<header class="w-full flex items-center justify-between px-margin-mobile md:px-margin-desktop py-6 border-b border-surface-variant">
+<div class="flex items-center gap-3">
+<svg class="size-6 text-primary-container" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 4C25.7818 14.2173 33.7827 22.2182 44 24C33.7827 25.7818 25.7818 33.7827 24 44C22.2182 33.7827 14.2173 25.7818 4 24C14.2173 22.2182 22.2182 14.2173 24 4Z" fill="currentColor"></path>
+</svg>
+<h1 class="font-headline-md text-on-surface tracking-tight">Gourmet Artisanal</h1>
+</div>
+<button class="flex items-center gap-2 text-outline hover:text-on-surface transition-colors font-label-md">
+<span class="material-symbols-outlined text-sm">close</span>
+<span class="hidden md:inline">Salir</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-3xl mx-auto px-margin-mobile py-10 md:py-16 flex flex-col gap-10">
+<!-- Stepper -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<p class="font-label-md text-primary-container tracking-widest uppercase">Paso 4 de 4</p>
+<p class="font-label-md text-outline">Finalizar</p>
+</div>
+<div class="w-full h-1 bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-full rounded-full transition-all duration-500"></div>
+</div>
+</div>
+<!-- Title Section -->
+<div class="flex flex-col gap-2">
+<h2 class="font-display-lg-mobile md:font-display-lg text-on-surface">Revisa y finaliza</h2>
+<p class="font-body-md text-outline">Por favor, verifica que todos los datos sean correctos antes de enviar tu solicitud de registro como productor.</p>
+</div>
+<!-- Summary Card -->
+<div class="border border-outline-variant rounded-lg bg-surface flex flex-col">
+<div class="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-x-6 gap-y-2 py-5 px-6 border-b border-surface-variant last:border-0">
+<dt class="font-label-sm text-outline uppercase tracking-widest pt-1">Perfil</dt>
+<dd class="font-body-md text-on-surface font-medium">Productor</dd>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-x-6 gap-y-2 py-5 px-6 border-b border-surface-variant last:border-0">
+<dt class="font-label-sm text-outline uppercase tracking-widest pt-1">Nombre</dt>
+<dd class="font-body-md text-on-surface">Usuario Ejemplo</dd>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-x-6 gap-y-2 py-5 px-6 border-b border-surface-variant last:border-0 items-start">
+<dt class="font-label-sm text-outline uppercase tracking-widest pt-1">Correo</dt>
+<dd class="font-body-md text-on-surface flex items-center flex-wrap gap-3">
+                    usuario@ejemplo.com
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                        Verificado
+                    </span>
+</dd>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-x-6 gap-y-2 py-5 px-6 border-b border-surface-variant last:border-0">
+<dt class="font-label-sm text-outline uppercase tracking-widest pt-1">Emprendimiento</dt>
+<dd class="font-body-md text-on-surface">Finca El Reloj</dd>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-x-6 gap-y-2 py-5 px-6 border-b border-surface-variant last:border-0">
+<dt class="font-label-sm text-outline uppercase tracking-widest pt-1">Municipio</dt>
+<dd class="font-body-md text-on-surface">Jijona</dd>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-x-6 gap-y-2 py-5 px-6 border-b border-surface-variant last:border-0">
+<dt class="font-label-sm text-outline uppercase tracking-widest pt-1">Productos</dt>
+<dd class="font-body-md text-on-surface">Aceites, Turrones</dd>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-x-6 gap-y-2 py-5 px-6 border-b border-surface-variant last:border-0">
+<dt class="font-label-sm text-outline uppercase tracking-widest pt-1">Consentimiento</dt>
+<dd class="font-body-md text-on-surface">Aceptado</dd>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex flex-col sm:flex-row-reverse gap-4 pt-6">
+<button class="w-full sm:w-auto px-8 py-4 bg-primary-container text-on-primary-container rounded font-label-md hover:bg-primary transition-colors flex items-center justify-center gap-2">
+                Finalizar registro
+            </button>
+<button class="w-full sm:w-auto px-8 py-4 bg-transparent border border-outline text-on-surface rounded font-label-md hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
+                Atrás
+            </button>
+</div>
+</main>
+</body></html>

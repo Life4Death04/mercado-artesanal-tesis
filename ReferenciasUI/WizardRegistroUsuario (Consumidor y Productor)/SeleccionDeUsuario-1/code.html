@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#1c1b1b",
+                        "tertiary-fixed": "#ece1d2",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fcf9f8",
+                        "inverse-primary": "#ffb2b9",
+                        "secondary-fixed-dim": "#d4c5aa",
+                        "primary-container": "#7a2e3a",
+                        "outline-variant": "#d9c1c2",
+                        "primary-fixed-dim": "#ffb2b9",
+                        "on-primary-container": "#ff99a5",
+                        "surface-container": "#f0eded",
+                        "on-background": "#1c1b1b",
+                        "inverse-on-surface": "#f3f0ef",
+                        "surface-bright": "#fcf9f8",
+                        "secondary": "#685d47",
+                        "secondary-fixed": "#f1e1c4",
+                        "on-secondary": "#ffffff",
+                        "inverse-surface": "#313030",
+                        "tertiary-fixed-dim": "#cfc5b7",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "tertiary": "#363126",
+                        "tertiary-container": "#4d473c",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#4c463b",
+                        "on-secondary-fixed": "#221b09",
+                        "on-primary-fixed": "#3f0110",
+                        "surface-container-low": "#f6f3f2",
+                        "surface-tint": "#964450",
+                        "outline": "#877273",
+                        "on-tertiary-container": "#bfb5a7",
+                        "surface-container-high": "#eae7e7",
+                        "on-tertiary-fixed": "#201b12",
+                        "on-secondary-fixed-variant": "#504631",
+                        "on-secondary-container": "#6e634d",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#792d39",
+                        "secondary-container": "#f1e1c4",
+                        "on-surface-variant": "#544244",
+                        "surface-variant": "#e5e2e1",
+                        "on-tertiary": "#ffffff",
+                        "background": "#fcf9f8",
+                        "surface-container-highest": "#e5e2e1",
+                        "primary-fixed": "#ffdadc",
+                        "surface-dim": "#dcd9d9",
+                        "error-container": "#ffdad6",
+                        "primary": "#5d1825"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "margin-mobile": "20px",
+                        "container-max": "1280px",
+                        "margin-desktop": "64px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "display-lg": ["Playfair Display"],
+                        "headline-md": ["Playfair Display"],
+                        "headline-lg": ["Playfair Display"],
+                        "display-lg-mobile": ["Playfair Display"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "display-lg-mobile": ["36px", {"lineHeight": "44px", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #FAF7F0;
+            color: #1A1A1A;
+            -webkit-font-smoothing: antialiased;
+        }
+        .editorial-border {
+            border-width: 0.5px;
+        }
+        .step-active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #5d1825;
+        }
+        .selection-card {
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .selection-card:hover {
+            transform: translateY(-4px);
+        }
+        .selected-state {
+            border: 2px solid #7A2E3A !important;
+            background-color: rgba(122, 46, 58, 0.02);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-body-md text-body-md">
+<!-- TopAppBar Shell -->
+<header class="bg-surface dark:bg-surface-dim docked full-width top-0 z-50 border-b border-outline-variant/30">
+<div class="flex justify-between items-center w-full px-margin-desktop py-6 max-w-container-max mx-auto">
+<h1 class="font-display-lg text-display-lg text-primary dark:text-primary-fixed tracking-tight">
+                Gourmet Artisanal
+            </h1>
+<nav class="hidden md:flex items-center space-x-8">
+<div class="relative pb-1 text-primary dark:text-primary-fixed border-b-2 border-primary font-bold">
+<span class="font-label-md text-label-md uppercase tracking-widest">Tipo de perfil</span>
+</div>
+<div class="text-on-surface-variant dark:text-on-tertiary-container opacity-50 pb-1">
+<span class="font-label-md text-label-md uppercase tracking-widest">Datos básicos</span>
+</div>
+<div class="text-on-surface-variant dark:text-on-tertiary-container opacity-50 pb-1">
+<span class="font-label-md text-label-md uppercase tracking-widest">Detalles del productor</span>
+</div>
+<div class="text-on-surface-variant dark:text-on-tertiary-container opacity-50 pb-1">
+<span class="font-label-md text-label-md uppercase tracking-widest">Finalizar</span>
+</div>
+</nav>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center px-margin-mobile md:px-margin-desktop py-20 max-w-container-max mx-auto w-full">
+<div class="w-full max-w-4xl text-center md:text-left">
+<p class="font-label-sm text-label-sm text-secondary mb-4 uppercase tracking-[0.2em]">
+                Conectado como: <span class="font-semibold">usuario@ejemplo.com</span>
+</p>
+<h2 class="font-headline-lg md:font-display-lg text-headline-lg md:text-display-lg mb-16 text-on-surface">
+                ¿Cómo quieres usar la plataforma?
+            </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+<!-- Option 1: Consumidor -->
+<button class="selection-card selected-state group flex flex-col items-center p-12 bg-white editorial-border border-outline/20 cursor-pointer text-center outline-none" id="card-consumidor" onclick="selectProfile('consumidor')">
+<div class="mb-8 w-24 h-24 flex items-center justify-center">
+<img alt="Icono Consumidor" class="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCUGHXBOjv6OBnThGs_Uvqz4d7-aEMXLJMLbL2NAPy-Wyhz4MwE8j9irfKCmGA0xeVvtkJcv2wlOwV9OrRC7jDXnHZOIjmt4FfHH--vQpucrrNa7PnejPYLHsNhWUlSbsGuQGp5LrwZtv63cCl_44qU9bDMs_Qhjm81eiqixBh--ILu7V_0p0I6QukgOqAQDjp8jMg1QspB-vyb4I4oruFiEw25jrmiR7TztlX_F52csBXgMperwQwQrnVbDbgtI0-uHgqWH_qIv4C"/>
+</div>
+<h3 class="font-headline-md text-headline-md mb-4 text-on-surface">Consumidor</h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed max-w-xs mx-auto">
+                        Descubrir y comprar productos artesanos de la provincia de Alicante.
+                    </p>
+<div class="mt-8 opacity-0 group-[.selected-state]:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</button>
+<!-- Option 2: Productor -->
+<button class="selection-card group flex flex-col items-center p-12 bg-white editorial-border border-outline/20 cursor-pointer text-center outline-none" id="card-productor" onclick="selectProfile('productor')">
+<div class="mb-8 w-24 h-24 flex items-center justify-center">
+<img alt="Icono Productor" class="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrIvrh_-k0ny79tEOmbH0Yf5HdpHvkBbFc67y782eWXtNkSa9ZrtHCFEJi1IhV6hpRPkKoVT3j4YwScBJpWtqopzXEQjw7165JrTEG5Nvb6QdAXTCs8manczbEWUYZHrvUSJJSz8InnKjYcGSf97mGF3VQ5Ic2LUaeXhXE3l3rgP-Pu_JDbEyhjc0jLHDinYf7lOnXmyeJPhjvazeP8wrNMKm8Oor6Q54bGme7PYZOgCjQT8ubePvNeQLrvzHnmcBwPHk526WO2kkK"/>
+</div>
+<h3 class="font-headline-md text-headline-md mb-4 text-on-surface">Productor</h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed max-w-xs mx-auto">
+                        Vender mis productos y dar a conocer mi historia a la comunidad.
+                    </p>
+<div class="mt-8 opacity-0 group-[.selected-state]:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</button>
+</div>
+</div>
+</main>
+<!-- Footer / Wizard Navigation Shell -->
+<footer class="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop py-8 bg-surface/95 backdrop-blur-sm border-t border-outline-variant/30">
+<div class="flex items-center">
+<button class="border border-on-surface text-on-surface px-10 py-3 font-label-md text-label-md uppercase tracking-widest hover:bg-on-surface hover:text-surface transition-all active:scale-95">
+                Back
+            </button>
+</div>
+<div class="flex items-center gap-6">
+<span class="hidden md:block font-label-sm text-label-sm text-on-surface-variant/60 uppercase tracking-widest">
+                Paso 1 de 4
+            </span>
+<button class="bg-primary text-on-primary px-12 py-3 font-label-md text-label-md uppercase tracking-widest shadow-lg shadow-primary/10 hover:bg-primary/90 transition-all active:scale-95">
+                Continue
+            </button>
+</div>
+</footer>
+<!-- Spacer for fixed footer -->
+<div class="h-32"></div>
+<script>
+        function selectProfile(type) {
+            const cardConsumidor = document.getElementById('card-consumidor');
+            const cardProductor = document.getElementById('card-productor');
+
+            if (type === 'consumidor') {
+                cardConsumidor.classList.add('selected-state');
+                cardProductor.classList.remove('selected-state');
+            } else {
+                cardProductor.classList.add('selected-state');
+                cardConsumidor.classList.remove('selected-state');
+            }
+        }
+
+        // Simple entrance animation for cards
+        window.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.selection-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.8s cubic-bezier(0.165, 0.84, 0.44, 1)';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 200 * index);
+            });
+        });
+    </script>
+</body></html>

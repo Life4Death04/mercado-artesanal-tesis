@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gourmet Editorial - Registro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-error": "#ffffff",
+                        "on-primary-fixed-variant": "#792d39",
+                        "surface-variant": "#e5e2e1",
+                        "secondary-container": "#f1e1c4",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#ece1d2",
+                        "secondary": "#685d47",
+                        "on-tertiary-fixed-variant": "#4c463b",
+                        "surface": "#fcf9f8",
+                        "on-surface": "#1c1b1b",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#f0eded",
+                        "secondary-fixed": "#f1e1c4",
+                        "tertiary": "#363126",
+                        "inverse-primary": "#ffb2b9",
+                        "primary-fixed": "#ffdadc",
+                        "surface-dim": "#dcd9d9",
+                        "primary-container": "#7a2e3a",
+                        "on-primary-container": "#ff99a5",
+                        "inverse-surface": "#313030",
+                        "on-secondary-fixed": "#221b09",
+                        "tertiary-fixed-dim": "#cfc5b7",
+                        "outline-variant": "#d9c1c2",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#4d473c",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#ffb2b9",
+                        "on-secondary-fixed-variant": "#504631",
+                        "inverse-on-surface": "#f3f0ef",
+                        "surface-tint": "#964450",
+                        "on-tertiary-fixed": "#201b12",
+                        "on-background": "#1c1b1b",
+                        "outline": "#877273",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#5d1825",
+                        "on-primary-fixed": "#3f0110",
+                        "on-tertiary-container": "#bfb5a7",
+                        "secondary-fixed-dim": "#d4c5aa",
+                        "background": "#fcf9f8",
+                        "surface-container-highest": "#e5e2e1",
+                        "on-surface-variant": "#544244",
+                        "surface-container-high": "#eae7e7",
+                        "surface-container-low": "#f6f3f2",
+                        "on-secondary-container": "#6e634d",
+                        "surface-bright": "#fcf9f8"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "unit": "8px",
+                        "margin-mobile": "20px",
+                        "container-max": "1280px"
+                    },
+                    fontFamily: {
+                        "headline-lg": ["Playfair Display", "serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "display-lg-mobile": ["Playfair Display", "serif"],
+                        "headline-md": ["Playfair Display", "serif"],
+                        "display-lg": ["Playfair Display", "serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "label-sm": ["Inter", "sans-serif"],
+                        "label-md": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: theme('colors.outline-variant'); border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col antialiased">
+<!-- Minimal Header for Focused View -->
+<header class="w-full px-margin-mobile md:px-margin-desktop py-6 border-b border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-background text-[28px]" data-icon="restaurant_menu">restaurant_menu</span>
+<span class="font-headline-md text-on-background font-semibold tracking-tight">Gourmet Editorial</span>
+</div>
+<button class="flex items-center gap-2 text-outline hover:text-on-background transition-colors font-label-sm uppercase tracking-wider">
+<span class="material-symbols-outlined text-[18px]" data-icon="arrow_back">arrow_back</span>
+            Volver
+        </button>
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col items-center py-12 px-margin-mobile md:px-0 w-full max-w-[800px] mx-auto">
+<!-- Stepper -->
+<nav aria-label="Progress" class="w-full mb-16">
+<ol class="flex items-center justify-between w-full" role="list">
+<!-- Step 1: Completed -->
+<li class="relative flex-1">
+<div aria-hidden="true" class="absolute inset-0 flex items-center">
+<div class="h-[1px] w-full bg-outline-variant"></div>
+</div>
+<div class="relative flex items-center justify-center">
+<span class="h-8 w-8 rounded-full bg-surface-variant flex items-center justify-center ring-4 ring-background">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant" data-icon="check">check</span>
+</span>
+</div>
+<p class="text-center mt-3 text-[10px] uppercase tracking-widest font-semibold text-outline">Perfil</p>
+</li>
+<!-- Step 2: Completed -->
+<li class="relative flex-1">
+<div aria-hidden="true" class="absolute inset-0 flex items-center">
+<div class="h-[1px] w-full bg-outline-variant"></div>
+</div>
+<div class="relative flex items-center justify-center">
+<span class="h-8 w-8 rounded-full bg-surface-variant flex items-center justify-center ring-4 ring-background">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant" data-icon="check">check</span>
+</span>
+</div>
+<p class="text-center mt-3 text-[10px] uppercase tracking-widest font-semibold text-outline">Datos</p>
+</li>
+<!-- Step 3: Active -->
+<li class="relative flex-1">
+<div aria-hidden="true" class="absolute inset-0 flex items-center">
+<div class="h-[1px] w-full bg-outline-variant"></div>
+</div>
+<div class="relative flex items-center justify-center">
+<span class="h-8 w-8 rounded-full bg-primary-container flex items-center justify-center ring-4 ring-background">
+<span class="text-[12px] font-semibold text-surface">3</span>
+</span>
+</div>
+<p class="text-center mt-3 text-[10px] uppercase tracking-widest font-semibold text-primary-container">Detalles</p>
+</li>
+<!-- Step 4: Pending -->
+<li class="relative flex-1">
+<div class="relative flex items-center justify-center">
+<span class="h-8 w-8 rounded-full border border-outline-variant bg-background flex items-center justify-center ring-4 ring-background">
+<span class="text-[12px] font-semibold text-outline-variant">4</span>
+</span>
+</div>
+<p class="text-center mt-3 text-[10px] uppercase tracking-widest font-semibold text-outline-variant">Fin</p>
+</li>
+</ol>
+</nav>
+<!-- Form Section -->
+<div class="w-full max-w-[540px]">
+<h1 class="font-headline-lg text-[32px] md:text-[40px] leading-tight mb-10 text-center text-on-background">Tu emprendimiento</h1>
+<form class="flex flex-col gap-8">
+<!-- Field: Nombre -->
+<div class="relative">
+<label class="block font-label-md text-on-background mb-2" for="nombre">Nombre del emprendimiento <span class="text-outline font-normal">(Requerido)</span></label>
+<input class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-on-background focus:ring-0 px-0 py-3 text-body-md text-on-background placeholder:text-outline transition-colors" id="nombre" name="nombre" placeholder="Ej. Aceites Altea" type="text"/>
+</div>
+<!-- Field: Municipio -->
+<div class="relative">
+<label class="block font-label-md text-on-background mb-2" for="municipio">Municipio de actividad <span class="text-outline font-normal">(Requerido)</span></label>
+<div class="relative">
+<select class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-on-background focus:ring-0 px-0 py-3 text-body-md text-on-background appearance-none cursor-pointer transition-colors" id="municipio" name="municipio">
+<option disabled="" selected="" value="">Seleccionar municipio</option>
+<option value="alicante">Alicante</option>
+<option value="altea">Altea</option>
+<option value="denia">Dénia</option>
+<option value="jijona">Jijona</option>
+<option value="elche">Elche</option>
+</select>
+<span class="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-outline" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<!-- Field: Tipos de producto -->
+<div class="relative">
+<label class="block font-label-md text-on-background mb-3">Tipos de producto <span class="text-outline font-normal">(Requerido)</span></label>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 rounded-DEFAULT border border-transparent bg-primary-container text-surface font-label-sm transition-colors" type="button">Aceites</button>
+<button class="px-4 py-2 rounded-DEFAULT border border-outline-variant bg-transparent text-on-surface-variant font-label-sm hover:border-on-background transition-colors" type="button">Embutidos</button>
+<button class="px-4 py-2 rounded-DEFAULT border border-transparent bg-primary-container text-surface font-label-sm transition-colors" type="button">Turrones</button>
+<button class="px-4 py-2 rounded-DEFAULT border border-outline-variant bg-transparent text-on-surface-variant font-label-sm hover:border-on-background transition-colors" type="button">Vinos</button>
+<button class="px-4 py-2 rounded-DEFAULT border border-outline-variant bg-transparent text-on-surface-variant font-label-sm hover:border-on-background transition-colors" type="button">Quesos</button>
+<button class="px-4 py-2 rounded-DEFAULT border border-outline-variant bg-transparent text-on-surface-variant font-label-sm hover:border-on-background transition-colors" type="button">Miel</button>
+</div>
+</div>
+<!-- Field: Descripción -->
+<div class="relative">
+<label class="block font-label-md text-on-background mb-2" for="descripcion">Descripción breve <span class="text-outline font-normal">(Opcional)</span></label>
+<textarea class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-on-background focus:ring-0 px-0 py-3 text-body-md text-on-background placeholder:text-outline transition-colors resize-none custom-scrollbar" id="descripcion" name="descripcion" placeholder="Cuenta la historia de tus productos..." rows="3"></textarea>
+</div>
+<!-- Info Note -->
+<div class="flex items-start gap-3 mt-2 bg-surface p-4 border border-outline-variant rounded-DEFAULT">
+<span class="material-symbols-outlined text-outline text-[20px] mt-0.5" data-icon="info">info</span>
+<p class="text-label-sm text-outline leading-relaxed">
+                        El logotipo, la portada y las modalidades de entrega se completarán después en tu panel de productor.
+                    </p>
+</div>
+</form>
+</div>
+</main>
+<!-- Footer Actions -->
+<footer class="w-full px-margin-mobile md:px-margin-desktop py-8 border-t border-outline-variant bg-background mt-auto">
+<div class="max-w-[800px] mx-auto flex flex-col items-center gap-6">
+<div class="w-full flex items-center justify-between">
+<button class="px-6 py-3 border border-on-background text-on-background rounded-DEFAULT font-label-md hover:bg-surface-variant transition-colors" type="button">
+                    Atrás
+                </button>
+<span class="text-label-sm text-outline font-medium tracking-wide">Paso 3 de 4</span>
+<button class="px-8 py-3 bg-primary-container text-surface rounded-DEFAULT font-label-md hover:bg-primary transition-colors" type="button">
+                    Continuar
+                </button>
+</div>
+<a class="text-label-sm text-outline hover:text-on-background underline underline-offset-4 transition-colors" href="#">Guardar y salir</a>
+</div>
+</footer>
+</body></html>
