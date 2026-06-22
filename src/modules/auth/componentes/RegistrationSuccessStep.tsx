@@ -1,4 +1,5 @@
 import { CheckCircle, Info } from 'lucide-react'
+import { APP_NAME } from '../../../lib/branding'
 import type { RegistrationRole } from './registrationWizard.types'
 
 type RegistrationSuccessStepProps = {
@@ -39,7 +40,7 @@ export function RegistrationSuccessStep({ role }: RegistrationSuccessStepProps) 
         </section>
       </main>
       <footer className="flex w-full flex-col items-center gap-6 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] bg-[var(--color-surface-container-lowest)] py-12">
-        <h3 className="text-headline-md text-[var(--color-on-surface-variant)]">ALICANTE DELICATESSEN</h3>
+        <h3 className="text-headline-md text-[var(--color-on-surface-variant)]">{APP_NAME}</h3>
         <nav className="text-label-sm flex flex-wrap justify-center gap-8 uppercase tracking-wider text-[var(--color-on-surface-variant)]">
           <a href="#" className="transition-colors hover:text-[var(--color-primary)]">Support</a>
           <a href="#" className="transition-colors hover:text-[var(--color-primary)]">Provenance</a>
@@ -47,7 +48,7 @@ export function RegistrationSuccessStep({ role }: RegistrationSuccessStepProps) 
           <a href="#" className="transition-colors hover:text-[var(--color-primary)]">Privacy</a>
         </nav>
         <p className="text-label-sm mt-4 text-[var(--color-on-surface-variant)] opacity-60">
-          © 2024 Gourmet Artisanal. Crafted for the discerning palate.
+          © 2024 {APP_NAME}. Crafted for the discerning palate.
         </p>
       </footer>
     </>
