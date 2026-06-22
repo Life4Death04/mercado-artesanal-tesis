@@ -19,6 +19,7 @@ import { UsuariosAdminPage } from '../modules/admin/pages/UsuariosAdminPage'
 import { CheckoutPage } from '../modules/pedidos/pages/CheckoutPage'
 import { HistorialPedidosPage } from '../modules/pedidos/pages/HistorialPedidosPage'
 import { PerfilPage } from '../modules/perfil/pages/PerfilPage'
+import { MisIncidenciasPage } from '../modules/perfil/pages/MisIncidenciasPage'
 import { LandingPage } from '../modules/landing/pages/LandingPage'
 import { DetalleProductoPage } from '../modules/productos/pages/DetalleProductoPage'
 import { CatalogoPage } from '../modules/productos/pages/CatalogoPage'
@@ -41,6 +42,7 @@ export function AppRouter() {
         <Route path="checkout" element={<CheckoutPage />} />
         <Route path="pedidos" element={<HistorialPedidosPage />} />
         <Route path="perfil" element={<PerfilPage />} />
+        <Route path="incidencias" element={<MisIncidenciasPage />} />
         <Route element={<DashboardLayout />}>
           <Route path="productor" element={<ProductorDashboardPage />} />
           <Route path="productor/productos" element={<ProductosProductorPage />} />
