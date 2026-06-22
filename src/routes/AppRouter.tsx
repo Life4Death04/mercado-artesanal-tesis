@@ -1,10 +1,14 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '../componentes/layout/AppLayout'
 import { DashboardLayout } from '../componentes/layout/DashboardLayout'
+import { AdminLayout } from '../modules/admin/componentes/AdminLayout'
 import { LoginPage } from '../modules/auth/pages/LoginPage'
 import { RegistroWizardPage } from '../modules/auth/pages/RegistroWizardPage'
 import { CarritoPage } from '../modules/carrito/pages/CarritoPage'
 import { AdminDashboardPage } from '../modules/admin/pages/AdminDashboardPage'
+import { CategoriasAdminPage } from '../modules/admin/pages/CategoriasAdminPage'
+import { ConfiguracionAdminPage } from '../modules/admin/pages/ConfiguracionAdminPage'
+import { MetricasGlobalesPage } from '../modules/admin/pages/MetricasGlobalesPage'
 import { PedidosAdminPage } from '../modules/admin/pages/PedidosAdminPage'
 import { ProductosAdminPage } from '../modules/admin/pages/ProductosAdminPage'
 import { UsuariosAdminPage } from '../modules/admin/pages/UsuariosAdminPage'
@@ -35,9 +39,14 @@ export function AppRouter() {
           <Route path="productor/productos" element={<ProductosProductorPage />} />
           <Route path="productor/pedidos" element={<PedidosProductorPage />} />
         </Route>
-        <Route element={<DashboardLayout />}>
+        <Route element={<AdminLayout />}>
           <Route path="admin" element={<AdminDashboardPage />} />
           <Route path="admin/usuarios" element={<UsuariosAdminPage />} />
+          <Route path="admin/moderacion" element={<ProductosAdminPage />} />
+          <Route path="admin/incidencias" element={<PedidosAdminPage />} />
+          <Route path="admin/categorias" element={<CategoriasAdminPage />} />
+          <Route path="admin/metricas-globales" element={<MetricasGlobalesPage />} />
+          <Route path="admin/configuracion" element={<ConfiguracionAdminPage />} />
           <Route path="admin/productos" element={<ProductosAdminPage />} />
           <Route path="admin/pedidos" element={<PedidosAdminPage />} />
         </Route>
