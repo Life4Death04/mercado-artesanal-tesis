@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Car, Check, CreditCard, Info, Lock, MapPin, Plus, Smartphone, Store, Truck, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Car, Check, CreditCard, Info, Lock, MapPin, Plus, Smartphone, Store, Truck } from 'lucide-react'
 
 type CheckoutStep = 1 | 2 | 3
 
@@ -117,8 +117,6 @@ export function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
-      <CheckoutHeader compact={currentStep === 3} />
-
       {currentStep === 3 ? (
         <ConfirmationStep />
       ) : (
@@ -137,22 +135,6 @@ export function CheckoutPage() {
 
       <CheckoutFooter compact={currentStep === 3} />
     </div>
-  )
-}
-
-function CheckoutHeader({ compact }: { compact: boolean }) {
-  return (
-    <header className={`flex w-full items-center border-b border-[color-mix(in_srgb,var(--color-outline-variant)_70%,transparent)] px-[var(--space-margin-mobile)] md:px-[var(--space-margin-desktop)] ${compact ? 'justify-center py-8' : 'h-20 justify-between'}`}>
-      <Link to="/" className={`text-display-lg leading-none text-[var(--color-primary)] ${compact ? 'text-[38px] md:text-[48px]' : 'text-[28px] sm:text-[36px] md:text-[34px]'}`}>
-        ALICANTE GOURMET
-      </Link>
-      {!compact ? (
-        <Link to="/carrito" className="text-label-md flex items-center gap-2 text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-primary)]">
-          <X size={16} strokeWidth={1.8} />
-          Cancelar
-        </Link>
-      ) : null}
-    </header>
   )
 }
 

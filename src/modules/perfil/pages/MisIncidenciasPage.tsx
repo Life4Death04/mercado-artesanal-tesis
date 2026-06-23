@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Flag, Globe, Package, Share2, ShoppingBag, UserCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Flag, Globe, Package, Share2 } from 'lucide-react'
 import { ReportarIncidenciaModal } from '../componentes/IncidenciaModals'
 
 type IncidenciaStatus = 'En revisión' | 'Resuelta' | 'Abierta' | 'Cerrada'
@@ -83,8 +83,6 @@ export function MisIncidenciasPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF7F0] text-[var(--color-on-background)]">
-      <IncidenciasHeader />
-
       <main className="mx-auto min-h-screen max-w-[var(--layout-container-max)] px-[var(--space-margin-mobile)] py-12 md:px-[var(--space-margin-desktop)]">
         {/* Page header */}
         <header className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
@@ -259,35 +257,6 @@ function IncidenciasPagination() {
       >
         <ChevronRight size={18} strokeWidth={1.8} />
       </button>
-    </nav>
-  )
-}
-
-function IncidenciasHeader() {
-  return (
-    <nav className="sticky top-0 z-50 w-full border-b border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] bg-[#FAF7F0]/90 backdrop-blur-md transition-all duration-300">
-      <div className="mx-auto flex w-full max-w-[var(--layout-container-max)] items-center justify-between px-[var(--space-margin-mobile)] py-4 md:px-[var(--space-margin-desktop)]">
-        <div className="flex items-center gap-8">
-          <Link to="/" className="text-headline-md tracking-tighter text-[var(--color-primary)]">
-            ALICANTE GOURMET
-          </Link>
-          <div className="hidden gap-6 md:flex">
-            {['Shop', 'Producers', 'Artisans'].map((item) => (
-              <a key={item} href="#" className="text-body-md text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-primary)]">
-                {item}
-              </a>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center gap-6">
-          <Link to="/carrito" aria-label="Carrito" className="text-[var(--color-primary)] transition-opacity hover:opacity-70">
-            <ShoppingBag size={22} strokeWidth={1.8} />
-          </Link>
-          <Link to="/perfil" aria-label="Mi perfil" className="border-b-2 border-[var(--color-primary)] pb-1 font-bold text-[var(--color-primary)]">
-            <UserCircle size={22} strokeWidth={1.8} />
-          </Link>
-        </div>
-      </div>
     </nav>
   )
 }

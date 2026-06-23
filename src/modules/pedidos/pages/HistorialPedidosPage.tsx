@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, ShoppingCart, UserCircle } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { OrderDetailModal, ProductReviewModal } from '../componentes/ConsumerOrderModals'
 
 export type ConsumerOrderStatus = 'PENDIENTE' | 'ENTREGADO' | 'ENVIADO' 
@@ -144,8 +144,6 @@ export function HistorialPedidosPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF7F0] text-[#1A1A1A]">
-      <OrdersHeader />
-
       <main className="mx-auto w-full max-w-[var(--layout-container-max)] px-[var(--space-margin-mobile)] py-16 md:px-[var(--space-margin-desktop)] md:py-24">
         <section className="mb-12">
           <nav aria-label="Breadcrumb" className="text-label-sm mb-6 flex items-center gap-2 text-[var(--color-outline)]">
@@ -207,33 +205,6 @@ export function HistorialPedidosPage() {
 
       {reviewProduct ? <ProductReviewModal product={reviewProduct} onClose={() => setReviewProduct(null)} /> : null}
     </div>
-  )
-}
-
-function OrdersHeader() {
-  return (
-    <nav className="sticky top-0 z-40 w-full border-b border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] bg-[var(--color-background)]/95 backdrop-blur-sm">
-      <div className="mx-auto flex h-20 max-w-[var(--layout-container-max)] items-center justify-between px-[var(--space-margin-mobile)] md:px-[var(--space-margin-desktop)]">
-        <Link to="/" className="text-headline-md text-[var(--color-primary)]">
-          L'Essence d'Alicante
-        </Link>
-        <div className="text-body-md hidden gap-8 md:flex">
-          {['Shop', 'Producers', 'Artisans', 'Magazine'].map((item) => (
-            <a key={item} href="#" className="rounded px-2 py-1 text-[var(--color-on-surface-variant)] transition-colors hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-primary)]">
-              {item}
-            </a>
-          ))}
-        </div>
-        <div className="flex items-center gap-4">
-          <Link to="/carrito" aria-label="Carrito" className="text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-primary)]">
-            <ShoppingCart size={22} strokeWidth={1.8} />
-          </Link>
-          <Link to="/perfil" aria-label="Perfil" className="text-[var(--color-primary)]">
-            <UserCircle size={24} strokeWidth={1.8} />
-          </Link>
-        </div>
-      </div>
-    </nav>
   )
 }
 

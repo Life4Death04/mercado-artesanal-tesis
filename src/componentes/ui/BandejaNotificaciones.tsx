@@ -159,7 +159,7 @@ export function BandejaNotificaciones({
             role="dialog"
             aria-modal="true"
             aria-label="Bandeja de notificaciones"
-            className="absolute right-0 top-12 z-50 w-[360px] overflow-hidden border border-[var(--color-outline-variant)] bg-[#FAF7F0] shadow-[0_10px_30px_-10px_rgba(122,46,58,0.08)] sm:w-[400px]"
+            className="absolute right-0 top-12 z-50 w-[min(calc(100vw-2rem),360px)] overflow-hidden border border-[var(--color-outline-variant)] bg-[#FAF7F0] shadow-[0_10px_30px_-10px_rgba(122,46,58,0.08)] sm:w-[400px]"
             style={{ animation: 'notifSlideIn 0.22s ease-out forwards' }}
           >
             {/* Panel header */}

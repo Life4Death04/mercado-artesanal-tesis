@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Bell, Heart, Minus, Plus, ShoppingBag, ShoppingCart, Sparkles, Sprout, TriangleAlert, User, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Heart, Minus, Plus, ShoppingBag, Sparkles, Sprout, TriangleAlert, X } from 'lucide-react'
 
 type CartItem = {
   name: string
@@ -64,14 +64,11 @@ const cartGroups: ProducerGroup[] = [
   },
 ]
 
-const navItems = ['Curation', 'Producers', 'Favorites']
 const orderTotal = '51.50€'
 
 export function CarritoPage() {
   return (
-    <div className="min-h-screen bg-[var(--color-background)] pt-20 text-[var(--color-on-surface)]">
-      <CartHeader />
-
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
       <main className="mx-auto flex w-full max-w-[var(--layout-container-max)] flex-grow flex-col px-[var(--space-margin-mobile)] pt-12 pb-32 md:px-[var(--space-margin-desktop)] md:py-24">
         <header className="mb-12 md:mb-16">
           <h1 className="text-display-lg text-[var(--color-on-surface)]">Tu cesta</h1>
@@ -93,40 +90,6 @@ export function CarritoPage() {
       <CartFooter />
       <MobileBottomNav />
     </div>
-  )
-}
-
-function CartHeader() {
-  return (
-    <header className="fixed top-0 left-0 z-50 flex h-20 w-full items-center justify-between border-b border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-background)] px-[var(--space-margin-mobile)] md:px-[var(--space-margin-desktop)]">
-      <Link to="/" className="text-display-lg text-[30px] leading-none tracking-tight text-[var(--color-primary)] italic sm:text-[36px] md:text-[48px]">
-        ALICANTE ORIGIN
-      </Link>
-
-      <nav className="hidden h-full items-center gap-8 md:flex" aria-label="Navegación principal">
-        {navItems.map((item) => (
-          <a key={item} href="#" className="text-body-md text-[var(--color-on-surface-variant)] transition-colors duration-300 hover:text-[var(--color-primary)]">
-            {item}
-          </a>
-        ))}
-        <Link to="/carrito" className="flex items-center gap-2 border-b-2 border-[var(--color-primary)] pb-1 font-bold text-[var(--color-primary)]">
-          <ShoppingCart size={18} strokeWidth={1.8} />
-          Basket
-        </Link>
-      </nav>
-
-      <div className="flex items-center gap-4 text-[var(--color-primary)]">
-        <button type="button" aria-label="Notificaciones" className="transition-colors hover:text-[var(--color-primary-container)]">
-          <Bell size={20} strokeWidth={1.8} />
-        </button>
-        <button type="button" aria-label="Perfil" className="transition-colors hover:text-[var(--color-primary-container)]">
-          <User size={20} strokeWidth={1.8} />
-        </button>
-        <Link to="/carrito" aria-label="Carrito" className="transition-colors hover:text-[var(--color-primary-container)] md:hidden">
-          <ShoppingCart size={20} strokeWidth={1.8} />
-        </Link>
-      </div>
-    </header>
   )
 }
 

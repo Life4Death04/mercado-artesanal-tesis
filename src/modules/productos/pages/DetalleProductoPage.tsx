@@ -4,13 +4,10 @@ import {
   ArrowRight,
   ChevronRight,
   Info,
-  Menu,
   Minus,
   Plus,
-  Search,
   ShoppingBag,
   Star,
-  User,
 } from 'lucide-react'
 
 const product = {
@@ -83,14 +80,9 @@ const relatedProducts = [
   },
 ]
 
-const temporaryLayoutNote = 'TODO: Header y footer temporales replicados desde la referencia. Deben reemplazarse por la navegación y pie definitivos.'
-
 export function DetalleProductoPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[var(--color-surface)] text-[var(--color-on-surface)] selection:bg-[var(--color-primary-container)] selection:text-[var(--color-on-primary)]">
-      <ProductTemporaryHeader />
-      <TemporaryTodoNotice position="top" />
-
       <main className="mx-auto max-w-[var(--layout-container-max)] px-[var(--space-margin-mobile)] py-12 md:px-[var(--space-margin-desktop)] md:py-20">
         <Breadcrumbs />
 
@@ -105,72 +97,7 @@ export function DetalleProductoPage() {
         <RelatedProductsSection />
       </main>
 
-      <TemporaryTodoNotice position="footer" />
       <ProductTemporaryFooter />
-    </div>
-  )
-}
-
-function ProductTemporaryHeader() {
-  return (
-    <nav className="sticky top-0 z-50 w-full border-b border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] bg-[var(--color-surface)] transition-colors duration-300">
-      <div className="mx-auto flex max-w-[var(--layout-container-max)] items-center justify-between px-[var(--space-margin-mobile)] py-[var(--space-gutter)] md:px-[var(--space-margin-desktop)]">
-        <div className="flex items-center gap-6">
-          <button type="button" aria-label="Abrir menú" className="text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-fixed-dim)] md:hidden">
-            <Menu size={24} strokeWidth={1.8} />
-          </button>
-          <Link to="/productos" className="text-headline-lg tracking-tight text-[var(--color-primary)]">
-            ALACANT ARTISÀ
-          </Link>
-        </div>
-
-        <ul className="hidden items-center gap-8 md:flex">
-          {['Catalog', 'Producers', 'Origins', 'Journal'].map((item, index) => (
-            <li key={item}>
-              <a
-                href="#"
-                className={`text-label-md cursor-pointer pb-1 transition-colors duration-300 active:opacity-70 ${
-                  index === 0
-                    ? 'border-b-2 border-[var(--color-primary)] text-[var(--color-primary)]'
-                    : 'text-[var(--color-secondary)] hover:text-[var(--color-primary)]'
-                }`}
-              >
-                {item}
-              </a>
-            </li>
-          ))}
-        </ul>
-
-        <div className="flex items-center gap-4">
-          <button type="button" aria-label="Buscar" className="text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-fixed-dim)]">
-            <Search size={20} strokeWidth={1.8} />
-          </button>
-          <Link to="/carrito" aria-label="Carrito" className="relative text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-fixed-dim)]">
-            <ShoppingBag size={21} strokeWidth={1.8} />
-            <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-[var(--color-primary-container)] text-[10px] font-bold text-[var(--color-on-primary)]">
-              1
-            </span>
-          </Link>
-          <button type="button" aria-label="Perfil" className="hidden text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-fixed-dim)] md:flex">
-            <User size={20} strokeWidth={1.8} />
-          </button>
-        </div>
-      </div>
-    </nav>
-  )
-}
-
-function TemporaryTodoNotice({ position }: { position: 'top' | 'footer' }) {
-  return (
-    <div className="border-y border-[color-mix(in_srgb,var(--color-primary-container)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-primary-fixed)_52%,var(--color-background))] px-[var(--space-margin-mobile)] py-3 md:px-[var(--space-margin-desktop)]">
-      <div className="mx-auto flex max-w-[var(--layout-container-max)] flex-col gap-1 md:flex-row md:items-center md:justify-between">
-        <span className="text-label-sm w-fit bg-[var(--color-primary-container)] px-3 py-1 uppercase tracking-[0.18em] text-[var(--color-on-primary)]">
-          TODO visible
-        </span>
-        <p className="text-label-md text-[var(--color-primary)]">
-          {position === 'top' ? temporaryLayoutNote : 'TODO: Footer temporal replicado; cambiar cuando se defina el pie final.'}
-        </p>
-      </div>
     </div>
   )
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ExternalLink, LogOut, Mail, MapPin, Plus, ShoppingBag, UserCircle } from 'lucide-react'
+import { ExternalLink, LogOut, Mail, MapPin, Plus } from 'lucide-react'
 import { AgregarDireccionModal } from '../componentes/ProfileModals'
 
 type Address = {
@@ -33,8 +32,6 @@ export function PerfilPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF7F0] text-[#1A1A1A]">
-      <ProfileHeader />
-
       <main className="mx-auto max-w-[800px] px-[var(--space-margin-mobile)] py-16 md:px-0">
         {/* Page title */}
         <section className="mb-16">
@@ -142,35 +139,6 @@ export function PerfilPage() {
 
       {showAddModal ? <AgregarDireccionModal onClose={() => setShowAddModal(false)} /> : null}
     </div>
-  )
-}
-
-function ProfileHeader() {
-  return (
-    <header className="sticky top-0 z-50 border-b border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] bg-[var(--color-surface)]/80 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-[var(--layout-container-max)] items-center justify-between px-[var(--space-margin-mobile)] py-4 md:px-[var(--space-margin-desktop)]">
-        <div className="flex items-center gap-8">
-          <Link to="/" className="text-headline-md font-semibold text-[var(--color-primary)]">
-            L'Essence d'Alicante
-          </Link>
-          <nav className="hidden gap-6 md:flex">
-            {['Le Marché', 'Our Story', 'Producers'].map((item) => (
-              <a key={item} href="#" className="text-label-md text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-primary)]">
-                {item}
-              </a>
-            ))}
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link to="/carrito" aria-label="Carrito" className="text-[var(--color-on-surface)] transition-opacity hover:opacity-80">
-            <ShoppingBag size={22} strokeWidth={1.8} />
-          </Link>
-          <button type="button" aria-label="Perfil" className="border-b-2 border-[var(--color-primary)] pb-1 text-[var(--color-primary)]">
-            <UserCircle size={22} strokeWidth={1.8} />
-          </button>
-        </div>
-      </div>
-    </header>
   )
 }
 

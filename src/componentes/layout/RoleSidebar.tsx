@@ -122,7 +122,12 @@ export function RoleSidebar({
         ))}
       </nav>
 
-      <SidebarFooter variant={variant} isProducerArea={isProducerArea} isProducerAsConsumer={isProducerAsConsumer} />
+      <SidebarFooter
+        variant={variant}
+        isProducerArea={isProducerArea}
+        isProducerAsConsumer={isProducerAsConsumer}
+        onMobileClose={onMobileClose}
+      />
     </>
   )
 
@@ -153,10 +158,12 @@ function SidebarFooter({
   variant,
   isProducerArea,
   isProducerAsConsumer,
+  onMobileClose,
 }: {
   variant: SidebarVariant
   isProducerArea: boolean
   isProducerAsConsumer: boolean
+  onMobileClose?: () => void
 }) {
   if (variant === 'admin') {
     return (
@@ -170,6 +177,7 @@ function SidebarFooter({
         </NavLink>
         <NavLink
           to="/login"
+          onClick={onMobileClose}
           className="text-label-md flex items-center gap-4 rounded-[var(--radius-lg)] px-4 py-3 text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]"
         >
           <LogOut size={21} strokeWidth={1.8} />
@@ -185,7 +193,10 @@ function SidebarFooter({
         {isProducerArea ? (
           <NavLink
             to="/productos"
-            onClick={() => window.localStorage.setItem('sidebar-owner', 'producer')}
+            onClick={() => {
+              window.localStorage.setItem('sidebar-owner', 'producer')
+              onMobileClose?.()
+            }}
             className="text-label-md flex w-full items-center justify-center gap-2 border border-[var(--color-primary-container)] bg-[var(--color-primary-container)] px-4 py-3 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)]"
           >
             Ver tienda
@@ -194,7 +205,10 @@ function SidebarFooter({
         ) : (
           <NavLink
             to="/productor"
-            onClick={() => window.localStorage.setItem('sidebar-owner', 'producer')}
+            onClick={() => {
+              window.localStorage.setItem('sidebar-owner', 'producer')
+              onMobileClose?.()
+            }}
             className="text-label-md flex w-full items-center justify-center gap-2 border border-[var(--color-primary-container)] bg-[var(--color-surface-container-low)] px-4 py-3 text-[var(--color-primary-container)] transition-colors hover:bg-[var(--color-primary-container)] hover:text-[var(--color-on-primary)]"
           >
             Volver al panel productor
@@ -206,9 +220,27 @@ function SidebarFooter({
             Navegando como consumidor
           </p>
         )}
+        <LogoutLink onMobileClose={onMobileClose} />
       </div>
     )
   }
 
-  return null
+  return (
+    <div className="mt-auto border-t border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] pt-6">
+      <LogoutLink onMobileClose={onMobileClose} />
+    </div>
+  )
+}
+
+function LogoutLink({ onMobileClose }: { onMobileClose?: () => void }) {
+  return (
+    <NavLink
+      to="/login"
+      onClick={onMobileClose}
+      className="text-label-md flex items-center gap-4 rounded-[var(--radius-lg)] px-4 py-3 text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]"
+    >
+      <LogOut size={21} strokeWidth={1.8} />
+      <span>Cerrar sesión</span>
+    </NavLink>
+  )
 }
