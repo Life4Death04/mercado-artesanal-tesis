@@ -1,12 +1,29 @@
+import { useState } from 'react'
 import { X } from 'lucide-react'
+
+type ResolutionType = 'resuelta' | 'sin-accion'
 
 type IncidentResolutionModalProps = {
   onClose: () => void
+  onConfirm: (resolution: ResolutionType) => void
 }
 
-export function IncidentResolutionModal({ onClose }: IncidentResolutionModalProps) {
+export function IncidentResolutionModal({ onClose, onConfirm }: IncidentResolutionModalProps) {
+  const [selected, setSelected] = useState<ResolutionType>('resuelta')
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    onConfirm(selected)
+    onClose()
+  }
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-resolution-title"
+    >
       <button
         type="button"
         aria-label="Cerrar modal"
@@ -15,7 +32,12 @@ export function IncidentResolutionModal({ onClose }: IncidentResolutionModalProp
       />
       <section className="relative flex w-full max-w-2xl flex-col overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-container-lowest)] shadow-[0_0_40px_rgba(28,27,27,0.15)]">
         <header className="flex items-center justify-between border-b border-[color-mix(in_srgb,var(--color-outline-variant)_50%,transparent)] px-6 py-5 md:px-8 md:py-6">
-          <h2 className="text-headline-lg text-[var(--color-on-surface)]">Registrar solución</h2>
+          <h2
+            id="modal-resolution-title"
+            className="text-headline-lg text-[var(--color-on-surface)]"
+          >
+            Registrar solución
+          </h2>
           <button
             type="button"
             aria-label="Cerrar modal"
@@ -26,13 +48,25 @@ export function IncidentResolutionModal({ onClose }: IncidentResolutionModalProp
           </button>
         </header>
 
-        <form className="flex flex-col" onSubmit={(event) => event.preventDefault()}>
+        <form className="flex flex-col" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-10 px-6 py-8 md:px-8">
             <fieldset>
-              <legend className="text-label-md mb-4 block text-[var(--color-on-surface)]">Estado de resolución</legend>
+              <legend className="text-label-md mb-4 block text-[var(--color-on-surface)]">
+                Estado de resolución
+              </legend>
               <div className="space-y-4">
-                <ResolutionRadio label="Resuelta" value="resuelta" />
-                <ResolutionRadio label="Resuelta — Sin acción requerida" value="sin-accion" />
+                <ResolutionRadio
+                  label="Resuelta"
+                  value="resuelta"
+                  checked={selected === 'resuelta'}
+                  onChange={() => setSelected('resuelta')}
+                />
+                <ResolutionRadio
+                  label="Resuelta — Sin acción requerida"
+                  value="sin-accion"
+                  checked={selected === 'sin-accion'}
+                  onChange={() => setSelected('sin-accion')}
+                />
               </div>
             </fieldset>
 
@@ -70,18 +104,25 @@ export function IncidentResolutionModal({ onClose }: IncidentResolutionModalProp
   )
 }
 
-type ResolutionRadioProps = {
+function ResolutionRadio({
+  label,
+  value,
+  checked,
+  onChange,
+}: {
   label: string
   value: string
-}
-
-function ResolutionRadio({ label, value }: ResolutionRadioProps) {
+  checked: boolean
+  onChange: () => void
+}) {
   return (
     <label className="group flex cursor-pointer items-start gap-4">
       <input
         type="radio"
         name="resolutionState"
         value={value}
+        checked={checked}
+        onChange={onChange}
         className="mt-0.5 size-5 appearance-none rounded-full border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] transition-all checked:border-[6px] checked:border-[var(--color-primary-container)] focus:ring-2 focus:ring-[var(--color-primary-container)] focus:ring-offset-2 focus:ring-offset-[var(--color-surface-container-lowest)] focus:outline-none"
       />
       <span className="text-body-md text-[var(--color-on-surface)] transition-colors group-hover:text-[var(--color-primary-container)]">

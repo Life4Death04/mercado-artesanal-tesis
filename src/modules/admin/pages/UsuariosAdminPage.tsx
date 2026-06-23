@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
 import {
   Ban,
@@ -186,11 +187,13 @@ const POR_PAGINA = 8
 // ---------------------------------------------------------------------------
 
 export function UsuariosAdminPage() {
+  const [searchParams] = useSearchParams()
+
   const [usuarios, setUsuarios] = useState<AdminUser[]>(USUARIOS_INICIALES)
   const [modal, setModal] = useState<UserModalState>(null)
 
-  // Filters
-  const [query, setQuery] = useState('')
+  // Filters — pre-fill ?q= param (viene desde detalle de incidencia)
+  const [query, setQuery] = useState(searchParams.get('q') ?? '')
   const [filtroRol, setFiltroRol] = useState('Rol (Todos)')
   const [filtroEstado, setFiltroEstado] = useState('Estado (Todos)')
   const [pagina, setPagina] = useState(1)
