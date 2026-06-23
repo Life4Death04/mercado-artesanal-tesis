@@ -1,59 +1,39 @@
 import { Link, useLocation } from 'react-router-dom'
-import { ChevronRight, Menu, ShoppingCart, UserCircle } from 'lucide-react'
+import { Menu, ShoppingCart, UserCircle } from 'lucide-react'
 import { BandejaNotificaciones } from '../ui/BandejaNotificaciones'
 
 type ConsumerTopbarProps = {
   onMenuClick: () => void
 }
 
-type Breadcrumb = {
-  label: string
-  to?: string
-}
-
 const routeMeta = [
   {
     match: (pathname: string) => pathname === '/productos',
     title: 'Catálogo',
-    breadcrumbs: [{ label: 'Área consumidor' }, { label: 'Catálogo' }],
   },
   {
     match: (pathname: string) => pathname.startsWith('/productos/'),
     title: 'Detalle de producto',
-    breadcrumbs: [
-      { label: 'Área consumidor' },
-      { label: 'Catálogo', to: '/productos' },
-      { label: 'Detalle' },
-    ],
   },
   {
     match: (pathname: string) => pathname === '/carrito',
     title: 'Carrito',
-    breadcrumbs: [{ label: 'Área consumidor' }, { label: 'Carrito' }],
   },
   {
     match: (pathname: string) => pathname === '/checkout',
     title: 'Checkout',
-    breadcrumbs: [
-      { label: 'Área consumidor' },
-      { label: 'Carrito', to: '/carrito' },
-      { label: 'Checkout' },
-    ],
   },
   {
     match: (pathname: string) => pathname === '/pedidos',
     title: 'Mis pedidos',
-    breadcrumbs: [{ label: 'Área consumidor' }, { label: 'Mis pedidos' }],
   },
   {
     match: (pathname: string) => pathname === '/perfil',
     title: 'Mi perfil',
-    breadcrumbs: [{ label: 'Área consumidor' }, { label: 'Mi perfil' }],
   },
   {
     match: (pathname: string) => pathname === '/incidencias',
     title: 'Mis incidencias',
-    breadcrumbs: [{ label: 'Área consumidor' }, { label: 'Mis incidencias' }],
   },
 ]
 
@@ -74,21 +54,10 @@ export function ConsumerTopbar({ onMenuClick }: ConsumerTopbarProps) {
         </button>
 
         <div className="min-w-0 flex-1">
-          <h1 className="text-headline-md truncate text-[var(--color-on-surface)] md:text-[28px]">
+          <span className="text-headline-md block truncate text-[var(--color-on-surface)] md:text-[28px]">
             {meta.title}
-          </h1>
-          <Breadcrumbs items={meta.breadcrumbs} />
+          </span>
         </div>
-
-        {/* <label className="relative hidden w-full max-w-sm items-center lg:flex xl:max-w-md">
-          <span className="sr-only">Buscar productos</span>
-          <Search size={18} strokeWidth={1.8} className="absolute left-3 text-[var(--color-outline)]" />
-          <input
-            type="search"
-            placeholder="Buscar productos artesanos..."
-            className="text-label-sm w-full border-0 border-b border-[var(--color-outline)] bg-transparent py-2 pr-4 pl-10 text-[var(--color-on-surface)] transition-colors placeholder:text-[var(--color-secondary)] focus:border-[var(--color-primary)] focus:outline-none"
-          />
-        </label>*/}
 
         <div className="flex shrink-0 items-center gap-2 text-[var(--color-primary)] sm:gap-3">
           <BandejaNotificaciones />
@@ -112,32 +81,5 @@ export function ConsumerTopbar({ onMenuClick }: ConsumerTopbarProps) {
         </div>
       </div>
     </header>
-  )
-}
-
-function Breadcrumbs({ items }: { items: Breadcrumb[] }) {
-  return (
-    <nav aria-label="Breadcrumb" className="mb-1 hidden sm:block">
-      <ol className="text-label-sm flex min-w-0 items-center gap-2 text-[var(--color-secondary)]">
-        {items.map((item, index) => {
-          const isLast = index === items.length - 1
-
-          return (
-            <li key={`${item.label}-${index}`} className="flex min-w-0 items-center gap-2">
-              {item.to && !isLast ? (
-                <Link to={item.to} className="truncate transition-colors hover:text-[var(--color-primary)]">
-                  {item.label}
-                </Link>
-              ) : (
-                <span className={`truncate ${isLast ? 'text-[var(--color-on-surface)]' : ''}`}>
-                  {item.label}
-                </span>
-              )}
-              {!isLast && <ChevronRight size={14} strokeWidth={1.8} className="shrink-0" />}
-            </li>
-          )
-        })}
-      </ol>
-    </nav>
   )
 }

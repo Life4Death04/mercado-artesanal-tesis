@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Heart, Minus, Plus, ShoppingBag, Sparkles, Sprout, TriangleAlert, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronRight, Heart, Minus, Plus, ShoppingBag, Sparkles, Sprout, TriangleAlert, X } from 'lucide-react'
 
 type CartItem = {
   name: string
@@ -71,6 +71,13 @@ export function CarritoPage() {
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
       <main className="mx-auto flex w-full max-w-[var(--layout-container-max)] flex-grow flex-col px-[var(--space-margin-mobile)] pt-12 pb-32 md:px-[var(--space-margin-desktop)] md:py-24">
         <header className="mb-12 md:mb-16">
+          <nav aria-label="Breadcrumb" className="text-label-sm mb-4 flex items-center gap-2 text-[var(--color-on-surface-variant)]/70">
+            <Link to="/productos" className="transition-colors hover:text-[var(--color-primary)]">
+              Catálogo
+            </Link>
+            <ChevronRight size={14} strokeWidth={1.8} />
+            <span className="text-[var(--color-on-surface)]">Carrito</span>
+          </nav>
           <h1 className="text-display-lg text-[var(--color-on-surface)]">Tu cesta</h1>
         </header>
 

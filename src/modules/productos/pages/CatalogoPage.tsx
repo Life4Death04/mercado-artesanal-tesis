@@ -131,6 +131,7 @@ export function CatalogoPage() {
         <CatalogFilters />
 
         <main className="min-w-0 flex-1" aria-label="Catálogo de productos artesanales">
+          <CatalogHeader />
           <SearchPanel />
           <CatalogToolbar />
 
@@ -146,6 +147,22 @@ export function CatalogoPage() {
 
       <CatalogFooter />
     </div>
+  )
+}
+
+function CatalogHeader() {
+  return (
+    <header className="mb-8">
+      <nav aria-label="Breadcrumb" className="text-label-sm mb-4 flex items-center gap-2 text-[var(--color-on-surface-variant)]/70">
+        <span>Área consumidor</span>
+        <ChevronRight size={14} strokeWidth={1.8} />
+        <span className="text-[var(--color-on-surface)]">Catálogo</span>
+      </nav>
+      <h1 className="text-display-lg text-[var(--color-on-surface)]">Catálogo</h1>
+      <p className="text-body-md mt-3 max-w-2xl text-[var(--color-on-surface-variant)]">
+        Explora una selección curada de productos artesanales de Alicante, filtrados por origen, categoría y disponibilidad.
+      </p>
+    </header>
   )
 }
 

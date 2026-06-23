@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ExternalLink, LogOut, Mail, MapPin, Plus } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ChevronRight, ExternalLink, LogOut, Mail, MapPin, Plus } from 'lucide-react'
 import { AgregarDireccionModal } from '../componentes/ProfileModals'
 
 type Address = {
@@ -35,6 +36,13 @@ export function PerfilPage() {
       <main className="mx-auto max-w-[800px] px-[var(--space-margin-mobile)] py-16 md:px-0">
         {/* Page title */}
         <section className="mb-16">
+          <nav aria-label="Breadcrumb" className="text-label-sm mb-4 flex items-center gap-2 text-[var(--color-on-surface-variant)]/70">
+            <Link to="/productos" className="transition-colors hover:text-[var(--color-primary)]">
+              Área consumidor
+            </Link>
+            <ChevronRight size={14} strokeWidth={1.8} />
+            <span className="text-[var(--color-on-surface)]">Mi perfil</span>
+          </nav>
           <h1 className="text-headline-lg text-[var(--color-on-surface)]">Mi perfil</h1>
           <p className="text-body-md mt-2 text-[var(--color-on-surface-variant)]">
             Gestiona tu información personal, direcciones y preferencias de cuenta.

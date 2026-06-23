@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Car, Check, CreditCard, Info, Lock, MapPin, Plus, Smartphone, Store, Truck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Car, Check, ChevronRight, CreditCard, Info, Lock, MapPin, Plus, Smartphone, Store, Truck } from 'lucide-react'
 
 type CheckoutStep = 1 | 2 | 3
 
@@ -121,6 +121,7 @@ export function CheckoutPage() {
         <ConfirmationStep />
       ) : (
         <main className="mx-auto w-full max-w-[var(--layout-container-max)] px-[var(--space-margin-mobile)] py-12 md:px-[var(--space-margin-desktop)] md:py-16">
+          <CheckoutPageHeader currentStep={currentStep} />
           <CheckoutStepper currentStep={currentStep} />
 
           <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-16">
@@ -135,6 +136,27 @@ export function CheckoutPage() {
 
       <CheckoutFooter compact={currentStep === 3} />
     </div>
+  )
+}
+
+function CheckoutPageHeader({ currentStep }: { currentStep: CheckoutStep }) {
+  const title = currentStep === 1 ? 'Detalles de Envío' : 'Método de Pago'
+  const description = currentStep === 1
+    ? 'Define cómo recibirá cada producto su comprador final.'
+    : 'Selecciona un método de pago para completar tu compra.'
+
+  return (
+    <header className="mb-12">
+      <nav aria-label="Breadcrumb" className="text-label-sm mb-4 flex items-center gap-2 text-[var(--color-on-surface-variant)]/70">
+        <Link to="/carrito" className="transition-colors hover:text-[var(--color-primary)]">
+          Carrito
+        </Link>
+        <ChevronRight size={14} strokeWidth={1.8} />
+        <span className="text-[var(--color-on-surface)]">Checkout</span>
+      </nav>
+      <h1 className="text-display-lg text-[var(--color-on-surface)]">{title}</h1>
+      <p className="text-body-md mt-3 max-w-2xl text-[var(--color-on-surface-variant)]">{description}</p>
+    </header>
   )
 }
 
@@ -174,7 +196,6 @@ function CheckoutStepper({ currentStep }: { currentStep: CheckoutStep }) {
 function ShippingDetailsStep() {
   return (
     <>
-      <h1 className="text-display-lg text-[var(--color-on-surface)]">Detalles de Envío</h1>
       {shippingGroups.map((group) => (
         <ShippingProducerCard key={group.producer} group={group} />
       ))}
@@ -262,11 +283,6 @@ function DeliveryOptionCard({ option, groupName }: { option: DeliveryOption; gro
 function PaymentMethodStep({ onBack }: { onBack: () => void }) {
   return (
     <>
-      <div>
-        <h1 className="text-display-lg text-[var(--color-on-surface)]">Método de Pago</h1>
-        <p className="text-body-md mt-2 text-[var(--color-on-surface-variant)]">Selecciona un método de pago para completar tu compra.</p>
-      </div>
-
       <fieldset className="mt-4">
         <legend className="sr-only">Método de pago</legend>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
