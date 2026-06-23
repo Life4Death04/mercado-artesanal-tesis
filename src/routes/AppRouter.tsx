@@ -26,7 +26,11 @@ import { CatalogoPage } from '../modules/productos/pages/CatalogoPage'
 import { PedidosProductorPage } from '../modules/productor/pages/PedidosProductorPage'
 import { PerfilProductorPublicoPage } from '../modules/productor/pages/PerfilProductorPublicoPage'
 import { ProductosProductorPage } from '../modules/productor/pages/ProductosProductorPage'
+import { EstadisticasProductorPage } from '../modules/productor/pages/EstadisticasProductorPage'
+import { InventarioProductorPage } from '../modules/productor/pages/InventarioProductorPage'
 import { ProductorDashboardPage } from '../modules/productor/pages/ProductorDashboardPage'
+import { ModalidadesEntregaPage } from '../modules/productor/pages/ModalidadesEntregaPage'
+import { EditarPerfilPublicoPage } from '../modules/productor/pages/EditarPerfilPublicoPage'
 
 export function AppRouter() {
   return (
@@ -47,6 +51,10 @@ export function AppRouter() {
           <Route path="productor" element={<ProductorDashboardPage />} />
           <Route path="productor/productos" element={<ProductosProductorPage />} />
           <Route path="productor/pedidos" element={<PedidosProductorPage />} />
+          <Route path="productor/inventario" element={<InventarioProductorPage />} />
+          <Route path="productor/estadisticas" element={<EstadisticasProductorPage />} />
+          <Route path="productor/entregas" element={<ModalidadesEntregaPage />} />
+          <Route path="productor/perfil" element={<EditarPerfilPublicoPage />} />
         </Route>
         <Route element={<AdminLayout />}>
           <Route path="admin" element={<AdminDashboardPage />} />

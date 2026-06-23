@@ -79,9 +79,9 @@ const CATEGORIAS_FILTER = ['Todas las categorías', 'Aceites', 'Embutidos', 'Vin
 const NAV_ITEMS = [
   { icon: ShoppingBag, label: 'Mis pedidos', to: '/productor/pedidos', active: false },
   { icon: BookOpen, label: 'Mi catálogo', to: '/productor/productos', active: true },
-  { icon: Package, label: 'Inventario', to: '#', active: false },
-  { icon: BarChart2, label: 'Estadísticas', to: '#', active: false },
-  { icon: Truck, label: 'Configuración de entregas', to: '#', active: false },
+  { icon: Package, label: 'Inventario', to: '/productor/inventario', active: false },
+  { icon: BarChart2, label: 'Estadísticas', to: '/productor/estadisticas', active: false },
+  { icon: Truck, label: 'Configuración de entregas', to: '/productor/entregas', active: false },
 ]
 
 // ---------------------------------------------------------------------------
@@ -117,7 +117,7 @@ export function ProductosProductorPage() {
         </nav>
 
         <div className="mt-auto border-t border-[var(--color-outline-variant)] pt-6">
-          <Link to="/perfil" className="flex items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 text-[var(--color-secondary)] transition-all hover:bg-[var(--color-surface-container-high)]">
+          <Link to="/productor/perfil" className="flex items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 text-[var(--color-secondary)] transition-all hover:bg-[var(--color-surface-container-high)]">
             <User size={20} strokeWidth={1.8} />
             <span className="text-label-md">Mi perfil</span>
           </Link>
