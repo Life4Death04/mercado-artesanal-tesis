@@ -158,15 +158,15 @@ export function SeleccionPeriodoModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-inverse-surface)]/30 p-[var(--space-margin-mobile)] md:p-[var(--space-margin-desktop)]"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-[var(--color-inverse-surface)]/30 p-3 min-[360px]:p-[var(--space-margin-mobile)] md:p-[var(--space-margin-desktop)]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="periodo-modal-title"
     >
-      <div className="flex w-full max-w-[840px] flex-col overflow-hidden rounded-[var(--radius-xl)] shadow-2xl ring-1 ring-[var(--color-outline-variant)]/50">
+      <div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[840px] flex-col overflow-hidden rounded-[var(--radius-lg)] shadow-2xl ring-1 ring-[var(--color-outline-variant)]/50 md:max-h-[calc(100dvh-8rem)] md:rounded-[var(--radius-xl)]">
         {/* Header */}
-        <header className="flex items-center justify-between border-b border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] px-6 py-5">
-          <h2 className="text-headline-md text-[24px] tracking-tight text-[var(--color-on-surface)]" id="periodo-modal-title">
+        <header className="flex items-center justify-between border-b border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] px-4 py-4 md:px-6 md:py-5">
+          <h2 className="text-headline-sm text-[20px] tracking-tight text-[var(--color-on-surface)] md:text-headline-md md:text-[24px]" id="periodo-modal-title">
             Rango personalizado
           </h2>
           <button
@@ -180,15 +180,15 @@ export function SeleccionPeriodoModal({
         </header>
 
         {/* Body */}
-        <div className="flex min-h-[420px] flex-1 flex-col bg-[var(--color-surface)] md:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[var(--color-surface)] md:min-h-[420px] md:flex-row md:overflow-visible">
           {/* Sidebar quick ranges */}
-          <aside className="flex w-full gap-1 overflow-x-auto border-b bg-[var(--color-surface-container-lowest)]/50 p-4 md:w-[220px] md:flex-col md:overflow-visible md:border-b-0 md:border-r border-[var(--color-outline-variant)]">
+          <aside className="flex w-full gap-1 overflow-x-auto border-b bg-[var(--color-surface-container-lowest)]/50 p-3 md:w-[220px] md:flex-col md:overflow-visible md:border-b-0 md:border-r md:p-4 border-[var(--color-outline-variant)]">
             {QUICK_RANGES.map((q) => (
               <button
                 key={q.label}
                 type="button"
                 onClick={() => applyQuick(q)}
-                className={`text-body-md flex-shrink-0 rounded-[var(--radius-lg)] px-4 py-3 text-left transition-colors ${activeQuick === q.label ? 'bg-[var(--color-surface-variant)] text-[var(--color-on-surface)]' : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-variant)] hover:text-[var(--color-on-surface)]'}`}
+                className={`text-body-md flex-shrink-0 rounded-[var(--radius-lg)] px-3 py-2.5 text-sm text-left transition-colors md:px-4 md:py-3 md:text-base ${activeQuick === q.label ? 'bg-[var(--color-surface-variant)] text-[var(--color-on-surface)]' : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-variant)] hover:text-[var(--color-on-surface)]'}`}
               >
                 {q.label}
               </button>
@@ -199,7 +199,7 @@ export function SeleccionPeriodoModal({
             <button
               type="button"
               onClick={() => setActiveQuick('Personalizado')}
-              className={`text-label-md mt-auto flex flex-shrink-0 items-center justify-between rounded-[var(--radius-lg)] px-4 py-3 text-left transition-colors ${activeQuick === 'Personalizado' || !activeQuick ? 'bg-[var(--color-surface-variant)] text-[var(--color-on-surface)]' : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-variant)] hover:text-[var(--color-on-surface)]'}`}
+              className={`text-label-md mt-auto flex flex-shrink-0 items-center justify-between gap-2 rounded-[var(--radius-lg)] px-3 py-2.5 text-left transition-colors md:px-4 md:py-3 ${activeQuick === 'Personalizado' || !activeQuick ? 'bg-[var(--color-surface-variant)] text-[var(--color-on-surface)]' : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-variant)] hover:text-[var(--color-on-surface)]'}`}
             >
               Personalizado
               <CalendarDays size={18} strokeWidth={1.8} className="text-[var(--color-secondary)]" />
@@ -207,8 +207,8 @@ export function SeleccionPeriodoModal({
           </aside>
 
           {/* Dual calendar */}
-          <div className="flex flex-1 flex-col justify-center p-6 md:p-8">
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12">
+          <div className="flex flex-1 flex-col justify-center p-3 min-[360px]:p-4 md:p-8">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-12">
               <MonthCalendar
                 year={baseMonth.year}
                 month={baseMonth.month}
@@ -217,32 +217,36 @@ export function SeleccionPeriodoModal({
                 onDayClick={handleDayClick}
                 onDayHover={setHoverDate}
                 onPrev={() => setBaseMonth((prev) => addMonths(prev.year, prev.month, -1))}
-                showPrev
-              />
-              <MonthCalendar
-                year={secondMonth.year}
-                month={secondMonth.month}
-                startDate={startDate}
-                endDate={effectiveEnd}
-                onDayClick={handleDayClick}
-                onDayHover={setHoverDate}
                 onNext={() => setBaseMonth((prev) => addMonths(prev.year, prev.month, 1))}
-                showNext
+                showPrev
+                showNextMobile
               />
+              <div className="hidden md:block">
+                <MonthCalendar
+                  year={secondMonth.year}
+                  month={secondMonth.month}
+                  startDate={startDate}
+                  endDate={effectiveEnd}
+                  onDayClick={handleDayClick}
+                  onDayHover={setHoverDate}
+                  onNext={() => setBaseMonth((prev) => addMonths(prev.year, prev.month, 1))}
+                  showNext
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <footer className="flex flex-col items-center justify-between gap-4 border-t border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] px-6 py-4 sm:flex-row">
+        <footer className="flex flex-col items-stretch justify-between gap-3 border-t border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] px-4 py-4 sm:flex-row sm:items-center md:px-6">
           {/* Range summary */}
-          <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)]/50 bg-[var(--color-surface)] px-4 py-2">
+          <div className="flex min-w-0 items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)]/50 bg-[var(--color-surface)] px-3 py-2 md:gap-3 md:px-4">
             <CalendarDays size={20} strokeWidth={1.8} className="text-[var(--color-secondary)]" />
-            <span className="text-body-md font-medium text-[var(--color-on-surface)]">
+            <span className="text-sm font-medium text-[var(--color-on-surface)] md:text-body-md">
               {startDate ? formatShort(startDate) : '—'}
             </span>
-            <span className="text-body-md text-[var(--color-secondary)]">—</span>
-            <span className="text-body-md font-medium text-[var(--color-on-surface)]">
+            <span className="text-sm text-[var(--color-secondary)] md:text-body-md">—</span>
+            <span className="text-sm font-medium text-[var(--color-on-surface)] md:text-body-md">
               {endDate ? formatShort(endDate) : '—'}
             </span>
           </div>
@@ -286,6 +290,7 @@ type MonthCalendarProps = {
   onNext?: () => void
   showPrev?: boolean
   showNext?: boolean
+  showNextMobile?: boolean
 }
 
 function MonthCalendar({
@@ -299,14 +304,15 @@ function MonthCalendar({
   onNext,
   showPrev = false,
   showNext = false,
+  showNextMobile = false,
 }: MonthCalendarProps) {
   const offset = getFirstDayOffset(year, month)
   const days = getDaysInMonth(year, month)
 
   return (
-    <div className="flex flex-col">
+    <div className="mx-auto flex w-full max-w-[300px] flex-col md:max-w-none">
       {/* Month header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between md:mb-6">
         <button
           type="button"
           onClick={onPrev}
@@ -315,28 +321,28 @@ function MonthCalendar({
         >
           <ChevronLeft size={20} strokeWidth={1.8} />
         </button>
-        <span className="text-label-md uppercase tracking-wider text-[var(--color-on-surface)]">
+        <span className="text-label-sm uppercase tracking-wider text-[var(--color-on-surface)] md:text-label-md">
           {MESES_ES[month]} {year}
         </span>
         <button
           type="button"
           onClick={onNext}
           aria-label="Mes siguiente"
-          className={`p-1 text-[var(--color-secondary)] transition-colors hover:text-[var(--color-primary)] ${!showNext ? 'invisible' : ''}`}
+          className={`p-1 text-[var(--color-secondary)] transition-colors hover:text-[var(--color-primary)] ${showNext ? '' : showNextMobile ? 'md:invisible' : 'invisible'}`}
         >
           <ChevronRight size={20} strokeWidth={1.8} />
         </button>
       </div>
 
       {/* Day labels */}
-      <div className="mb-2 grid grid-cols-7 gap-y-2">
+      <div className="mb-2 grid grid-cols-7 gap-y-1 md:gap-y-2">
         {DIAS_SEMANA.map((d) => (
-          <span key={d} className="text-label-sm text-center text-[var(--color-secondary)]">{d}</span>
+          <span key={d} className="text-center text-[11px] font-medium text-[var(--color-secondary)] md:text-label-sm">{d}</span>
         ))}
       </div>
 
       {/* Day grid */}
-      <div className="grid grid-cols-7 gap-y-2">
+      <div className="grid grid-cols-7 gap-y-1 md:gap-y-2">
         {/* Offset cells */}
         {Array.from({ length: offset }, (_, i) => (
           <div key={`empty-${i}`} />
@@ -405,7 +411,7 @@ function DayCell({ date, startDate, endDate, onDayClick, onDayHover }: DayCellPr
       <button
         type="button"
         onClick={() => onDayClick(date)}
-        className={`relative z-10 flex size-9 items-center justify-center rounded-full text-[var(--color-on-surface)] transition-colors
+        className={`relative z-10 flex size-7 items-center justify-center rounded-full text-sm text-[var(--color-on-surface)] transition-colors min-[360px]:size-8 md:size-9 md:text-base
           ${isStart || isEnd ? 'bg-[var(--color-primary-container)] font-medium text-[var(--color-on-primary-container)] shadow-sm' : 'hover:bg-[var(--color-surface-variant)]'}`}
       >
         {date.getDate()}

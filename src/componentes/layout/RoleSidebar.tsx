@@ -1,0 +1,214 @@
+import { NavLink, useLocation } from 'react-router-dom'
+import type { LucideIcon } from 'lucide-react'
+import {
+  AlertTriangle,
+  BarChart2,
+  BarChart3,
+  BookOpen,
+  ExternalLink,
+  Gavel,
+  Home,
+  LayoutDashboard,
+  LogOut,
+  Package,
+  ReceiptText,
+  Shapes,
+  ShoppingBag,
+  ShoppingCart,
+  Store,
+  Truck,
+  User,
+  Users,
+} from 'lucide-react'
+import { APP_NAME } from '../../lib/branding'
+
+type SidebarVariant = 'admin' | 'consumer' | 'producer'
+
+type SidebarItem = {
+  label: string
+  to: string
+  icon: LucideIcon
+  end?: boolean
+}
+
+const adminItems: SidebarItem[] = [
+  { label: 'Inicio', to: '/admin', icon: LayoutDashboard, end: true },
+  { label: 'Usuarios', to: '/admin/usuarios', icon: Users },
+  { label: 'Moderación', to: '/admin/moderacion', icon: Gavel },
+  { label: 'Incidencias', to: '/admin/incidencias', icon: AlertTriangle },
+  { label: 'Categorías', to: '/admin/categorias', icon: Shapes },
+  { label: 'Métricas globales', to: '/admin/metricas-globales', icon: BarChart3 },
+]
+
+const consumerItems: SidebarItem[] = [
+  { label: 'Catálogo', to: '/productos', icon: Store },
+  { label: 'Carrito', to: '/carrito', icon: ShoppingCart },
+  { label: 'Mis pedidos', to: '/pedidos', icon: ReceiptText },
+  { label: 'Mi perfil', to: '/perfil', icon: User },
+  { label: 'Incidencias', to: '/incidencias', icon: AlertTriangle },
+]
+
+const producerItems: SidebarItem[] = [
+  { label: 'Inicio', to: '/productor', icon: Home, end: true },
+  { label: 'Mis pedidos', to: '/productor/pedidos', icon: ShoppingBag },
+  { label: 'Mi catálogo', to: '/productor/productos', icon: BookOpen },
+  { label: 'Inventario', to: '/productor/inventario', icon: Package },
+  { label: 'Estadísticas', to: '/productor/estadisticas', icon: BarChart2 },
+  { label: 'Configuración de entregas', to: '/productor/entregas', icon: Truck },
+  { label: 'Mi perfil', to: '/productor/perfil', icon: User },
+]
+
+type RoleSidebarProps = {
+  variant: SidebarVariant
+  /** Permite que el productor vea navegación de consumidor sin perder el botón de retorno. */
+  producerConsumerMode?: boolean
+  mobileOpen?: boolean
+  onMobileClose?: () => void
+}
+
+export function RoleSidebar({
+  variant,
+  producerConsumerMode = false,
+  mobileOpen = false,
+  onMobileClose,
+}: RoleSidebarProps) {
+  const location = useLocation()
+  const isProducerArea = variant === 'producer' && location.pathname.startsWith('/productor') && !producerConsumerMode
+  const isProducerAsConsumer = variant === 'producer' && !isProducerArea
+
+  const items = variant === 'admin'
+    ? adminItems
+    : isProducerArea
+      ? producerItems
+      : consumerItems
+
+  const subtitle = variant === 'admin'
+    ? 'Admin Dashboard'
+    : isProducerArea
+      ? 'Área de productor'
+      : isProducerAsConsumer
+        ? 'Área consumidor · Productor'
+        : 'Área consumidor'
+
+  const content = (
+    <>
+      <div className="mb-12">
+        <h1 className="font-editorial text-headline-md text-[var(--color-primary-container)] tracking-tight">
+          {APP_NAME}
+        </h1>
+        <p className="text-label-sm mt-1 uppercase tracking-wider text-[var(--color-secondary)]">
+          {subtitle}
+        </p>
+      </div>
+
+      <nav className="flex flex-grow flex-col gap-2" aria-label="Navegación principal">
+        {items.map(({ label, to, icon: Icon, end }) => (
+          <NavLink
+            key={`${label}-${to}`}
+            to={to}
+            end={end}
+            onClick={onMobileClose}
+            className={({ isActive }) =>
+              `text-label-md flex items-center gap-4 rounded-[var(--radius-lg)] px-4 py-3 transition-colors ${
+                isActive
+                  ? 'scale-[0.98] bg-[var(--color-surface-container-low)] font-bold text-[var(--color-primary-container)]'
+                  : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]'
+              }`
+            }
+          >
+            <Icon size={22} strokeWidth={1.8} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      <SidebarFooter variant={variant} isProducerArea={isProducerArea} isProducerAsConsumer={isProducerAsConsumer} />
+    </>
+  )
+
+  return (
+    <>
+      <aside className="fixed top-0 left-0 z-50 hidden h-full w-64 flex-col overflow-y-auto border-r border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-background)] p-6 md:flex">
+        {content}
+      </aside>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-[90] md:hidden" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            aria-label="Cerrar navegación"
+            onClick={onMobileClose}
+            className="absolute inset-0 bg-[var(--color-inverse-surface)]/40 backdrop-blur-sm"
+          />
+          <aside className="relative z-10 flex h-full w-[min(82vw,18rem)] flex-col overflow-y-auto border-r border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-background)] p-6 shadow-2xl">
+            {content}
+          </aside>
+        </div>
+      )}
+    </>
+  )
+}
+
+function SidebarFooter({
+  variant,
+  isProducerArea,
+  isProducerAsConsumer,
+}: {
+  variant: SidebarVariant
+  isProducerArea: boolean
+  isProducerAsConsumer: boolean
+}) {
+  if (variant === 'admin') {
+    return (
+      <div className="mt-auto flex flex-col gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] pt-6">
+        <NavLink
+          to="/productos"
+          className="text-label-md flex w-full items-center justify-center gap-2 border border-[color-mix(in_srgb,var(--color-on-surface)_15%,transparent)] px-4 py-3 text-[var(--color-on-surface)] transition-colors hover:border-[var(--color-primary-container)] hover:bg-[var(--color-primary-container)] hover:text-[var(--color-on-primary)]"
+        >
+          Ver tienda
+          <ExternalLink size={16} strokeWidth={1.8} />
+        </NavLink>
+        <NavLink
+          to="/login"
+          className="text-label-md flex items-center gap-4 rounded-[var(--radius-lg)] px-4 py-3 text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]"
+        >
+          <LogOut size={21} strokeWidth={1.8} />
+          <span>Cerrar sesión</span>
+        </NavLink>
+      </div>
+    )
+  }
+
+  if (variant === 'producer') {
+    return (
+      <div className="mt-auto flex flex-col gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] pt-6">
+        {isProducerArea ? (
+          <NavLink
+            to="/productos"
+            onClick={() => window.localStorage.setItem('sidebar-owner', 'producer')}
+            className="text-label-md flex w-full items-center justify-center gap-2 border border-[var(--color-primary-container)] bg-[var(--color-primary-container)] px-4 py-3 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)]"
+          >
+            Ver tienda
+            <ExternalLink size={16} strokeWidth={1.8} />
+          </NavLink>
+        ) : (
+          <NavLink
+            to="/productor"
+            onClick={() => window.localStorage.setItem('sidebar-owner', 'producer')}
+            className="text-label-md flex w-full items-center justify-center gap-2 border border-[var(--color-primary-container)] bg-[var(--color-surface-container-low)] px-4 py-3 text-[var(--color-primary-container)] transition-colors hover:bg-[var(--color-primary-container)] hover:text-[var(--color-on-primary)]"
+          >
+            Volver al panel productor
+            <ExternalLink size={16} strokeWidth={1.8} />
+          </NavLink>
+        )}
+        {isProducerAsConsumer && (
+          <p className="text-label-sm text-center text-[var(--color-secondary)]">
+            Navegando como consumidor
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  return null
+}

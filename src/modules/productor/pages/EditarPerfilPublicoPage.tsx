@@ -119,7 +119,7 @@ export function EditarPerfilPublicoPage() {
   return (
     <div className="flex min-h-screen bg-[var(--color-surface)] text-[var(--color-on-surface)]">
       {/* ── Sidebar ── */}
-      <aside className="fixed left-0 top-0 z-40 hidden h-full w-64 flex-col border-r border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-6 md:flex">
+      <aside className="hidden">
         <div className="mb-12">
           <Link to="/" className="text-headline-md font-bold text-[var(--color-primary)]">
             Alicante Gourmet

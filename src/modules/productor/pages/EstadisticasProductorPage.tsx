@@ -119,7 +119,7 @@ export function EstadisticasProductorPage() {
   return (
     <div className="flex min-h-screen bg-[var(--color-background)] text-[var(--color-on-background)]">
       {/* ── Sidebar ── */}
-      <aside className="fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col border-r border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-4 lg:flex">
+      <aside className="hidden">
         {/* Producer identity */}
         <div className="mb-12 mt-4 px-2">
           <div className="mb-2 flex items-center gap-3">

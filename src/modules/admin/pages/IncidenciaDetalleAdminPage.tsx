@@ -2,11 +2,47 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, ChevronRight, FileText } from 'lucide-react'
 import { IncidentResolutionModal } from '../componentes/IncidentResolutionModal'
+import { DeactivateProducerModal } from '../componentes/ContentModerationModals'
+
+type IncidentStatus = 'Pendiente' | 'En revisión' | 'Resuelta'
+
+type HistoryEntry = {
+  date: string
+  event: string
+  detail: string
+  active: boolean
+}
+
+// ---------------------------------------------------------------------------
+// Mock data
+// ---------------------------------------------------------------------------
+
+const INITIAL_STATUS: IncidentStatus = 'En revisión'
+
+const INITIAL_HISTORY: HistoryEntry[] = [
+  {
+    date: '14 Nov 2023, 10:30 AM',
+    event: 'Estado cambiado a En revisión',
+    detail: 'Por Admin Moderación',
+    active: true,
+  },
+  {
+    date: '13 Nov 2023, 04:15 PM',
+    event: 'Evidencia fotográfica añadida',
+    detail: 'Por Elena Rossi',
+    active: false,
+  },
+  {
+    date: '13 Nov 2023, 04:10 PM',
+    event: 'Incidencia creada',
+    detail: 'Motivo: Problema de envío/calidad',
+    active: false,
+  },
+]
 
 const incident = {
   id: '#INC-2841',
   type: 'Reclamación',
-  status: 'En revisión',
   description:
     'El cliente reporta que el pedido de trufas blancas frescas llegó en mal estado debido a un retraso en la cadena de frío durante el transporte. El embalaje térmico estaba dañado y el producto presenta un olor inusual. Se solicita un reembolso completo o un reemplazo inmediato, ya que era para un evento corporativo de alto nivel programado para mañana.',
   relatedCase: {
@@ -42,34 +78,76 @@ const incident = {
       action: 'Ver perfil de vendedor',
     },
   ],
-  history: [
-    {
-      date: '14 Nov 2023, 10:30 AM',
-      event: 'Estado cambiado a En revisión',
-      detail: 'Por Admin Moderación',
-      active: true,
-    },
-    {
-      date: '13 Nov 2023, 04:15 PM',
-      event: 'Evidencia fotográfica añadida',
-      detail: 'Por Elena Rossi',
-      active: false,
-    },
-    {
-      date: '13 Nov 2023, 04:10 PM',
-      event: 'Incidencia creada',
-      detail: 'Motivo: Problema de envío/calidad',
-      active: false,
-    },
-  ],
 }
 
+// ---------------------------------------------------------------------------
+// Status badge
+// ---------------------------------------------------------------------------
+
+function StatusBadge({ status }: { status: IncidentStatus }) {
+  const cls = {
+    Pendiente:
+      'bg-[color-mix(in_srgb,var(--color-error-container)_40%,transparent)] text-[var(--color-primary-container)]',
+    'En revisión':
+      'bg-[var(--color-secondary-container)] text-[var(--color-on-secondary-container)]',
+    Resuelta:
+      'bg-[var(--color-surface-variant)] text-[var(--color-on-surface-variant)]',
+  }[status]
+
+  return (
+    <span
+      className={`text-label-sm w-fit rounded-full px-4 py-1.5 uppercase tracking-wide ${cls}`}
+    >
+      {status}
+    </span>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
 export function IncidenciaDetalleAdminPage() {
+  const [status, setStatus] = useState<IncidentStatus>(INITIAL_STATUS)
+  const [history, setHistory] = useState<HistoryEntry[]>(INITIAL_HISTORY)
   const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false)
+  const [isDeactivarModalOpen, setIsDeactivarModalOpen] = useState(false)
+
+  const isResolved = status === 'Resuelta'
+
+  function addHistoryEntry(event: string, detail: string) {
+    const now = new Date()
+    const dateStr = now.toLocaleString('es-ES', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+    setHistory((prev) => [
+      { date: dateStr, event, detail, active: true },
+      ...prev.map((h) => ({ ...h, active: false })),
+    ])
+  }
+
+  function handleResolutionConfirm(resolution: 'resuelta' | 'sin-accion') {
+    setStatus('Resuelta')
+    const label =
+      resolution === 'resuelta'
+        ? 'Incidencia marcada como Resuelta'
+        : 'Incidencia cerrada — Sin acción requerida'
+    addHistoryEntry(label, 'Por Admin Moderación')
+  }
+
+  function handleCloseWithoutAction() {
+    setStatus('Resuelta')
+    addHistoryEntry('Incidencia cerrada sin acción', 'Por Admin Moderación')
+  }
 
   return (
     <>
       <div className="mx-[var(--space-margin-mobile)] max-w-[var(--layout-container-max)] md:mx-0">
+        {/* Header */}
         <header className="mb-12">
           <Link
             to="/admin/incidencias"
@@ -86,25 +164,30 @@ export function IncidenciaDetalleAdminPage() {
               </span>
               <h1 className="text-display-lg text-[var(--color-primary)]">{incident.id}</h1>
             </div>
-            <span className="text-label-sm w-fit rounded-full bg-[var(--color-secondary-container)] px-4 py-1.5 uppercase tracking-wide text-[var(--color-on-secondary-container)]">
-              {incident.status}
-            </span>
+            <StatusBadge status={status} />
           </div>
         </header>
 
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-6">
+          {/* ── Main column ── */}
           <main className="flex flex-col gap-12 lg:col-span-8">
+            {/* Description */}
             <section>
-              <h2 className="text-headline-md mb-4 text-[var(--color-on-surface)]">Descripción del problema</h2>
+              <h2 className="text-headline-md mb-4 text-[var(--color-on-surface)]">
+                Descripción del problema
+              </h2>
               <p className="text-body-lg max-w-4xl leading-relaxed text-[var(--color-on-surface-variant)]">
                 {incident.description}
               </p>
             </section>
 
+            {/* Related case */}
             <section>
-              <h2 className="text-headline-md mb-4 text-[var(--color-on-surface)]">Caso Relacionado</h2>
+              <h2 className="text-headline-md mb-4 text-[var(--color-on-surface)]">
+                Caso Relacionado
+              </h2>
               <Link
-                to="/admin/pedidos"
+                to={`/admin/moderacion?q=${encodeURIComponent(incident.relatedCase.product)}`}
                 className="group flex flex-col gap-5 border border-[color-mix(in_srgb,var(--color-secondary)_45%,transparent)] bg-[var(--color-surface-bright)] p-4 transition-colors hover:border-[var(--color-on-surface)] sm:flex-row sm:items-center"
               >
                 <img
@@ -119,7 +202,9 @@ export function IncidenciaDetalleAdminPage() {
                   <h3 className="text-body-md font-semibold text-[var(--color-on-surface)] transition-colors group-hover:text-[var(--color-primary-container)]">
                     {incident.relatedCase.product}
                   </h3>
-                  <p className="text-body-md mt-1 text-[var(--color-secondary)]">{incident.relatedCase.details}</p>
+                  <p className="text-body-md mt-1 text-[var(--color-secondary)]">
+                    {incident.relatedCase.details}
+                  </p>
                 </div>
                 <ChevronRight
                   size={22}
@@ -129,8 +214,11 @@ export function IncidenciaDetalleAdminPage() {
               </Link>
             </section>
 
+            {/* Evidence */}
             <section>
-              <h2 className="text-headline-md mb-4 text-[var(--color-on-surface)]">Evidencia Adjunta</h2>
+              <h2 className="text-headline-md mb-4 text-[var(--color-on-surface)]">
+                Evidencia Adjunta
+              </h2>
               <div className="flex gap-4 overflow-x-auto pb-4">
                 {incident.evidence.map((item) => (
                   <button key={item.url} type="button" className="group relative shrink-0 cursor-pointer">
@@ -153,9 +241,13 @@ export function IncidenciaDetalleAdminPage() {
             </section>
           </main>
 
+          {/* ── Aside ── */}
           <aside className="flex flex-col gap-10 lg:col-span-4">
+            {/* Users */}
             <section className="border border-[color-mix(in_srgb,var(--color-secondary)_45%,transparent)] bg-[var(--color-surface-bright)] p-6">
-              <h2 className="text-headline-md mb-6 text-[var(--color-on-surface)]">Usuarios Implicados</h2>
+              <h2 className="text-headline-md mb-6 text-[var(--color-on-surface)]">
+                Usuarios Implicados
+              </h2>
               <div className="divide-y divide-[color-mix(in_srgb,var(--color-secondary)_35%,transparent)]">
                 {incident.users.map((user) => (
                   <article key={user.email} className="py-6 first:pt-0 last:pb-0">
@@ -167,10 +259,12 @@ export function IncidenciaDetalleAdminPage() {
                         {user.initials}
                       </div>
                       <div>
-                        <h3 className="text-body-md font-semibold text-[var(--color-on-surface)]">{user.name}</h3>
+                        <h3 className="text-body-md font-semibold text-[var(--color-on-surface)]">
+                          {user.name}
+                        </h3>
                         <p className="text-body-md text-[var(--color-secondary)]">{user.email}</p>
                         <Link
-                          to="/admin/usuarios"
+                          to={`/admin/usuarios?q=${encodeURIComponent(user.name)}`}
                           className="text-label-sm mt-2 inline-block uppercase tracking-wide text-[var(--color-primary-container)] hover:underline"
                         >
                           {user.action}
@@ -182,17 +276,22 @@ export function IncidenciaDetalleAdminPage() {
               </div>
             </section>
 
+            {/* History */}
             <section className="border border-[color-mix(in_srgb,var(--color-secondary)_45%,transparent)] bg-[var(--color-surface-bright)] p-6">
               <h2 className="text-headline-md mb-6 text-[var(--color-on-surface)]">Historial</h2>
               <div className="relative ml-3 space-y-6 border-l border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)]">
-                {incident.history.map((item) => (
-                  <article key={item.date} className="relative pl-6">
+                {history.map((item, i) => (
+                  <article key={i} className="relative pl-6">
                     <span
                       className={`absolute top-1 -left-[5px] size-2.5 rounded-full ring-4 ring-[var(--color-surface-bright)] ${
-                        item.active ? 'bg-[var(--color-primary-container)]' : 'bg-[var(--color-outline)]'
+                        item.active
+                          ? 'bg-[var(--color-primary-container)]'
+                          : 'bg-[var(--color-outline)]'
                       }`}
                     />
-                    <span className="text-label-sm mb-1 block text-[var(--color-outline)]">{item.date}</span>
+                    <span className="text-label-sm mb-1 block text-[var(--color-outline)]">
+                      {item.date}
+                    </span>
                     <p className="text-body-md text-[var(--color-on-surface)]">{item.event}</p>
                     <p className="text-body-md mt-1 text-[var(--color-secondary)]">{item.detail}</p>
                   </article>
@@ -200,22 +299,32 @@ export function IncidenciaDetalleAdminPage() {
               </div>
             </section>
 
+            {/* Actions */}
             <section className="flex flex-col gap-3 pt-4">
+              {/* Registrar solución */}
               <button
                 type="button"
+                disabled={isResolved}
                 onClick={() => setIsResolutionModalOpen(true)}
-                className="text-label-md w-full bg-[var(--color-primary-container)] px-6 py-4 text-center uppercase tracking-widest text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)]"
+                className="text-label-md w-full bg-[var(--color-primary-container)] px-6 py-4 text-center uppercase tracking-widest text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Registrar solución
+                {isResolved ? 'Incidencia resuelta' : 'Registrar solución'}
               </button>
+
+              {/* Cerrar sin acción */}
               <button
                 type="button"
-                className="text-label-md w-full border border-[var(--color-on-surface)] bg-transparent px-6 py-4 text-center uppercase tracking-widest text-[var(--color-on-surface)] transition-colors hover:bg-[var(--color-surface-container)]"
+                disabled={isResolved}
+                onClick={handleCloseWithoutAction}
+                className="text-label-md w-full border border-[var(--color-on-surface)] bg-transparent px-6 py-4 text-center uppercase tracking-widest text-[var(--color-on-surface)] transition-colors hover:bg-[var(--color-surface-container)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cerrar sin acción
               </button>
+
+              {/* Desactivar cuenta del reportado */}
               <button
                 type="button"
+                onClick={() => setIsDeactivarModalOpen(true)}
                 className="text-label-md mt-4 w-full px-6 py-4 text-center uppercase tracking-widest text-[var(--color-error)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-error-container)_35%,transparent)]"
               >
                 Desactivar cuenta del reportado
@@ -225,7 +334,21 @@ export function IncidenciaDetalleAdminPage() {
         </div>
       </div>
 
-      {isResolutionModalOpen && <IncidentResolutionModal onClose={() => setIsResolutionModalOpen(false)} />}
+      {/* Modals */}
+      {isResolutionModalOpen && (
+        <IncidentResolutionModal
+          onClose={() => setIsResolutionModalOpen(false)}
+          onConfirm={handleResolutionConfirm}
+        />
+      )}
+
+      {isDeactivarModalOpen && (
+        <DeactivateProducerModal
+          producerName={incident.users[1].name}
+          onClose={() => setIsDeactivarModalOpen(false)}
+          onConfirm={() => { /* feedback visual futuro */ }}
+        />
+      )}
     </>
   )
 }

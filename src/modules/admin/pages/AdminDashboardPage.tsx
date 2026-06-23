@@ -17,8 +17,8 @@ const quickAccessTiles = [
     alt: 'Productos frescos organizados sobre una superficie clara',
   },
   {
-    label: 'Configuración Global',
-    to: '/admin/configuracion',
+    label: 'Gestión de Incidencias',
+    to: '/admin/incidencias',
     image:
       'https://lh3.googleusercontent.com/aida-public/AB6AXuCcm90VWuGg9mXGLIDuAZG9ktl-_0wEvjRCFy1yAdusw2i2d8glLNJeK8VRF3IGSJgYiHf-X7_NrK2Go5YML9hfirXIE5PhinrsnNVdVnsrDDt41zQCmZHgoeTQxmoZjEoA2wIoAllRRjWMU_B3gXPx0x7aROAuPXtsinybIgJL7libZTY2rD4u2qBUdzVJ9n8Y4lYN5w_bOoOhVU8G7q5dUHd5NxJa8weeUmRfnsBUGK5scwInUAjKwHeMFseGsEwLXQIHv8NhuTwj',
     alt: 'Fachada arquitectónica minimalista con sombras geométricas',
