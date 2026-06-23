@@ -1,7 +1,12 @@
-import { Trash2, X } from 'lucide-react'
+import { AlertTriangle, Trash2, X } from 'lucide-react'
+
+// ---------------------------------------------------------------------------
+// DeletePublicationModal
+// ---------------------------------------------------------------------------
 
 type DeletePublicationModalProps = {
   onClose: () => void
+  onConfirm: () => void
 }
 
 const removalReasons = [
@@ -11,9 +16,20 @@ const removalReasons = [
   'Otro',
 ]
 
-export function DeletePublicationModal({ onClose }: DeletePublicationModalProps) {
+export function DeletePublicationModal({ onClose, onConfirm }: DeletePublicationModalProps) {
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    onConfirm()
+    onClose()
+  }
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-eliminar-pub-title"
+    >
       <button
         type="button"
         aria-label="Cerrar modal"
@@ -30,15 +46,22 @@ export function DeletePublicationModal({ onClose }: DeletePublicationModalProps)
           <X size={24} strokeWidth={1.8} />
         </button>
 
-        <form className="overflow-y-auto p-8 md:p-10" onSubmit={(event) => event.preventDefault()}>
-          <h2 className="text-headline-lg mb-4 pr-8 text-[var(--color-on-surface)]">Eliminar publicación</h2>
+        <form className="overflow-y-auto p-8 md:p-10" onSubmit={handleSubmit}>
+          <h2
+            id="modal-eliminar-pub-title"
+            className="text-headline-lg mb-4 pr-8 text-[var(--color-on-surface)]"
+          >
+            Eliminar publicación
+          </h2>
           <p className="text-body-md mb-8 text-[var(--color-on-surface-variant)]">
-            Indique el motivo por el cual desea retirar este producto del catálogo. Esta acción notificará
-            automáticamente al productor.
+            Indique el motivo por el cual desea retirar este producto del catálogo. Esta acción
+            notificará automáticamente al productor.
           </p>
 
           <fieldset className="mb-8">
-            <legend className="text-label-md mb-4 text-[var(--color-on-surface)]">Motivo de la retirada</legend>
+            <legend className="text-label-md mb-4 text-[var(--color-on-surface)]">
+              Motivo de la retirada
+            </legend>
             <div className="space-y-4">
               {removalReasons.map((reason) => (
                 <label key={reason} className="group flex cursor-pointer items-start gap-3">
@@ -84,6 +107,95 @@ export function DeletePublicationModal({ onClose }: DeletePublicationModalProps)
             </button>
           </footer>
         </form>
+      </section>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// DeactivateProducerModal
+// ---------------------------------------------------------------------------
+
+type DeactivateProducerModalProps = {
+  producerName: string
+  onClose: () => void
+  onConfirm: () => void
+}
+
+export function DeactivateProducerModal({
+  producerName,
+  onClose,
+  onConfirm,
+}: DeactivateProducerModalProps) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-deactivate-prod-title"
+    >
+      {/* Backdrop */}
+      <button
+        type="button"
+        aria-label="Cerrar modal"
+        onClick={onClose}
+        className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-on-surface)_40%,transparent)] backdrop-blur-sm"
+      />
+
+      <section className="relative z-10 flex w-full max-w-[480px] flex-col border border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] bg-[var(--color-background)] shadow-[0_20px_40px_-10px_rgba(28,27,27,0.15)]">
+        <div className="px-8 pt-10 pb-6">
+          <div className="mb-4 flex items-center gap-3">
+            <AlertTriangle
+              size={22}
+              strokeWidth={1.8}
+              className="shrink-0 text-[var(--color-primary-container)]"
+            />
+            <h2
+              id="modal-deactivate-prod-title"
+              className="text-headline-md text-[var(--color-on-surface)]"
+            >
+              Desactivar cuenta del productor
+            </h2>
+          </div>
+          <p className="text-label-sm uppercase tracking-wider text-[var(--color-outline)]">
+            {producerName}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-6 px-8 pb-8">
+          <p className="text-body-md text-[var(--color-on-surface-variant)]">
+            ¿Está seguro de que desea suspender el acceso de este productor? Sus publicaciones
+            dejarán de ser visibles en el catálogo de forma inmediata.
+          </p>
+          <div className="flex items-start gap-3 border-l-[3px] border-[color-mix(in_srgb,var(--color-primary-container)_40%,transparent)] bg-[var(--color-surface-container-low)] p-4">
+            <AlertTriangle
+              size={20}
+              strokeWidth={1.8}
+              className="shrink-0 text-[var(--color-primary-container)]"
+            />
+            <p className="text-body-md text-[var(--color-on-surface)]">
+              Esta acción notificará al productor automáticamente. La cuenta puede reactivarse
+              posteriormente.
+            </p>
+          </div>
+        </div>
+
+        <footer className="flex items-center justify-end gap-4 border-t border-[color-mix(in_srgb,var(--color-secondary)_25%,transparent)] bg-[var(--color-background)] px-8 py-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-label-md px-5 py-2.5 text-[var(--color-on-surface)] transition-colors hover:bg-[var(--color-surface-container-low)]"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => { onConfirm(); onClose() }}
+            className="text-label-md bg-[var(--color-primary-container)] px-6 py-2.5 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)]"
+          >
+            Desactivar
+          </button>
+        </footer>
       </section>
     </div>
   )

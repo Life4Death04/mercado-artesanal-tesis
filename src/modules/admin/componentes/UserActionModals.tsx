@@ -89,7 +89,7 @@ function UserDetailDrawer({ user, onClose, onOpenModal }: UserDetailDrawerProps)
 
   function handleModerate() {
     onClose()
-    navigate(`/admin/moderacion?q=${user.id}`)
+    navigate(`/admin/moderacion?q=${encodeURIComponent(user.name)}`)
   }
 
   function handleToggleStatus() {
