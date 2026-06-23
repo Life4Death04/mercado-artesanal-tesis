@@ -177,7 +177,7 @@ export function PedidosProductorPage() {
   return (
     <div className="flex min-h-screen bg-[#FAF7F0] text-[var(--color-on-surface)]">
       {/* ── Sidebar ── */}
-      <aside className="fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-6">
+      <aside className="hidden">
         <div className="mb-12">
           <Link to="/" className="text-headline-md text-[var(--color-primary)]">Alicante Gourmet</Link>
           <p className="text-label-sm mt-1 text-[var(--color-secondary)]">Artesano de Denia</p>

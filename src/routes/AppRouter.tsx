@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '../componentes/layout/AppLayout'
+import { ConsumerLayout } from '../componentes/layout/ConsumerLayout'
 import { DashboardLayout } from '../componentes/layout/DashboardLayout'
 import { AdminLayout } from '../modules/admin/componentes/AdminLayout'
 import { LoginPage } from '../modules/auth/pages/LoginPage'
@@ -39,14 +40,16 @@ export function AppRouter() {
       <Route path="registro" element={<RegistroWizardPage />} />
       <Route element={<AppLayout />}>
         <Route index element={<LandingPage />} />
-        <Route path="productos" element={<CatalogoPage />} />
-        <Route path="productos/:productoId" element={<DetalleProductoPage />} />
         <Route path="productores/:productorId" element={<PerfilProductorPublicoPage />} />
-        <Route path="carrito" element={<CarritoPage />} />
-        <Route path="checkout" element={<CheckoutPage />} />
-        <Route path="pedidos" element={<HistorialPedidosPage />} />
-        <Route path="perfil" element={<PerfilPage />} />
-        <Route path="incidencias" element={<MisIncidenciasPage />} />
+        <Route element={<ConsumerLayout />}>
+          <Route path="productos" element={<CatalogoPage />} />
+          <Route path="productos/:productoId" element={<DetalleProductoPage />} />
+          <Route path="carrito" element={<CarritoPage />} />
+          <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="pedidos" element={<HistorialPedidosPage />} />
+          <Route path="perfil" element={<PerfilPage />} />
+          <Route path="incidencias" element={<MisIncidenciasPage />} />
+        </Route>
         <Route element={<DashboardLayout />}>
           <Route path="productor" element={<ProductorDashboardPage />} />
           <Route path="productor/productos" element={<ProductosProductorPage />} />

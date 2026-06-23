@@ -1,17 +1,14 @@
 import { useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { ChevronLeft, ChevronRight, Edit3, Plus, Search, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Edit3, Plus, RefreshCcw, Search, Trash2 } from 'lucide-react'
 import { CategoryActionModals } from '../componentes/CategoryActionModals'
-import type { CategoryModalState } from '../componentes/CategoryActionModals'
+import type { Category, CategoryModalState } from '../componentes/CategoryActionModals'
 
-type Category = {
-  id: number
-  name: string
-  description: string
-  products: number
-}
+// ---------------------------------------------------------------------------
+// Mock data — 15 categorías
+// ---------------------------------------------------------------------------
 
-const categories: Category[] = [
+const CATEGORIAS_INICIALES: Category[] = [
   {
     id: 1,
     name: 'Aceites de Oliva',
@@ -43,15 +40,144 @@ const categories: Category[] = [
   {
     id: 5,
     name: 'Quesos de Cabra',
-    description: 'Quesos de pasta blanda, semicurados y añejos elaborados con leche cruda de cabra de pastoreo libre.',
+    description:
+      'Quesos de pasta blanda, semicurados y añejos elaborados con leche cruda de cabra de pastoreo libre.',
     products: 48,
+  },
+  {
+    id: 6,
+    name: 'Conservas Gourmet',
+    description:
+      'Conservas de pescados, verduras y legumbres preparadas con técnicas tradicionales y aceites de alta calidad.',
+    products: 41,
+  },
+  {
+    id: 7,
+    name: 'Frutos Secos',
+    description:
+      'Almendras, nueces y pistachos tostados o crudos, seleccionados por origen y cosecha.',
+    products: 63,
+  },
+  {
+    id: 8,
+    name: 'Dulces Tradicionales',
+    description:
+      'Turrones, pasteles, confituras y elaboraciones dulces de obradores locales.',
+    products: 52,
+  },
+  {
+    id: 9,
+    name: 'Panadería Artesana',
+    description:
+      'Panes de masa madre, cocas saladas y bollería de fermentación lenta elaborados a pequeña escala.',
+    products: 28,
+  },
+  {
+    id: 10,
+    name: 'Especias y Sales',
+    description:
+      'Sales marinas, hierbas aromáticas y mezclas de especias para cocina mediterránea.',
+    products: 19,
+  },
+  {
+    id: 11,
+    name: 'Bebidas Artesanas',
+    description:
+      'Licores, kombuchas, cafés y bebidas de producción local con identidad regional.',
+    products: 36,
+  },
+  {
+    id: 12,
+    name: 'Productos Ecológicos',
+    description:
+      'Selección transversal de productos certificados o producidos bajo prácticas sostenibles.',
+    products: 74,
+  },
+  {
+    id: 13,
+    name: 'Arroces y Cereales',
+    description:
+      'Arroces de proximidad, harinas, granos antiguos y cereales integrales de cultivo local.',
+    products: 22,
+  },
+  {
+    id: 14,
+    name: 'Salsas y Aderezos',
+    description:
+      'Salsas preparadas, vinagretas, aliolis y aderezos para acompañar platos tradicionales.',
+    products: 31,
+  },
+  {
+    id: 15,
+    name: 'Cestas y Regalos',
+    description:
+      'Composiciones de productos artesanales pensadas para regalos, eventos y experiencias gastronómicas.',
+    products: 15,
   },
 ]
 
+const POR_PAGINA = 8
+
+type OrdenCategoria = 'Alfabético (A-Z)' | 'Más productos' | 'Recientes'
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
 export function CategoriasAdminPage() {
+  const [categorias, setCategorias] = useState<Category[]>(CATEGORIAS_INICIALES)
   const [modal, setModal] = useState<CategoryModalState>(null)
+  const [query, setQuery] = useState('')
+  const [orden, setOrden] = useState<OrdenCategoria>('Alfabético (A-Z)')
+  const [pagina, setPagina] = useState(1)
 
   const closeModal = () => setModal(null)
+
+  const filtradas = categorias
+    .filter((category) => {
+      const q = query.toLowerCase()
+      return (
+        !q ||
+        category.name.toLowerCase().includes(q) ||
+        category.description.toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => {
+      if (orden === 'Más productos') return b.products - a.products
+      if (orden === 'Recientes') return b.id - a.id
+      return a.name.localeCompare(b.name)
+    })
+
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA))
+  const inicio = (pagina - 1) * POR_PAGINA
+  const paginadas = filtradas.slice(inicio, inicio + POR_PAGINA)
+
+  function resetFiltros() {
+    setQuery('')
+    setOrden('Alfabético (A-Z)')
+    setPagina(1)
+  }
+
+  function handleSave(id: number | null, name: string, description: string) {
+    if (id === null) {
+      const newId = Math.max(0, ...categorias.map((c) => c.id)) + 1
+      setCategorias((prev) => [{ id: newId, name, description, products: 0 }, ...prev])
+      setOrden('Recientes')
+      setPagina(1)
+      return
+    }
+
+    setCategorias((prev) =>
+      prev.map((category) =>
+        category.id === id ? { ...category, name, description } : category,
+      ),
+    )
+  }
+
+  function handleDelete(id: number) {
+    setCategorias((prev) => prev.filter((category) => category.id !== id))
+    setPagina(1)
+  }
 
   return (
     <>
@@ -84,59 +210,107 @@ export function CategoriasAdminPage() {
             />
             <input
               type="search"
+              value={query}
+              onChange={(event) => { setQuery(event.target.value); setPagina(1) }}
               placeholder="Buscar categoría..."
               className="text-body-md w-full border-0 border-b border-[color-mix(in_srgb,var(--color-outline)_45%,transparent)] bg-transparent py-2 pr-3 pl-8 text-[var(--color-on-surface)] transition-colors placeholder:text-[var(--color-secondary)] focus:border-[var(--color-on-surface)] focus:outline-none"
             />
           </label>
 
-          <label className="text-label-md flex items-center gap-2 text-[var(--color-secondary)]">
-            Orden:
-            <select
-              defaultValue="Alfabético (A-Z)"
-              className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-[var(--color-on-surface)] focus:outline-none"
+          <div className="flex w-full flex-col gap-4 md:w-auto md:flex-row md:items-center">
+            <label className="text-label-md flex items-center gap-2 text-[var(--color-secondary)]">
+              Orden:
+              <select
+                value={orden}
+                onChange={(event) => { setOrden(event.target.value as OrdenCategoria); setPagina(1) }}
+                className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-[var(--color-on-surface)] focus:outline-none"
+              >
+                <option>Alfabético (A-Z)</option>
+                <option>Más productos</option>
+                <option>Recientes</option>
+              </select>
+            </label>
+
+            <button
+              type="button"
+              onClick={resetFiltros}
+              className="text-label-md flex items-center gap-2 text-[var(--color-outline)] transition-colors hover:text-[var(--color-on-surface)]"
             >
-              <option>Alfabético (A-Z)</option>
-              <option>Más productos</option>
-              <option>Recientes</option>
-            </select>
-          </label>
+              <RefreshCcw size={15} strokeWidth={1.9} />
+              Restablecer
+            </button>
+          </div>
         </section>
 
         <section className="flex flex-col gap-4" aria-label="Listado de categorías">
-          {categories.map((category, index) => (
-            <CategoryRow
-              key={category.id}
-              category={category}
-              highlighted={index === 0}
-              onEdit={() => setModal({ type: 'edit', category })}
-              onDelete={() => setModal({ type: 'delete', category })}
-            />
-          ))}
+          {paginadas.length === 0 ? (
+            <div className="rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface)] p-10 text-center text-[var(--color-secondary)]">
+              No se encontraron categorías con los filtros aplicados.
+            </div>
+          ) : (
+            paginadas.map((category, index) => (
+              <CategoryRow
+                key={category.id}
+                category={category}
+                highlighted={index === 0}
+                onEdit={() => setModal({ type: 'edit', category })}
+                onDelete={() => setModal({ type: 'delete', category })}
+              />
+            ))
+          )}
         </section>
 
         <footer className="mt-12 flex flex-col gap-6 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] pt-6 md:flex-row md:items-center md:justify-between">
-          <span className="text-label-md text-[var(--color-secondary)]">Mostrando 1-5 de 24 categorías</span>
+          <span className="text-label-md text-[var(--color-secondary)]">
+            {filtradas.length === 0
+              ? 'Sin resultados'
+              : `Mostrando ${inicio + 1}–${Math.min(inicio + POR_PAGINA, filtradas.length)} de ${filtradas.length} categorías`}
+          </span>
           <div className="flex gap-2">
-            <PaginationButton icon={ChevronLeft} label="Página anterior" disabled />
-            <button
-              type="button"
-              aria-current="page"
-              className="text-label-md grid size-10 place-items-center rounded-[var(--radius-sm)] bg-[var(--color-on-surface)] text-[var(--color-surface)]"
-            >
-              1
-            </button>
-            <PaginationButton label="2" />
-            <PaginationButton label="3" />
-            <span className="grid size-10 place-items-center text-[var(--color-secondary)]">...</span>
-            <PaginationButton icon={ChevronRight} label="Página siguiente" />
+            <PaginationButton
+              icon={ChevronLeft}
+              label="Página anterior"
+              disabled={pagina === 1}
+              onClick={() => setPagina((p) => p - 1)}
+            />
+            {Array.from({ length: totalPaginas }, (_, index) => index + 1).map((page) => (
+              <button
+                key={page}
+                type="button"
+                aria-current={page === pagina ? 'page' : undefined}
+                onClick={() => setPagina(page)}
+                className={`text-label-md grid size-10 place-items-center rounded-[var(--radius-sm)] transition-colors ${
+                  page === pagina
+                    ? 'bg-[var(--color-on-surface)] text-[var(--color-surface)]'
+                    : 'border border-[color-mix(in_srgb,var(--color-outline-variant)_55%,transparent)] text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container-low)]'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <PaginationButton
+              icon={ChevronRight}
+              label="Página siguiente"
+              disabled={pagina === totalPaginas}
+              onClick={() => setPagina((p) => p + 1)}
+            />
           </div>
         </footer>
       </div>
 
-      <CategoryActionModals modal={modal} onClose={closeModal} />
+      <CategoryActionModals
+        modal={modal}
+        onClose={closeModal}
+        onSave={handleSave}
+        onDelete={handleDelete}
+      />
     </>
   )
 }
+
+// ---------------------------------------------------------------------------
+// CategoryRow
+// ---------------------------------------------------------------------------
 
 type CategoryRowProps = {
   category: Category
@@ -163,7 +337,7 @@ function CategoryRow({ category, highlighted = false, onEdit, onDelete }: Catego
           <span className="text-label-md rounded-full bg-[color-mix(in_srgb,var(--color-secondary-fixed)_45%,transparent)] px-3 py-1 text-[var(--color-secondary)]">
             {category.products} productos
           </span>
-          <div className="flex items-center gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               aria-label={`Editar ${category.name}`}
@@ -188,18 +362,24 @@ function CategoryRow({ category, highlighted = false, onEdit, onDelete }: Catego
   )
 }
 
+// ---------------------------------------------------------------------------
+// PaginationButton
+// ---------------------------------------------------------------------------
+
 type PaginationButtonProps = {
   label: string
   icon?: LucideIcon
   disabled?: boolean
+  onClick?: () => void
 }
 
-function PaginationButton({ label, icon: Icon, disabled = false }: PaginationButtonProps) {
+function PaginationButton({ label, icon: Icon, disabled = false, onClick }: PaginationButtonProps) {
   return (
     <button
       type="button"
       aria-label={label.length > 1 ? label : `Página ${label}`}
       disabled={disabled}
+      onClick={onClick}
       className="text-label-md grid size-10 place-items-center rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--color-outline-variant)_55%,transparent)] text-[var(--color-on-surface)] transition-colors hover:bg-[var(--color-surface-container-low)] disabled:cursor-not-allowed disabled:opacity-50"
     >
       {Icon ? <Icon size={20} strokeWidth={1.8} /> : label}

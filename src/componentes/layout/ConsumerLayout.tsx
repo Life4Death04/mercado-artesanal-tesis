@@ -3,11 +3,13 @@ import { Outlet } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { RoleSidebar } from './RoleSidebar'
 
-export function DashboardLayout() {
+export function ConsumerLayout() {
+  const [sidebarOwner] = useState(() => window.localStorage.getItem('sidebar-owner'))
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const isProducerBrowsingStore = sidebarOwner === 'producer'
 
   return (
-    <>
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
       <button
         type="button"
         aria-label="Abrir navegación"
@@ -17,11 +19,14 @@ export function DashboardLayout() {
         <Menu size={22} strokeWidth={1.8} />
       </button>
       <RoleSidebar
-        variant="producer"
+        variant={isProducerBrowsingStore ? 'producer' : 'consumer'}
+        producerConsumerMode={isProducerBrowsingStore}
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
       />
-      <Outlet />
-    </>
+      <main className="md:ml-64">
+        <Outlet />
+      </main>
+    </div>
   )
 }
