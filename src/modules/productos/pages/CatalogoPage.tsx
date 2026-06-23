@@ -1,196 +1,215 @@
 import { Link } from 'react-router-dom'
-import { Bell, Search, ShoppingCart, SlidersHorizontal, Star } from 'lucide-react'
+import {
+  Boxes,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  PackageCheck,
+  Search,
+  SlidersHorizontal,
+  Star,
+  WalletCards,
+} from 'lucide-react'
 
-const categories = [
-  { name: 'Aceites & Vinagres', count: 12, active: false },
-  { name: 'Dulces Artesanos', count: 24, active: true },
-  { name: 'Embutidos y Sobrasadas', count: 18, active: false },
-  { name: 'Quesos Curados', count: 9, active: false },
-  { name: 'Conservas de la Mar', count: 15, active: false },
+type FilterOption = {
+  label: string
+  active?: boolean
+}
+
+type Product = {
+  id: string
+  name: string
+  category: string
+  producer: string
+  origin: string
+  price: string
+  stock: 'En stock' | 'Sin stock'
+  rating: number
+  reviews: number
+  imageUrl: string
+}
+
+const categories: FilterOption[] = [
+  { label: 'Aceites', active: true },
+  { label: 'Vinos' },
+  { label: 'Embutidos' },
+  { label: 'Turrones' },
 ]
 
-const municipalities = ['Jijona', 'Pinoso', 'Villena', 'Novelda']
+const municipalities: FilterOption[] = [
+  { label: 'Jijona' },
+  { label: 'Pinoso' },
+  { label: 'Villena' },
+]
 
-const products = [
+const products: Product[] = [
   {
-    id: 'turron-jijona',
-    name: 'Turrón de Jijona',
-    category: 'Dulces',
-    origin: 'Jijona',
-    price: '12,50 €',
-    badge: 'Alicante D.O.',
-    availability: 'Disponible',
-    rating: 5,
-    imageUrl:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDA7KXcRlul0jkaHFJgcWr3i48LTEm2PiN2oMy7AgIfUNdgJG-cZH5Gju7orMJUwgFTuD1WRGJagaXzVeuBWknb2Dj_U2qx7QCXwnM31dQWimVJJIXwhdeSPwhy7tCZkeBTAaaUFJ3fipqOyRhncsjeNvSVi4xcIhwlECqJV-fyq5D7h5E1hwhXPkjfY8ZTwtWessS1sFY3jbyNLyeojnfE5rIpF2pbOBNNz4zwo2PG48cVDpjD4uVjWLJkzSjpnPKdjpKsXg7Ra432',
-  },
-  {
-    id: 'sobrasada-artesana',
-    name: 'Sobrasada artesana',
-    category: 'Embutidos',
+    id: 'oro-liquido-virgen-extra',
+    name: 'Oro Líquido Virgen Extra',
+    category: 'Aceites',
+    producer: 'Almazara El Tendre',
     origin: 'Pinoso',
-    price: '8,90 €',
-    availability: 'Disponible',
+    price: '18,50 €',
+    stock: 'En stock',
     rating: 4,
+    reviews: 24,
     imageUrl:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBxvyosjd7_l_glyen-XjXwXTGcNwivDpxwx1iP-EOKBE1K9-WV3iVgZ838UcbdnFPp6r5L6ihWRE0FmWHkM9G_kMp5fl2pE8Y4POTd3B0kq074Vgx6kkxxH1k9OmeNQMBxe-1FZvVkQzIf2qkngU2nADjaHmwv3wGgOCN8Pjc6PGity6DBvmHUOV1Zv9g4dDELRqcvBOB24paYRHRwdLmd3ukU2KuONQDpQITOD5sCIRycRpIbDZiKsGtanvenuURVDVDGllLkrdfE',
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuBs81tSMbFflR3UKUDu2xh0_c9gd5UoQyAlZy-U7-e-Z42Tgl4ZHDoU5s4PVN3xzTb3A5Ep1W3cUR80e1OnxOQ0cQ8iJLjGPLGy5zx3iz6fTrZvbQrU2AnYzUWoX0Tg0hzsDwXO7P55R4_VhCYIEVLn6ElEa-54i8FHdnAKfpI6gpeFX8vzxVbeBjvW3Muqnm2TRkgrPMuCFt8aT78aOirD42KpFz5WjyyB3AmBG-QQjSxuGI9Ahm4upZk1w_36uvxHEpmZTSHMUcs',
   },
   {
-    id: 'queso-curado-cabra',
-    name: 'Queso curado de cabra',
-    category: 'Quesos',
-    origin: 'Villena',
-    price: '15,20 €',
-    availability: 'En Stock',
+    id: 'turron-blando-artesano',
+    name: 'Turrón Blando Artesano',
+    category: 'Turrones',
+    producer: 'Turrones Jijona S.L.',
+    origin: 'Jijona',
+    price: '12,00 €',
+    stock: 'En stock',
     rating: 5,
+    reviews: 56,
     imageUrl:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuChoi5PCyKn9PKQ0vEq3TpX6DXkPPhujYLFBKy7UNeei4zt7eaQRC19cVvBUn2cWhsl5L6TuwziAUL_410jmxcVmwml2jwZ_AD0eNdsHqvIsLuRvc1ZaG_MRtbcC1k8PyKE4PvefXaoZp-t2Y8LgAaIEBZbIxDTiYkEfnVwhTurzSWb9lhZb_Ot3BFfwTMMrdtu40QVffpBAp2CWLFtbeJW2HuvqjR8DgnihGxl4MAMIgwCnYVdRYmkGEDRvqy1T6f-BKfEJeElrkLq',
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuBKQWfa65s_7dCYBCU1ABVTKhXMp5dxM018mKuSdEjGhzmS3cGRsKhMn3AqLlhcfAFLff_7ShIAKdDT9Goff5Od0gEo7it_MMVETRCRYVQxDvc8mgwfsm5xfOYx5IVFsXuarXkUM1Fo-oWwX84SqSm31N7I0khMA19UjXnwO2OBS27R6p_72h2OEhZ3KsNK-E24xM-uDE1o6_3kUOcMlI8qzah-yV-h_7A8cmU7w4Xl_8CfG-LGmgC-e87wGSGgi0tHKNlURRvdhw8',
   },
   {
-    id: 'pericana-montana',
-    name: 'Pericana de la Montaña',
-    category: 'Conservas',
-    origin: 'Muro',
-    price: '6,40 €',
-    availability: 'Disponible',
+    id: 'tinto-crianza-monastrell',
+    name: 'Tinto Crianza Monastrell',
+    category: 'Vinos',
+    producer: 'Bodegas Monastrell',
+    origin: 'Villena',
+    price: '22,00 €',
+    stock: 'Sin stock',
     rating: 4,
+    reviews: 18,
     imageUrl:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAbLXQTLZDzSv3JEm4RCk-eNnebNNePc_RL5riv2SRUi_3BJrbiKbW24XQMn6RZ2X7G239hGvG-zBoQbFC6kA6Fnq64Ig6JLYMr-EmLhl9VHkitMI4DZtBWmtw0h_NHdED2bpBS14Dn9Dy-m-ApMDMFm6ny8gayfj1nYvyiUKtBa06W6V3wcnu-ZfmZ7JBq77Z39Vvp31nN8PuKOrAJv1BJ7uset4CeEhbiE2RmUqtHhJjex4qSls8-ABsKWpxoQ5Qk4GKC1SPobJlD',
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuD2UjzXmY8KF0_4qO_MdscDSIVlv3R6d9K11EntdmKih-XDxMHoIRt8UeoIkH_vy3BXyK7EuTNrbkpvwG5SK3XXWhh76whZoBnvW0EDRxZhPzETApknTTvLXG1l0aqPSSVwB4xUJLwx6sQgJIviLCdhknPqpYJg7VxTzVnTfy5_bYsvDYwPBurNuWsjFb3cOf9ofFZ2jLKT_ZDYiSJNMqwhVebI9huuDYIazYf-Eiw81XUpznp_h1d1w9poAcoysIcCNWG_sWqsKnw',
+  },
+  {
+    id: 'longaniza-curada-artesana',
+    name: 'Longaniza Curada Artesana',
+    category: 'Embutidos',
+    producer: 'Cárnicas Pinoso',
+    origin: 'Pinoso',
+    price: '9,50 €',
+    stock: 'En stock',
+    rating: 5,
+    reviews: 42,
+    imageUrl:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuCEak3TPIhCLj0X2F22kQcyCmT_ex5nXQp7flW7VG5R-BI2_zaHoIbgx6sf4aQbD2lucvwJtDAWGCwSt7tntjZj3jwlB4QD4HbwQP23rCKvURo-z379i94pEfLe9UtIvpnW4nFML-dXpymKYKYP_o3ssNSAZyXqrgQUf6uGUFOO7FSxlA7O0UpU2zflWvcnYmxj3iGPxRETa5PU7NbqWbwJOsMKe9TP0jyKsrAaif4QWmnCzhCDe8eEN5PFN-FePhKpUzm9xyNXlcU',
+  },
+  {
+    id: 'miel-de-azahar',
+    name: 'Miel de Azahar',
+    category: 'Miel',
+    producer: 'Apícola Marina',
+    origin: 'Denia',
+    price: '8,20 €',
+    stock: 'En stock',
+    rating: 5,
+    reviews: 31,
+    imageUrl:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuD3TIIOQmF3_HQd85psvhUyJxgBu4gYe3bHC2-v5JgxTG2_sDSCoz4wCbvO30nvVergQ8yd4pk8OGdZJ0k24ONwWS7SEUVEOjZC7b42wlrOMju6BNVfEVvAMjCIz6C_NXWXdOl0NnxupRmkTNGkNcwmCuDui4nuQXuUZH6nDp7Vgcdfl4Pqsvev0NFsTJTrJMA1TinwPI79t9pzTsLBhgWVOZ9yWTyYqmclmF8XuaRKRpAX9YvSP2EJO1KEg9CZ-CaN_LEJgEujBAE',
+  },
+  {
+    id: 'embutido-tradicional',
+    name: 'Embutido Tradicional',
+    category: 'Embutidos',
+    producer: 'Cárnicas Pinoso',
+    origin: 'Pinoso',
+    price: '11,40 €',
+    stock: 'En stock',
+    rating: 4,
+    reviews: 15,
+    imageUrl:
+      'https://images.unsplash.com/photo-1603046891726-36bfd957e0bf?auto=format&fit=crop&w=900&q=80',
   },
 ]
-
-const secondaryFilters = ['Region', 'Category', 'Price', 'Producer']
 
 export function CatalogoPage() {
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-background)] selection:bg-[var(--color-primary-fixed)] selection:text-[var(--color-on-primary-fixed)]">
-      <nav className="sticky top-0 z-50 w-full border-b border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
-        <div className="mx-auto flex h-20 max-w-[var(--layout-container-max)] items-center justify-between px-[var(--space-margin-mobile)] md:px-[var(--space-margin-desktop)]">
-          <Link to="/productos" className="font-editorial text-[24px] font-bold tracking-tight text-[var(--color-primary)] uppercase md:text-[32px]">
-            Alicante Delicatessen
-          </Link>
+      <div className="mx-auto flex w-full max-w-[var(--layout-container-max)] flex-col gap-8 px-[var(--space-margin-mobile)] py-10 md:px-[var(--space-margin-desktop)] lg:flex-row lg:gap-16">
+        <CatalogFilters />
 
-          <label className="relative mx-6 hidden max-w-md flex-1 items-center lg:flex">
-            <span className="sr-only">Buscar productos</span>
-            <Search size={18} strokeWidth={1.8} className="absolute left-3 text-[var(--color-outline)]" />
-            <input
-              type="search"
-              placeholder="Buscar productos artesanos…"
-              className="text-label-sm w-full border-0 border-b border-[var(--color-outline)] bg-transparent py-2 pr-4 pl-10 text-[var(--color-on-surface)] transition-colors placeholder:text-[var(--color-secondary)] focus:border-[var(--color-primary)] focus:outline-none"
-            />
-          </label>
+        <main className="min-w-0 flex-1" aria-label="Catálogo de productos artesanales">
+          <SearchPanel />
+          <CatalogToolbar />
 
-          <div className="flex items-center gap-5 md:gap-6">
-            <button type="button" aria-label="Notificaciones" className="p-2 text-[var(--color-primary)] transition-opacity active:opacity-70">
-              <Bell size={21} strokeWidth={1.8} />
-            </button>
-            <Link to="/carrito" aria-label="Carrito" className="relative flex items-center p-2 text-[var(--color-primary)] transition-opacity active:opacity-70">
-              <ShoppingCart size={22} strokeWidth={1.8} />
-              <span className="absolute top-0 right-0 grid size-4 place-items-center rounded-full bg-[var(--color-primary)] text-[10px] text-[var(--color-on-primary)]">
-                2
-              </span>
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      <div className="sticky top-20 z-40 w-full border-b border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
-        <div className="mx-auto flex max-w-[var(--layout-container-max)] items-center gap-6 overflow-x-auto px-[var(--space-margin-mobile)] py-4 md:px-[var(--space-margin-desktop)]">
-          <div className="mr-2 flex shrink-0 items-center gap-2">
-            <SlidersHorizontal size={18} strokeWidth={1.8} className="text-[var(--color-secondary)]" />
-            <span className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">Filters</span>
-          </div>
-          <div className="flex items-center gap-6">
-            {secondaryFilters.map((filter, index) => (
-              <button
-                key={filter}
-                type="button"
-                className={`text-label-sm shrink-0 border-b pb-1 uppercase tracking-widest transition-colors ${
-                  index === 0
-                    ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                    : 'border-transparent text-[var(--color-secondary)] hover:text-[var(--color-primary)]'
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-          <div className="flex-grow" />
-          <button type="button" className="text-label-sm shrink-0 uppercase tracking-widest text-[var(--color-secondary)] underline-offset-4 transition-colors hover:text-[var(--color-primary)] hover:underline">
-            Reset
-          </button>
-        </div>
-      </div>
-
-      <main className="mx-auto grid max-w-[var(--layout-container-max)] grid-cols-1 gap-[var(--space-gutter)] px-[var(--space-margin-mobile)] py-12 md:px-[var(--space-margin-desktop)] lg:grid-cols-12">
-        <aside className="space-y-10 border-b border-[var(--color-outline-variant)] pb-8 lg:col-span-3 lg:border-r lg:border-b-0 lg:pr-[var(--space-gutter)]">
-          <FilterCategoryList />
-          <FilterRule />
-          <MunicipalityFilters />
-          <FilterRule />
-          <AvailabilityFilters />
-        </aside>
-
-        <section className="lg:col-span-9" aria-label="Productos disponibles">
-          <div className="grid grid-cols-1 gap-x-[var(--space-gutter)] gap-y-16 md:grid-cols-2">
+          <section className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 xl:grid-cols-3" aria-label="Productos disponibles">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
-          </div>
+          </section>
 
-          <div className="mt-20 flex justify-center">
-            <button
-              type="button"
-              className="text-label-sm border border-[var(--color-on-background)] px-12 py-4 uppercase tracking-widest text-[var(--color-on-background)] transition-colors duration-300 hover:bg-[var(--color-on-background)] hover:text-[var(--color-surface)]"
-            >
-              Cargar más productos
-            </button>
-          </div>
-        </section>
-      </main>
+          <Pagination />
+        </main>
+      </div>
 
-      <footer className="mt-20 w-full border-t border-[var(--color-outline-variant)] bg-[var(--color-surface-container-highest)]">
-        <div className="mx-auto flex max-w-[var(--layout-container-max)] flex-col items-start justify-between gap-8 px-[var(--space-margin-mobile)] py-12 md:flex-row md:items-center md:px-[var(--space-margin-desktop)]">
-          <div className="space-y-4">
-            <span className="font-editorial block text-[40px] leading-none font-bold text-[var(--color-primary)] uppercase md:text-[56px]">
-              Alicante
-              <br />
-              Delicatessen
-            </span>
-            <p className="text-label-sm max-w-xs text-[var(--color-on-surface-variant)]">
-              Comisarios gastronómicos de la herencia del Mediterráneo.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-x-8 gap-y-4">
-            {['Privacy Policy', 'Terms of Service', 'Shipping & Returns', 'Contact Us', 'Wholesale'].map((item) => (
-              <a key={item} href="#" className="text-label-sm text-[var(--color-on-surface-variant)] underline-offset-4 transition-colors hover:text-[var(--color-primary)] hover:underline">
-                {item}
-              </a>
-            ))}
-          </div>
-          <p className="text-label-sm text-[var(--color-on-surface-variant)]">© 2024 Alicante Delicatessen.</p>
-        </div>
-      </footer>
+      <CatalogFooter />
     </div>
   )
 }
 
-function FilterCategoryList() {
+function CatalogFilters() {
   return (
-    <section>
-      <h2 className="text-label-sm mb-6 uppercase tracking-widest text-[var(--color-primary)]">Categoría</h2>
-      <ul className="text-body-md space-y-4 text-[var(--color-on-surface-variant)]">
-        {categories.map((category) => (
-          <li key={category.name}>
-            <button
-              type="button"
-              className={`group flex w-full items-center justify-between text-left transition-colors hover:text-[var(--color-primary)] ${
-                category.active ? 'font-semibold text-[var(--color-primary)]' : ''
-              }`}
-            >
-              <span>{category.name}</span>
-              <span className="text-[10px] text-[var(--color-outline)]">{category.count}</span>
-            </button>
+    <aside className="border-[color-mix(in_srgb,var(--color-outline-variant)_85%,transparent)] pb-6 lg:sticky lg:top-28 lg:flex lg:h-[calc(100dvh-9rem)] lg:w-80 lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:border-r lg:pr-8">
+      <div className="mb-8 flex items-end justify-between gap-4 lg:block">
+        <div>
+          <h2 className="text-title-lg text-[var(--color-secondary)]">Filtros</h2>
+          <p className="text-label-sm mt-1 text-[var(--color-on-surface-variant)]">Refina tu búsqueda</p>
+        </div>
+        <button type="button" className="text-label-sm flex items-center gap-2 text-[var(--color-primary)] lg:hidden">
+          <SlidersHorizontal size={17} strokeWidth={1.8} />
+          Ajustar
+        </button>
+      </div>
+
+      <div className="grid gap-8 md:grid-cols-2 lg:flex lg:flex-col lg:gap-0">
+        <FilterGroup icon={Boxes} title="Categorías" options={categories} />
+        <FilterGroup icon={MapPin} title="Municipios" options={municipalities} />
+
+        <section className="border-b border-[var(--color-outline-variant)] pb-6 lg:pt-6">
+          <FilterTitle icon={WalletCards} title="Rango de precio" />
+          <div className="px-2">
+            <input
+              aria-label="Precio máximo"
+              className="h-1 w-full accent-[var(--color-primary)]"
+              max="100"
+              min="0"
+              type="range"
+              defaultValue="50"
+            />
+            <div className="text-label-sm mt-3 flex justify-between text-[var(--color-on-surface-variant)]">
+              <span>0 €</span>
+              <span className="font-semibold text-[var(--color-on-surface)]">Hasta 50 €</span>
+              <span>100 €</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="pb-6 lg:pt-6">
+          <FilterTitle icon={PackageCheck} title="Disponibilidad" />
+          <FilterCheckbox option={{ label: 'Solo con stock' }} />
+        </section>
+      </div>
+
+      <button
+        type="button"
+        className="text-label-md mt-8 w-full border border-[var(--color-outline)] px-6 py-3 uppercase tracking-wider text-[var(--color-secondary)] transition-colors duration-300 hover:bg-[var(--color-surface-container)] hover:text-[var(--color-primary)] lg:mt-auto"
+      >
+        Restablecer filtros
+      </button>
+    </aside>
+  )
+}
+
+function FilterGroup({ icon, title, options }: { icon: typeof Boxes; title: string; options: FilterOption[] }) {
+  return (
+    <section className="border-b border-[var(--color-outline-variant)] pb-6 lg:pt-6 first:lg:pt-0">
+      <FilterTitle icon={icon} title={title} />
+      <ul className="space-y-3">
+        {options.map((option) => (
+          <li key={option.label}>
+            <FilterCheckbox option={option} />
           </li>
         ))}
       </ul>
@@ -198,104 +217,231 @@ function FilterCategoryList() {
   )
 }
 
-function MunicipalityFilters() {
+function FilterTitle({ icon: Icon, title }: { icon: typeof Boxes; title: string }) {
   return (
-    <section>
-      <h2 className="text-label-sm mb-6 uppercase tracking-widest text-[var(--color-primary)]">Origen (Municipios)</h2>
-      <div className="text-body-md space-y-4 text-[var(--color-on-surface-variant)]">
-        {municipalities.map((municipality) => (
-          <label key={municipality} className="flex cursor-pointer items-center gap-3">
-            <input
-              type="checkbox"
-              className="size-4 rounded-none border-[var(--color-outline-variant)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
-            />
-            <span>{municipality}</span>
-          </label>
-        ))}
-      </div>
+    <div className="mb-4 flex items-center gap-3">
+      <Icon size={19} strokeWidth={1.8} className="text-[var(--color-primary)]" />
+      <h3 className="text-label-md uppercase tracking-[0.2em] text-[var(--color-on-surface)]">{title}</h3>
+    </div>
+  )
+}
+
+function FilterCheckbox({ option }: { option: FilterOption }) {
+  return (
+    <label className="group flex cursor-pointer items-center gap-3">
+      <input
+        type="checkbox"
+        defaultChecked={option.active}
+        className="size-4 rounded-sm border-[var(--color-outline-variant)] bg-transparent accent-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+      />
+      <span
+        className={`text-body-md transition-colors group-hover:text-[var(--color-primary-container)] ${
+          option.active
+            ? 'font-bold text-[var(--color-primary)]'
+            : 'text-[var(--color-on-surface-variant)]'
+        }`}
+      >
+        {option.label}
+      </span>
+    </label>
+  )
+}
+
+function SearchPanel() {
+  return (
+    <section className="mb-10">
+      <label className="flex items-center rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-4 py-4 shadow-sm transition-all focus-within:border-[var(--color-primary)] focus-within:ring-1 focus-within:ring-[var(--color-primary)] md:px-6">
+        <span className="sr-only">Buscar productos</span>
+        <Search size={28} strokeWidth={1.7} className="mr-4 shrink-0 text-[var(--color-primary)]" />
+        <input
+          type="search"
+          placeholder="Busca vinos, turrones, embutidos..."
+          className="text-body-lg w-full border-0 bg-transparent p-0 text-[var(--color-on-surface)] placeholder:text-[var(--color-outline)] focus:outline-none focus:ring-0"
+        />
+        <button
+          type="button"
+          className="text-label-md ml-4 hidden rounded-[var(--radius-default)] bg-[var(--color-primary)] px-8 py-2.5 uppercase tracking-wider text-[var(--color-on-primary)] shadow-sm transition-colors hover:bg-[var(--color-primary-container)] sm:block"
+        >
+          Buscar
+        </button>
+      </label>
     </section>
   )
 }
 
-function AvailabilityFilters() {
+function CatalogToolbar() {
   return (
-    <section>
-      <h2 className="text-label-sm mb-6 uppercase tracking-widest text-[var(--color-primary)]">Disponibilidad</h2>
-      <div className="text-body-md space-y-4 text-[var(--color-on-surface-variant)]">
-        {['En Stock', 'Bajo Pedido'].map((availability) => (
-          <label key={availability} className="flex cursor-pointer items-center gap-3">
-            <input
-              type="radio"
-              name="availability"
-              className="size-4 border-[var(--color-outline-variant)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
-            />
-            <span>{availability}</span>
-          </label>
-        ))}
+    <div className="mb-8 flex flex-col items-start justify-between gap-4 border-b border-[var(--color-outline-variant)] pb-4 sm:flex-row sm:items-center">
+      <p className="text-body-md text-[var(--color-on-surface-variant)]">
+        <span className="font-semibold text-[var(--color-on-surface)]">124</span> productos encontrados
+      </p>
+      <div className="flex items-center gap-4">
+        <span className="text-label-md uppercase text-[var(--color-on-surface-variant)]">Ordenar por:</span>
+        <button
+          type="button"
+          className="flex items-center gap-2 border-b border-[var(--color-outline-variant)] pb-1 text-[var(--color-on-surface)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+        >
+          <span className="text-body-md">Novedades</span>
+          <ChevronDown size={20} strokeWidth={1.8} />
+        </button>
       </div>
-    </section>
+    </div>
   )
 }
 
-function FilterRule() {
-  return <hr className="border-[var(--color-outline-variant)]" />
-}
+function ProductCard({ product }: { product: Product }) {
+  const isOutOfStock = product.stock === 'Sin stock'
 
-type Product = (typeof products)[number]
-
-type ProductCardProps = {
-  product: Product
-}
-
-function ProductCard({ product }: ProductCardProps) {
   return (
-    <article className="group cursor-pointer">
-      <Link to={`/productos/${product.id}`} className="block">
-        <div className="relative mb-6 aspect-[4/5] overflow-hidden bg-[var(--color-surface-container-low)]">
+    <article
+      className={`group flex h-full cursor-pointer flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--color-primary-container)] hover:shadow-md ${
+        isOutOfStock ? 'opacity-75' : ''
+      }`}
+    >
+      <Link to={`/productos/${product.id}`} className="flex h-full flex-col">
+        <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--color-surface-container)]">
           <img
             src={product.imageUrl}
             alt={product.name}
-            className="size-full object-cover grayscale-[20%] transition-all duration-700 group-hover:scale-[1.025] group-hover:grayscale-0"
+            className="size-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
           />
-          {product.badge && (
-            <div className="text-label-sm absolute top-4 left-4 bg-[var(--color-primary)] px-3 py-1 text-[10px] tracking-widest text-[var(--color-on-primary)] uppercase">
-              {product.badge}
+          <StockBadge status={product.stock} />
+        </div>
+
+        <div className="flex flex-1 flex-col p-5">
+          <div className="mb-2 flex items-start justify-between gap-4">
+            <div className="flex min-w-0 flex-col gap-1">
+              <span className="text-label-sm truncate uppercase tracking-[0.2em] text-[var(--color-secondary)]">
+                {product.category}
+              </span>
+              <span className="text-label-sm truncate font-medium text-[var(--color-on-surface)]">
+                {product.producer}
+              </span>
             </div>
-          )}
-          <span className="text-label-sm absolute bottom-0 left-0 w-full translate-y-full bg-[var(--color-primary)] py-4 text-center text-[var(--color-on-primary)] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-            Añadir al carrito
-          </span>
+            <span className="text-label-sm shrink-0 text-[var(--color-on-surface-variant)]">{product.origin}</span>
+          </div>
+
+          <h3 className="text-title-lg mb-3 text-[var(--color-on-surface)] transition-colors group-hover:text-[var(--color-primary)]">
+            {product.name}
+          </h3>
+
+          <Rating value={product.rating} reviews={product.reviews} />
+
+          <div className="mt-auto flex items-center justify-between border-t border-[var(--color-outline-variant)] pt-4">
+            <span className="text-lg font-semibold text-[var(--color-on-surface)]">{product.price}</span>
+          </div>
         </div>
       </Link>
-
-      <div className="space-y-2">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-label-sm text-[10px] uppercase tracking-widest text-[var(--color-outline)]">
-              {product.category} · {product.origin}
-            </p>
-            <h2 className="text-headline-md mt-1 text-[var(--color-on-surface)]">{product.name}</h2>
-          </div>
-          <span className="text-headline-md shrink-0 text-[var(--color-primary)]">{product.price}</span>
-        </div>
-
-        <div className="mt-4 flex items-center gap-4">
-          <Rating value={product.rating} />
-          <span className="text-label-sm bg-[var(--color-surface-container-highest)] px-2 py-0.5 text-[10px] text-[var(--color-secondary-fixed-dim)] uppercase">
-            {product.availability}
-          </span>
-        </div>
-      </div>
     </article>
   )
 }
 
-function Rating({ value }: { value: number }) {
+function StockBadge({ status }: { status: Product['stock'] }) {
+  const isOutOfStock = status === 'Sin stock'
+
   return (
-    <div className="flex text-[var(--color-primary)]" aria-label={`${value} de 5 estrellas`}>
-      {Array.from({ length: 5 }, (_, index) => (
-        <Star key={index} size={16} strokeWidth={1.6} fill={index < value ? 'currentColor' : 'transparent'} />
-      ))}
+    <div className="absolute top-3 left-3 flex items-center gap-1 rounded-[var(--radius-sm)] border border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-2 py-1 shadow-sm">
+      <span className={`size-1.5 rounded-full ${isOutOfStock ? 'bg-[var(--color-outline)]' : 'bg-[var(--color-primary)]'}`} />
+      <span className="text-label-sm text-[10px] uppercase tracking-wider text-[var(--color-on-surface-variant)]">
+        {status}
+      </span>
     </div>
+  )
+}
+
+function Rating({ value, reviews }: { value: number; reviews: number }) {
+  return (
+    <div className="mb-4 flex items-center gap-1" aria-label={`${value} de 5 estrellas, ${reviews} reseñas`}>
+      {Array.from({ length: 5 }, (_, index) => (
+        <Star
+          key={index}
+          size={16}
+          strokeWidth={1.6}
+          className={index < value ? 'text-[var(--color-secondary)]' : 'text-[var(--color-outline)]'}
+          fill={index < value ? 'currentColor' : 'transparent'}
+        />
+      ))}
+      <span className="text-label-sm ml-1 text-[var(--color-on-surface-variant)]">({reviews})</span>
+    </div>
+  )
+}
+
+function Pagination() {
+  return (
+    <nav className="mt-16 flex items-center justify-center gap-4 border-t border-[var(--color-outline-variant)] pt-8" aria-label="Paginación del catálogo">
+      <PaginationButton icon={ChevronLeft} label="Página anterior" disabled />
+      <div className="flex items-center gap-2">
+        {[1, 2, 3].map((page) => (
+          <PaginationButton key={page} label={String(page)} active={page === 1} />
+        ))}
+        <span className="text-label-md grid size-10 place-items-center text-[var(--color-on-surface-variant)]">...</span>
+        <PaginationButton label="12" />
+      </div>
+      <PaginationButton icon={ChevronRight} label="Página siguiente" />
+    </nav>
+  )
+}
+
+function PaginationButton({
+  label,
+  icon: Icon,
+  active = false,
+  disabled = false,
+}: {
+  label: string
+  icon?: typeof ChevronLeft
+  active?: boolean
+  disabled?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={Icon ? label : `Página ${label}`}
+      aria-current={active ? 'page' : undefined}
+      disabled={disabled}
+      className={`text-label-md grid size-10 place-items-center rounded-[var(--radius-default)] border transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+        active
+          ? 'border-[var(--color-primary)] bg-[var(--color-primary)] font-bold text-[var(--color-on-primary)] shadow-sm'
+          : 'border-[var(--color-outline-variant)] bg-[var(--color-surface)] text-[var(--color-on-surface-variant)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
+      }`}
+    >
+      {Icon ? <Icon size={20} strokeWidth={1.8} /> : label}
+    </button>
+  )
+}
+
+function CatalogFooter() {
+  return (
+    <footer className="mt-10 border-t border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)]">
+      <div className="mx-auto grid max-w-[var(--layout-container-max)] grid-cols-1 gap-12 px-[var(--space-margin-mobile)] py-16 md:grid-cols-3 md:px-[var(--space-margin-desktop)]">
+        <div className="flex flex-col gap-4">
+          <span className="text-headline-md tracking-tight text-[var(--color-primary)]">ARTESANÍA ALICANTE</span>
+          <p className="text-body-md max-w-xs text-[var(--color-secondary)]">
+            Tradición y sabor desde el corazón de la provincia.
+          </p>
+        </div>
+
+        <nav className="flex flex-col gap-3" aria-label="Enlaces de tienda">
+          {['Historia', 'Productores', 'Envíos'].map((item) => (
+            <a key={item} href="#" className="text-body-md text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-primary)]">
+              {item}
+            </a>
+          ))}
+        </nav>
+
+        <div className="flex flex-col gap-4 md:items-end md:text-right">
+          <nav className="flex flex-col gap-3 md:items-end" aria-label="Enlaces legales">
+            {['Aviso Legal', 'Privacidad'].map((item) => (
+              <a key={item} href="#" className="text-body-md text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-primary)]">
+                {item}
+              </a>
+            ))}
+          </nav>
+          <p className="text-label-sm mt-auto pt-4 text-[var(--color-secondary)]">
+            © 2024 Artesanía de Alicante. Tradición y Sabor.
+          </p>
+        </div>
+      </div>
+    </footer>
   )
 }
