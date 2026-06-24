@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { BasicDataStep } from '../componentes/BasicDataStep'
 import { ProducerInfoStep } from '../componentes/ProducerInfoStep'
 import { ProfileTypeStep } from '../componentes/ProfileTypeStep'
@@ -21,6 +22,7 @@ const initialData: RegistrationWizardData = {
 }
 
 export function RegistroWizardPage() {
+  const navigate = useNavigate()
   const [data, setData] = useState<RegistrationWizardData>(initialData)
   const [currentStep, setCurrentStep] = useState<RegistrationStep>('profile')
 
@@ -39,6 +41,13 @@ export function RegistroWizardPage() {
 
   const currentIndex = steps.findIndex((step) => step.id === currentStep)
   const stepCounter = currentStep === 'success' ? '' : `Paso ${currentIndex + 1} de ${steps.length}`
+  const progressSteps: WizardStepMeta[] = currentStep === 'success'
+    ? [...steps, { id: 'success', label: 'Listo' }]
+    : steps
+
+  function finishPath() {
+    return data.role === 'productor' ? '/productor/perfil' : '/productos'
+  }
 
   function updateData(updates: Partial<RegistrationWizardData>) {
     setData((currentData) => ({ ...currentData, ...updates }))
@@ -84,15 +93,17 @@ export function RegistroWizardPage() {
   if (currentStep === 'success') {
     return (
       <RegistrationWizardShell variant="success">
-        <RegistrationSuccessStep role={data.role} />
+        <RegistrationProgress steps={progressSteps} currentStep={currentStep} />
+        <RegistrationSuccessStep role={data.role} onPrimaryAction={() => navigate(finishPath())} />
       </RegistrationWizardShell>
     )
   }
 
   if (currentStep === 'review') {
     return (
-      <RegistrationWizardShell>
-        <ReviewRegistrationStep data={data} stepLabel={stepCounter} />
+      <RegistrationWizardShell onExit={() => navigate('/login')}>
+        <RegistrationProgress steps={progressSteps} currentStep={currentStep} />
+        <ReviewRegistrationStep data={data} />
         <WizardFooter
           currentLabel={stepCounter}
           onBack={goToPreviousStep}
@@ -104,12 +115,8 @@ export function RegistroWizardPage() {
   }
 
   return (
-    <RegistrationWizardShell>
-      <div className="mx-auto w-full max-w-[var(--layout-container-max)] px-[var(--space-margin-mobile)] md:px-[var(--space-margin-desktop)]">
-        <div className="flex justify-end pt-6">
-          <RegistrationStepper steps={steps} currentStep={currentStep} />
-        </div>
-      </div>
+    <RegistrationWizardShell onExit={() => navigate('/login')}>
+      <RegistrationProgress steps={progressSteps} currentStep={currentStep} />
       {currentStep === 'profile' && (
         <ProfileTypeStep
           selectedRole={data.role}
@@ -119,7 +126,15 @@ export function RegistroWizardPage() {
       )}
       {currentStep === 'basic' && <BasicDataStep data={data} onChange={updateData} />}
       {currentStep === 'producer' && <ProducerInfoStep data={data} onChange={updateData} />}
-      <WizardFooter currentLabel={stepCounter} onBack={goToPreviousStep} onNext={goToNextStep} backLabel="Back" nextLabel="Continue" />
+      <WizardFooter currentLabel={stepCounter} onBack={goToPreviousStep} onNext={goToNextStep} backLabel="Atrás" nextLabel="Continuar" />
     </RegistrationWizardShell>
+  )
+}
+
+function RegistrationProgress({ steps, currentStep }: { steps: WizardStepMeta[]; currentStep: RegistrationStep }) {
+  return (
+    <div className="mx-auto w-full max-w-[var(--layout-container-max)] px-[var(--space-margin-mobile)] pt-6 md:px-[var(--space-margin-desktop)] md:pt-8">
+      <RegistrationStepper steps={steps} currentStep={currentStep} />
+    </div>
   )
 }
