@@ -39,10 +39,10 @@ export function AppRouter() {
       <Route path="registro" element={<RegistroWizardPage />} />
       <Route element={<AppLayout />}>
         <Route index element={<LandingPage />} />
-        <Route path="productores/:productorId" element={<PerfilProductorPublicoPage />} />
         <Route element={<ConsumerLayout />}>
           <Route path="productos" element={<CatalogoPage />} />
           <Route path="productos/:productoId" element={<DetalleProductoPage />} />
+          <Route path="productores/:productorId" element={<PerfilProductorPublicoPage />} />
           <Route path="carrito" element={<CarritoPage />} />
           <Route path="checkout" element={<CheckoutPage />} />
           <Route path="pedidos" element={<HistorialPedidosPage />} />

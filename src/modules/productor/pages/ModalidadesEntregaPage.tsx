@@ -1,37 +1,22 @@
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  BarChart2,
-  BookOpen,
+  ChevronRight,
   MapPin,
-  Package,
+  PackageCheck,
+  Pencil,
   Plus,
-  ShoppingBag,
+  Save,
   Trash2,
   Truck,
   User,
+  X,
 } from 'lucide-react'
 import {
   AgregarPuntoModal,
   EliminarPuntoModal,
   type PuntoRecogida,
 } from '../componentes/ModalidadesEntregaModals'
-
-// ---------------------------------------------------------------------------
-// Nav
-// ---------------------------------------------------------------------------
-
-const NAV_ITEMS = [
-  { icon: ShoppingBag, label: 'Mis pedidos', to: '/productor/pedidos', active: false },
-  { icon: BookOpen, label: 'Mi catálogo', to: '/productor/productos', active: false },
-  { icon: Package, label: 'Inventario', to: '/productor/inventario', active: false },
-  { icon: BarChart2, label: 'Estadísticas', to: '/productor/estadisticas', active: false },
-  { icon: Truck, label: 'Configuración de entregas', to: '/productor/entregas', active: true },
-]
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 type EntregaPersonalState = {
   activa: boolean
@@ -47,9 +32,12 @@ type MensajeriaState = {
   coste: string
 }
 
-// ---------------------------------------------------------------------------
-// Mock data
-// ---------------------------------------------------------------------------
+type DeliveryConfig = {
+  entregaPersonal: EntregaPersonalState
+  mensajeria: MensajeriaState
+  puntosActiva: boolean
+  puntos: PuntoRecogida[]
+}
 
 const puntosIniciales: PuntoRecogida[] = [
   {
@@ -58,332 +46,459 @@ const puntosIniciales: PuntoRecogida[] = [
     calle: 'Calle Mayor 12',
     municipio: 'Alicante',
     codigoPostal: '03002',
-    horario: '09:00 – 20:00',
+    horario: '09:00 - 20:00',
   },
 ]
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
-export function ModalidadesEntregaPage() {
-  // --- Entrega personal state ---
-  const [entregaPersonal, setEntregaPersonal] = useState<EntregaPersonalState>({
+const initialConfig: DeliveryConfig = {
+  entregaPersonal: {
     activa: true,
     ambito: 'Alicante y alrededores',
-    coste: '0.00€',
-    notas: 'Entregas solo los sábados por la mañana',
-  })
-
-  // --- Mensajería state ---
-  const [mensajeria, setMensajeria] = useState<MensajeriaState>({
+    coste: '0,00 EUR',
+    notas: 'Entregas solo los sabados por la manana',
+  },
+  mensajeria: {
     activa: true,
     empresa: 'Seur / MRW',
     ambito: 'Nacional',
-    coste: '5.50€',
-  })
+    coste: '5,50 EUR',
+  },
+  puntosActiva: true,
+  puntos: puntosIniciales,
+}
 
-  // --- Puntos de recogida state ---
-  const [puntosActiva, setPuntosActiva] = useState(true)
-  const [puntos, setPuntos] = useState<PuntoRecogida[]>(puntosIniciales)
-
-  // Modal state
+export function ModalidadesEntregaPage() {
+  const [savedConfig, setSavedConfig] = useState<DeliveryConfig>(initialConfig)
+  const [draftConfig, setDraftConfig] = useState<DeliveryConfig>(initialConfig)
+  const [isEditing, setIsEditing] = useState(false)
   const [showAgregar, setShowAgregar] = useState(false)
   const [puntoAEliminar, setPuntoAEliminar] = useState<PuntoRecogida | null>(null)
 
+  const activeMethods = [
+    draftConfig.entregaPersonal.activa,
+    draftConfig.mensajeria.activa,
+    draftConfig.puntosActiva,
+  ].filter(Boolean).length
+
+  function beginEdit() {
+    setDraftConfig(savedConfig)
+    setIsEditing(true)
+  }
+
+  function cancelEdit() {
+    setDraftConfig(savedConfig)
+    setPuntoAEliminar(null)
+    setShowAgregar(false)
+    setIsEditing(false)
+  }
+
+  function saveChanges() {
+    setSavedConfig(draftConfig)
+    setIsEditing(false)
+  }
+
+  function updateEntregaPersonal<K extends keyof EntregaPersonalState>(
+    key: K,
+    value: EntregaPersonalState[K],
+  ) {
+    setDraftConfig((current) => ({
+      ...current,
+      entregaPersonal: { ...current.entregaPersonal, [key]: value },
+    }))
+  }
+
+  function updateMensajeria<K extends keyof MensajeriaState>(
+    key: K,
+    value: MensajeriaState[K],
+  ) {
+    setDraftConfig((current) => ({
+      ...current,
+      mensajeria: { ...current.mensajeria, [key]: value },
+    }))
+  }
+
   function agregarPunto(datos: Omit<PuntoRecogida, 'id'>) {
-    setPuntos((prev) => [...prev, { ...datos, id: `pr-${Date.now()}` }])
+    setDraftConfig((current) => ({
+      ...current,
+      puntos: [...current.puntos, { ...datos, id: `pr-${Date.now()}` }],
+    }))
   }
 
   function eliminarPunto(id: string) {
-    setPuntos((prev) => prev.filter((p) => p.id !== id))
+    setDraftConfig((current) => ({
+      ...current,
+      puntos: current.puntos.filter((punto) => punto.id !== id),
+    }))
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--color-surface)] text-[var(--color-on-surface)]">
-      {/* ── Sidebar ── */}
-      <aside className="hidden">
-        <div className="mb-12">
-          <Link to="/" className="text-headline-md font-bold text-[var(--color-primary)]">
-            Alicante Gourmet
-          </Link>
-          <p className="text-body-md mt-2 text-[var(--color-secondary)]">Artesano de Denia</p>
-        </div>
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
+      <main className="mx-auto w-full max-w-[var(--layout-container-max)] px-[var(--space-margin-mobile)] py-12 md:px-[var(--space-margin-desktop)] md:py-16">
+        <section className="mb-10">
+          <nav
+            aria-label="Breadcrumb"
+            className="text-label-sm mb-6 flex items-center gap-2 text-[var(--color-secondary)]"
+          >
+            <Link to="/productor/pedidos" className="transition-colors hover:text-[var(--color-primary)]">
+              Area Productor
+            </Link>
+            <ChevronRight size={14} strokeWidth={1.8} />
+            <span className="text-[var(--color-primary)]">Configuracion de entregas</span>
+          </nav>
 
-        <nav className="flex flex-1 flex-col gap-2">
-          {NAV_ITEMS.map(({ icon: Icon, label, to, active }) => (
-            <Link
-              key={label}
-              to={to}
-              className={`flex items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 transition-all duration-200 ${
-                active
-                  ? 'translate-x-0.5 bg-[var(--color-secondary-container)] font-semibold text-[var(--color-primary)]'
-                  : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-container-high)]'
+          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+              <h1 className="text-display-lg mb-4 text-[var(--color-primary)]">
+                Configuracion de entregas
+              </h1>
+              <p className="text-body-md max-w-2xl text-[var(--color-on-surface-variant)]">
+                Define como reciben tus productos los clientes y deja visible que modalidades
+                estan activas antes de publicar cambios.
+              </p>
+            </div>
+
+            {isEditing ? (
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="text-label-md inline-flex items-center justify-center gap-2 border border-[var(--color-outline-variant)] bg-white px-5 py-3 text-[var(--color-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                >
+                  <X size={16} strokeWidth={1.8} />
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={saveChanges}
+                  className="text-label-md inline-flex items-center justify-center gap-2 bg-[var(--color-primary)] px-5 py-3 text-white transition-colors hover:bg-[var(--color-primary-container)]"
+                >
+                  <Save size={16} strokeWidth={1.8} />
+                  Guardar
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={beginEdit}
+                className="text-label-md inline-flex items-center justify-center gap-2 bg-[var(--color-primary-container)] px-5 py-3 text-[var(--color-on-primary-container)] transition-colors hover:bg-[var(--color-primary)] hover:text-white"
+              >
+                <Pencil size={16} strokeWidth={1.8} />
+                Editar configuracion
+              </button>
+            )}
+          </div>
+        </section>
+
+        <section className="mb-10 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <SummaryCard
+            label="Modalidades activas"
+            value={`${activeMethods}/3`}
+            helpText="Se recomienda tener al menos una activa"
+            icon={<PackageCheck size={22} strokeWidth={1.8} className="text-[#2E7D32]" />}
+            iconBg="#E8F5E9"
+          />
+          <SummaryCard
+            label="Cobertura principal"
+            value={draftConfig.mensajeria.ambito}
+            helpText={draftConfig.entregaPersonal.activa ? draftConfig.entregaPersonal.ambito : 'Sin reparto propio'}
+            icon={<Truck size={22} strokeWidth={1.8} className="text-[var(--color-primary)]" />}
+            iconBg="rgba(122,46,58,0.12)"
+          />
+          <SummaryCard
+            label="Puntos de recogida"
+            value={String(draftConfig.puntos.length)}
+            helpText={draftConfig.puntosActiva ? 'Disponibles para clientes' : 'Modalidad desactivada'}
+            icon={<MapPin size={22} strokeWidth={1.8} className="text-[#1565C0]" />}
+            iconBg="#E3F2FD"
+          />
+        </section>
+
+        <section className="mb-6 border border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-surface-container-lowest)] p-5 shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)] md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-label-md mb-1 uppercase tracking-[0.18em] text-[var(--color-outline)]">
+                Estado de la pantalla
+              </p>
+              <p className="text-body-md text-[var(--color-on-surface-variant)]">
+                {isEditing
+                  ? 'Los campos y toggles estan habilitados. Guarda para confirmar los cambios.'
+                  : 'Los campos estan bloqueados hasta pulsar Editar configuracion.'}
+              </p>
+            </div>
+            <span
+              className={`text-label-md inline-flex w-fit items-center rounded-full px-4 py-2 ${
+                isEditing
+                  ? 'bg-[#FFF3E0] text-[#EF6C00]'
+                  : 'bg-[rgba(46,125,50,0.12)] text-[#2E7D32]'
               }`}
             >
-              <Icon size={20} strokeWidth={active ? 2 : 1.8} />
-              <span className="text-label-md">{label}</span>
-            </Link>
-          ))}
-        </nav>
+              {isEditing ? 'Edicion en curso' : 'Solo lectura'}
+            </span>
+          </div>
+        </section>
 
-        <div className="mt-auto border-t border-[var(--color-outline-variant)] pt-4">
-          <Link
-            to="/productor/perfil"
-            className="flex items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 text-[var(--color-secondary)] transition-all hover:bg-[var(--color-surface-container-high)]"
+        <div className="flex flex-col gap-6">
+          <DeliveryCard
+            icon={<User size={22} strokeWidth={1.8} className="text-[var(--color-primary)]" />}
+            title="Entrega personal"
+            subtitle="Gestion directa de repartos"
+            active={draftConfig.entregaPersonal.activa}
+            editable={isEditing}
+            onToggle={() => updateEntregaPersonal('activa', !draftConfig.entregaPersonal.activa)}
           >
-            <User size={20} strokeWidth={1.8} />
-            <span className="text-label-md">Mi perfil</span>
-          </Link>
-        </div>
-      </aside>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <CardField
+                label="Ambito de cobertura"
+                value={draftConfig.entregaPersonal.ambito}
+                onChange={(value) => updateEntregaPersonal('ambito', value)}
+                disabled={!isEditing || !draftConfig.entregaPersonal.activa}
+              />
+              <CardField
+                label="Coste del servicio"
+                value={draftConfig.entregaPersonal.coste}
+                onChange={(value) => updateEntregaPersonal('coste', value)}
+                disabled={!isEditing || !draftConfig.entregaPersonal.activa}
+              />
+              <TextAreaField
+                label="Notas o condiciones"
+                value={draftConfig.entregaPersonal.notas}
+                onChange={(value) => updateEntregaPersonal('notas', value)}
+                disabled={!isEditing || !draftConfig.entregaPersonal.activa}
+              />
+            </div>
+          </DeliveryCard>
 
-      {/* ── Main ── */}
-      <main className="min-h-screen flex-1 px-[var(--space-margin-mobile)] py-12 pb-24 md:px-[var(--space-margin-desktop)]">
-        <div className="mx-auto max-w-4xl">
-          {/* Page header */}
-          <header className="mb-12 max-w-2xl">
-            <h1 className="text-display-lg text-[var(--color-primary)]">
-              Configuración de entregas
-            </h1>
-            <p className="text-body-lg mt-4 text-[var(--color-secondary)]">
-              Configura cómo recibirán tus productos los clientes. Se recomienda tener al menos una
-              modalidad activa.
-            </p>
-          </header>
+          <DeliveryCard
+            icon={<Truck size={22} strokeWidth={1.8} className="text-[var(--color-primary)]" />}
+            title="Mensajeria"
+            subtitle="Envio por agencia externa"
+            active={draftConfig.mensajeria.activa}
+            editable={isEditing}
+            onToggle={() => updateMensajeria('activa', !draftConfig.mensajeria.activa)}
+          >
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <CardField
+                label="Empresa de transporte"
+                value={draftConfig.mensajeria.empresa}
+                onChange={(value) => updateMensajeria('empresa', value)}
+                disabled={!isEditing || !draftConfig.mensajeria.activa}
+              />
+              <SelectField
+                label="Ambito"
+                value={draftConfig.mensajeria.ambito}
+                onChange={(value) => updateMensajeria('ambito', value)}
+                disabled={!isEditing || !draftConfig.mensajeria.activa}
+                options={['Provincial', 'Nacional', 'Internacional']}
+              />
+              <CardField
+                label="Coste base"
+                value={draftConfig.mensajeria.coste}
+                onChange={(value) => updateMensajeria('coste', value)}
+                disabled={!isEditing || !draftConfig.mensajeria.activa}
+              />
+            </div>
+          </DeliveryCard>
 
-          {/* Cards */}
-          <div className="flex flex-col gap-8">
-            {/* ── Block 1: Entrega personal ── */}
-            <DeliveryCard
-              active={entregaPersonal.activa}
-              onToggle={() =>
-                setEntregaPersonal((prev) => ({ ...prev, activa: !prev.activa }))
-              }
-              icon={<User size={22} strokeWidth={1.8} className="text-[var(--color-primary)]" />}
-              title="Entrega personal"
-              subtitle="Gestión directa de repartos"
-            >
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                <CardField
-                  label="Ámbito de cobertura"
-                  value={entregaPersonal.ambito}
-                  onChange={(v) => setEntregaPersonal((prev) => ({ ...prev, ambito: v }))}
-                  disabled={!entregaPersonal.activa}
-                />
-                <CardField
-                  label="Coste del servicio"
-                  value={entregaPersonal.coste}
-                  onChange={(v) => setEntregaPersonal((prev) => ({ ...prev, coste: v }))}
-                  disabled={!entregaPersonal.activa}
-                />
-                <div className="flex flex-col gap-1 md:col-span-2">
-                  <span className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">
-                    Notas / Condiciones
-                  </span>
-                  <input
-                    type="text"
-                    value={entregaPersonal.notas}
-                    disabled={!entregaPersonal.activa}
-                    onChange={(e) =>
-                      setEntregaPersonal((prev) => ({ ...prev, notas: e.target.value }))
-                    }
-                    className="border-b border-[var(--color-outline-variant)] bg-transparent text-body-md text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none disabled:text-[var(--color-secondary)]"
-                  />
+          <DeliveryCard
+            icon={<MapPin size={22} strokeWidth={1.8} className="text-[var(--color-primary)]" />}
+            title="Punto de recogida"
+            subtitle="Recogida local por parte del cliente"
+            active={draftConfig.puntosActiva}
+            editable={isEditing}
+            onToggle={() =>
+              setDraftConfig((current) => ({ ...current, puntosActiva: !current.puntosActiva }))
+            }
+          >
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-label-md uppercase tracking-[0.18em] text-[var(--color-outline)]">
+                    Puntos activos
+                  </p>
+                  <p className="text-body-sm text-[var(--color-on-surface-variant)]">
+                    Gestiona direcciones y horarios disponibles para recogida local.
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  disabled={!isEditing || !draftConfig.puntosActiva}
+                  onClick={() => setShowAgregar(true)}
+                  className="text-label-md inline-flex w-fit items-center gap-2 border border-[var(--color-outline-variant)] bg-white px-4 py-2 text-[var(--color-primary)] transition-colors hover:border-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Plus size={16} strokeWidth={1.8} />
+                  Anadir punto
+                </button>
               </div>
-            </DeliveryCard>
 
-            {/* ── Block 2: Mensajería ── */}
-            <DeliveryCard
-              active={mensajeria.activa}
-              onToggle={() => setMensajeria((prev) => ({ ...prev, activa: !prev.activa }))}
-              icon={<Truck size={22} strokeWidth={1.8} className="text-[var(--color-primary)]" />}
-              title="Mensajería"
-              subtitle="Envío por agencia externa"
-            >
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                <CardField
-                  label="Empresa de transporte"
-                  value={mensajeria.empresa}
-                  onChange={(v) => setMensajeria((prev) => ({ ...prev, empresa: v }))}
-                  disabled={!mensajeria.activa}
-                />
-                {/* Scope select */}
-                <div className="flex flex-col gap-1">
-                  <span className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">
-                    Ámbito
-                  </span>
-                  <select
-                    value={mensajeria.ambito}
-                    disabled={!mensajeria.activa}
-                    onChange={(e) =>
-                      setMensajeria((prev) => ({ ...prev, ambito: e.target.value }))
-                    }
-                    className="border-b border-[var(--color-outline-variant)] bg-transparent text-body-md text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none disabled:text-[var(--color-secondary)]"
-                  >
-                    <option>Provincial</option>
-                    <option>Nacional</option>
-                    <option>Internacional</option>
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1 md:col-span-2">
-                  <CardField
-                    label="Coste de envío (base)"
-                    value={mensajeria.coste}
-                    onChange={(v) => setMensajeria((prev) => ({ ...prev, coste: v }))}
-                    disabled={!mensajeria.activa}
-                  />
-                </div>
-              </div>
-            </DeliveryCard>
-
-            {/* ── Block 3: Punto de recogida ── */}
-            <DeliveryCard
-              active={puntosActiva}
-              onToggle={() => setPuntosActiva((prev) => !prev)}
-              icon={
-                <MapPin size={22} strokeWidth={1.8} className="text-[var(--color-primary)]" />
-              }
-              title="Punto de recogida"
-              subtitle="Recogida local por el cliente"
-            >
-              <div>
-                <p className="text-label-sm mb-4 uppercase tracking-widest text-[var(--color-secondary)]">
-                  Puntos Activos
-                </p>
-
-                {/* List */}
-                <div className="mb-6 flex flex-col gap-3">
-                  {puntos.length === 0 && (
-                    <p className="text-body-md text-[var(--color-secondary)] italic">
-                      No hay puntos de recogida configurados.
-                    </p>
-                  )}
-                  {puntos.map((punto) => (
-                    <div
+              <div className="flex flex-col gap-3">
+                {draftConfig.puntos.length === 0 ? (
+                  <div className="border border-dashed border-[var(--color-outline-variant)] p-6 text-center text-[var(--color-on-surface-variant)]">
+                    No hay puntos de recogida configurados.
+                  </div>
+                ) : (
+                  draftConfig.puntos.map((punto) => (
+                    <article
                       key={punto.id}
-                      className="flex items-start justify-between rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface)] p-4"
+                      className="flex flex-col gap-4 border border-[var(--color-outline-variant)] bg-white/70 p-4 md:flex-row md:items-start md:justify-between"
                     >
-                      <div>
-                        <h4 className="text-label-md text-[var(--color-on-surface)]">
-                          {punto.nombre}
-                        </h4>
-                        <p className="text-body-md mt-1 text-sm text-[var(--color-secondary)]">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-headline-sm text-[var(--color-on-surface)]">
+                            {punto.nombre}
+                          </h3>
+                          <span className="text-label-sm rounded-full bg-[rgba(21,101,192,0.1)] px-3 py-1 text-[#1565C0]">
+                            {punto.codigoPostal}
+                          </span>
+                        </div>
+                        <p className="text-body-md text-[var(--color-on-surface-variant)]">
                           {punto.calle}, {punto.municipio}
                         </p>
-                        <p className="text-label-sm mt-2 text-[var(--color-primary)]">
+                        <p className="text-label-md text-[var(--color-primary)]">
                           Horario: {punto.horario}
                         </p>
+                        {punto.indicaciones ? (
+                          <p className="text-body-sm text-[var(--color-secondary)]">
+                            {punto.indicaciones}
+                          </p>
+                        ) : null}
                       </div>
+
                       <button
                         type="button"
                         aria-label={`Eliminar ${punto.nombre}`}
                         onClick={() => setPuntoAEliminar(punto)}
-                        disabled={!puntosActiva}
-                        className="ml-4 flex-shrink-0 text-[var(--color-secondary)] transition-colors hover:text-[var(--color-error)] disabled:pointer-events-none disabled:opacity-40"
+                        disabled={!isEditing || !draftConfig.puntosActiva}
+                        className="text-label-md inline-flex items-center gap-2 self-start text-[var(--color-secondary)] transition-colors hover:text-[var(--color-error)] disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        <Trash2 size={18} strokeWidth={1.8} />
+                        <Trash2 size={16} strokeWidth={1.8} />
+                        Eliminar
                       </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Add point button */}
-                <button
-                  type="button"
-                  disabled={!puntosActiva}
-                  onClick={() => setShowAgregar(true)}
-                  className="text-label-md flex items-center gap-2 text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-container)] disabled:pointer-events-none disabled:opacity-40"
-                >
-                  <Plus size={18} strokeWidth={2} />
-                  Añadir punto
-                </button>
+                    </article>
+                  ))
+                )}
               </div>
-            </DeliveryCard>
-          </div>
+            </div>
+          </DeliveryCard>
         </div>
       </main>
 
-      {/* ── Modals ── */}
-      {showAgregar && (
+      {showAgregar && isEditing ? (
         <AgregarPuntoModal onClose={() => setShowAgregar(false)} onConfirm={agregarPunto} />
-      )}
+      ) : null}
 
-      {puntoAEliminar && (
+      {puntoAEliminar && isEditing ? (
         <EliminarPuntoModal
           nombrePunto={puntoAEliminar.nombre}
           onClose={() => setPuntoAEliminar(null)}
           onConfirm={() => eliminarPunto(puntoAEliminar.id)}
         />
-      )}
+      ) : null}
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// DeliveryCard — shared card wrapper with toggle + save button
-// ---------------------------------------------------------------------------
+type SummaryCardProps = {
+  label: string
+  value: string
+  helpText: string
+  icon: ReactNode
+  iconBg: string
+}
+
+function SummaryCard({ label, value, helpText, icon, iconBg }: SummaryCardProps) {
+  return (
+    <div className="flex items-center justify-between rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-5 md:p-6">
+      <div>
+        <p className="text-label-md mb-1 uppercase tracking-widest text-[var(--color-secondary)]">
+          {label}
+        </p>
+        <p className="text-headline-lg text-[var(--color-on-surface)]">{value}</p>
+        <p className="text-body-sm mt-2 text-[var(--color-on-surface-variant)]">{helpText}</p>
+      </div>
+      <div className="flex size-12 items-center justify-center rounded-full" style={{ backgroundColor: iconBg }}>
+        {icon}
+      </div>
+    </div>
+  )
+}
 
 type DeliveryCardProps = {
   active: boolean
+  editable: boolean
   onToggle: () => void
-  icon: React.ReactNode
+  icon: ReactNode
   title: string
   subtitle: string
-  children: React.ReactNode
+  children: ReactNode
 }
 
-function DeliveryCard({ active, onToggle, icon, title, subtitle, children }: DeliveryCardProps) {
+function DeliveryCard({
+  active,
+  editable,
+  onToggle,
+  icon,
+  title,
+  subtitle,
+  children,
+}: DeliveryCardProps) {
   return (
-    <div
-      className={`rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-8 transition-all duration-300 hover:bg-[var(--color-surface-container-low)] ${
-        !active ? 'opacity-70' : ''
+    <section
+      className={`rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-5 shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)] transition-opacity md:p-6 ${
+        active ? 'opacity-100' : 'opacity-75'
       }`}
     >
-      {/* Card header */}
-      <div className="mb-8 flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-surface-container)]">
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="flex size-12 items-center justify-center rounded-full bg-[rgba(122,46,58,0.12)]">
             {icon}
           </div>
           <div>
-            <h3 className="text-headline-sm text-[var(--color-primary)]">{title}</h3>
-            <p className="text-label-sm mt-0.5 text-[var(--color-secondary)]">{subtitle}</p>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <h2 className="text-headline-sm text-[var(--color-primary)]">{title}</h2>
+              <span
+                className={`text-label-sm rounded-full px-3 py-1 ${
+                  active
+                    ? 'bg-[rgba(46,125,50,0.12)] text-[#2E7D32]'
+                    : 'bg-[var(--color-surface-container-high)] text-[var(--color-secondary)]'
+                }`}
+              >
+                {active ? 'Activa' : 'Inactiva'}
+              </span>
+            </div>
+            <p className="text-body-md text-[var(--color-on-surface-variant)]">{subtitle}</p>
           </div>
         </div>
-        {/* Toggle */}
-        <Toggle checked={active} onChange={onToggle} />
+
+        <div className="flex items-center gap-3">
+          <span className="text-label-sm uppercase tracking-[0.18em] text-[var(--color-outline)]">
+            Disponible
+          </span>
+          <Toggle checked={active} onChange={onToggle} disabled={!editable} />
+        </div>
       </div>
 
-      {/* Card body */}
-      <div className="mb-8">{children}</div>
-
-      {/* Footer */}
-      <div className="flex justify-end border-t border-[var(--color-outline-variant)] pt-6">
-        <button
-          type="button"
-          className="text-label-md rounded-[var(--radius-default)] bg-[var(--color-primary-container)] px-6 py-2 text-[var(--color-on-primary-container)] transition-colors hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)]"
-        >
-          Guardar
-        </button>
-      </div>
-    </div>
+      {children}
+    </section>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Toggle switch
-// ---------------------------------------------------------------------------
-
-function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+function Toggle({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean
+  onChange: () => void
+  disabled?: boolean
+}) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       onClick={onChange}
-      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus:outline-none ${
+      disabled={disabled}
+      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
         checked ? 'bg-[var(--color-primary-container)]' : 'bg-[var(--color-surface-container-highest)]'
       }`}
     >
@@ -396,10 +511,6 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
   )
 }
 
-// ---------------------------------------------------------------------------
-// CardField — minimal bottom-border input
-// ---------------------------------------------------------------------------
-
 function CardField({
   label,
   value,
@@ -408,11 +519,11 @@ function CardField({
 }: {
   label: string
   value: string
-  onChange: (v: string) => void
+  onChange: (value: string) => void
   disabled?: boolean
 }) {
   return (
-    <div className="flex flex-col gap-1">
+    <label className="flex flex-col gap-2">
       <span className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">
         {label}
       </span>
@@ -420,9 +531,70 @@ function CardField({
         type="text"
         value={value}
         disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-        className="border-b border-[var(--color-outline-variant)] bg-transparent text-body-md text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none disabled:text-[var(--color-secondary)]"
+        onChange={(event) => onChange(event.target.value)}
+        className="text-body-md border border-[var(--color-outline-variant)] bg-white px-4 py-3 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-surface-container)] disabled:text-[var(--color-secondary)]"
       />
-    </div>
+    </label>
+  )
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  disabled,
+  options,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  disabled?: boolean
+  options: string[]
+}) {
+  return (
+    <label className="flex flex-col gap-2">
+      <span className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">
+        {label}
+      </span>
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+        className="text-body-md border border-[var(--color-outline-variant)] bg-white px-4 py-3 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-surface-container)] disabled:text-[var(--color-secondary)]"
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function TextAreaField({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  disabled?: boolean
+}) {
+  return (
+    <label className="flex flex-col gap-2 md:col-span-2">
+      <span className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">
+        {label}
+      </span>
+      <textarea
+        rows={4}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+        className="text-body-md resize-none border border-[var(--color-outline-variant)] bg-white px-4 py-3 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-surface-container)] disabled:text-[var(--color-secondary)]"
+      />
+    </label>
   )
 }
