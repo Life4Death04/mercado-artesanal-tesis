@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import {
   Boxes,
   ChevronDown,
@@ -9,25 +8,12 @@ import {
   PackageCheck,
   Search,
   SlidersHorizontal,
-  Star,
   WalletCards,
 } from 'lucide-react'
+import { ConsumerProductCard, type ConsumerCatalogCardProduct } from '../componentes/ConsumerProductCard'
 
 type FilterOption = {
   label: string
-}
-
-type Product = {
-  id: string
-  name: string
-  category: string
-  producer: string
-  origin: string
-  price: string
-  stock: 'En stock' | 'Sin stock'
-  rating: number
-  reviews: number
-  imageUrl: string
 }
 
 const categories: FilterOption[] = [
@@ -45,7 +31,7 @@ const municipalities: FilterOption[] = [
   { label: 'Denia' },
 ]
 
-const products: Product[] = [
+const products: ConsumerCatalogCardProduct[] = [
   {
     id: 'oro-liquido-virgen-extra',
     name: 'Oro Líquido Virgen Extra',
@@ -144,8 +130,8 @@ export function CatalogoPage() {
       .join(' ')
       .toLowerCase()
       .includes(normalizedSearch)
-    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(product.category)
-    const matchesMunicipality = selectedMunicipalities.length === 0 || selectedMunicipalities.includes(product.origin)
+    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(product.category ?? '')
+    const matchesMunicipality = selectedMunicipalities.length === 0 || selectedMunicipalities.includes(product.origin ?? '')
     const matchesPrice = parsePrice(product.price) <= maxPrice
     const matchesStock = !stockOnly || product.stock === 'En stock'
 
@@ -192,7 +178,7 @@ export function CatalogoPage() {
 
           <section className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 xl:grid-cols-3" aria-label="Productos disponibles">
             {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ConsumerProductCard key={product.id} product={product} />
             ))}
           </section>
 
@@ -397,83 +383,6 @@ function CatalogToolbar({ count }: { count: number }) {
           <ChevronDown size={20} strokeWidth={1.8} />
         </button>
       </div>
-    </div>
-  )
-}
-
-function ProductCard({ product }: { product: Product }) {
-  const isOutOfStock = product.stock === 'Sin stock'
-
-  return (
-    <article
-      className={`group flex h-full cursor-pointer flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--color-primary-container)] hover:shadow-md ${
-        isOutOfStock ? 'opacity-75' : ''
-      }`}
-    >
-      <Link to={`/productos/${product.id}`} className="flex h-full flex-col">
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--color-surface-container)]">
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="size-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
-          />
-          <StockBadge status={product.stock} />
-        </div>
-
-        <div className="flex flex-1 flex-col p-5">
-          <div className="mb-2 flex items-start justify-between gap-4">
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className="text-label-sm truncate uppercase tracking-[0.2em] text-[var(--color-secondary)]">
-                {product.category}
-              </span>
-              <span className="text-label-sm truncate font-medium text-[var(--color-on-surface)]">
-                {product.producer}
-              </span>
-            </div>
-            <span className="text-label-sm shrink-0 text-[var(--color-on-surface-variant)]">{product.origin}</span>
-          </div>
-
-          <h3 className="text-title-lg mb-3 text-[var(--color-on-surface)] transition-colors group-hover:text-[var(--color-primary)]">
-            {product.name}
-          </h3>
-
-          <Rating value={product.rating} reviews={product.reviews} />
-
-          <div className="mt-auto flex items-center justify-between border-t border-[var(--color-outline-variant)] pt-4">
-            <span className="text-lg font-semibold text-[var(--color-on-surface)]">{product.price}</span>
-          </div>
-        </div>
-      </Link>
-    </article>
-  )
-}
-
-function StockBadge({ status }: { status: Product['stock'] }) {
-  const isOutOfStock = status === 'Sin stock'
-
-  return (
-    <div className="absolute top-3 left-3 flex items-center gap-1 rounded-[var(--radius-sm)] border border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-2 py-1 shadow-sm">
-      <span className={`size-1.5 rounded-full ${isOutOfStock ? 'bg-[var(--color-outline)]' : 'bg-[var(--color-primary)]'}`} />
-      <span className="text-label-sm text-[10px] uppercase tracking-wider text-[var(--color-on-surface-variant)]">
-        {status}
-      </span>
-    </div>
-  )
-}
-
-function Rating({ value, reviews }: { value: number; reviews: number }) {
-  return (
-    <div className="mb-4 flex items-center gap-1" aria-label={`${value} de 5 estrellas, ${reviews} reseñas`}>
-      {Array.from({ length: 5 }, (_, index) => (
-        <Star
-          key={index}
-          size={16}
-          strokeWidth={1.6}
-          className={index < value ? 'text-[var(--color-secondary)]' : 'text-[var(--color-outline)]'}
-          fill={index < value ? 'currentColor' : 'transparent'}
-        />
-      ))}
-      <span className="text-label-sm ml-1 text-[var(--color-on-surface-variant)]">({reviews})</span>
     </div>
   )
 }
