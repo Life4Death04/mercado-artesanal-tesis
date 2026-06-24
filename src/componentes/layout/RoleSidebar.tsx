@@ -163,7 +163,6 @@ function SidebarFooter({
   isProducerAsConsumer: boolean
   onMobileClose?: () => void
 }) {
-  
 
   if (variant === 'producer') {
     return (
