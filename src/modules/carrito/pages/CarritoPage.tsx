@@ -1,60 +1,68 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Bell, Heart, Minus, Plus, ShoppingBag, ShoppingCart, Sparkles, Sprout, TriangleAlert, User, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronRight, Heart, Minus, Plus, ShoppingBag, Sparkles, Sprout, TriangleAlert, X } from 'lucide-react'
 
 type CartItem = {
+  id: string
+  productPath: string
   name: string
   unitPrice: string
+  unitPriceValue: number
   quantity: number
-  total: string
   image: string
   warning?: string
   disableIncrease?: boolean
 }
 
 type ProducerGroup = {
+  id: string
   name: string
   location: string
   path?: string
-  subtotal: string
   items: CartItem[]
 }
 
-const cartGroups: ProducerGroup[] = [
+const initialCartGroups: ProducerGroup[] = [
   {
+    id: 'finca-alicante',
     name: 'Finca Alicante',
     location: 'Denia',
     path: '/productores/finca-alicante',
-    subtotal: '37.50€',
     items: [
       {
+        id: 'aceite-oliva-virgen-extra',
+        productPath: '/productos/aceite-oliva-virgen-extra',
         name: 'Aceite de Oliva Virgen Extra',
         unitPrice: '18.50€ / ud',
+        unitPriceValue: 18.5,
         quantity: 1,
-        total: '18.50€',
         image:
           'https://lh3.googleusercontent.com/aida-public/AB6AXuDFEQm_z3dev2jYciMF1OVkN7afLFF9JrFWmZFGNNgUs3C_g8xkbcAv1IwnimQ5FM5M5NXtE0pt8j5faLUAqR89Q-qe0z915pXuYeRisMgkK_N-npdKrl1w1Vindl_2NJoez7HC08LAZ_2oucJuo_FxxkCnEDhLjS3ACibYGlau2lY77lK9dgoyp4-PgLYt4suBajIZEh4NtvtNyQPIlxWPGscSUBHDh3stWuFoJUeP5ditGRAwrHwF-hGwTcxE1EGdNPyRio5oPu0',
       },
       {
+        id: 'miel-azahar',
+        productPath: '/productos/miel-de-azahar',
         name: 'Miel de Azahar',
         unitPrice: '9.50€ / ud',
+        unitPriceValue: 9.5,
         quantity: 2,
-        total: '19.00€',
         image:
           'https://lh3.googleusercontent.com/aida-public/AB6AXuDo6-DPtDJ2-94vFmaJCElQ_8yyIOG57vXUHTFoDeFgx-1cuPgTxf3l9XZciGW6Scq_Kb6S1YtOUGbbYg2kug-4q4ie8N_EZ2zb2BZ8zi1DhrJgSWFnsorfGsg1PN98j1e2n5dU9qS_9lY8eEkQ8f99Ah5TL6PXLr5KLMy9yh4PQTIQuP1bsfMqrFtz6Bruq9aRl8yUVuZ6gXfDW2JF9YyJa8Y7TfB3PYyXc0Ux-Rs7VF1v5CEzLtRYy_Gwmayk_OTDj_axxgyrFJc',
       },
     ],
   },
   {
+    id: 'embutidos-del-sol',
     name: 'Embutidos del Sol',
     location: 'Pinoso',
-    subtotal: '14.00€',
     items: [
       {
+        id: 'sobrasada-artesana',
+        productPath: '/productos/sobrasada-artesana',
         name: 'Sobrasada Artesana',
         unitPrice: '7.00€ / ud',
+        unitPriceValue: 7,
         quantity: 2,
-        total: '14.00€',
         warning: 'Últimas 2 unidades disponibles',
         disableIncrease: true,
         image:
@@ -64,73 +72,109 @@ const cartGroups: ProducerGroup[] = [
   },
 ]
 
-const navItems = ['Curation', 'Producers', 'Favorites']
-const orderTotal = '51.50€'
+function formatPrice(value: number) {
+  return `${value.toFixed(2)}€`
+}
 
 export function CarritoPage() {
-  return (
-    <div className="min-h-screen bg-[var(--color-background)] pt-20 text-[var(--color-on-surface)]">
-      <CartHeader />
+  const [cartGroups, setCartGroups] = useState(initialCartGroups)
 
+  const productSubtotal = cartGroups.reduce(
+    (total, group) => total + group.items.reduce((groupTotal, item) => groupTotal + item.unitPriceValue * item.quantity, 0),
+    0,
+  )
+
+  function updateItemQuantity(groupId: string, itemId: string, delta: number) {
+    setCartGroups((currentGroups) =>
+      currentGroups
+        .map((group) => {
+          if (group.id !== groupId) {
+            return group
+          }
+
+          return {
+            ...group,
+            items: group.items.map((item) => {
+              if (item.id !== itemId) {
+                return item
+              }
+
+              if (delta > 0 && item.disableIncrease) {
+                return item
+              }
+
+              return {
+                ...item,
+                quantity: Math.max(1, item.quantity + delta),
+              }
+            }),
+          }
+        })
+        .filter((group) => group.items.length > 0),
+    )
+  }
+
+  function removeItem(groupId: string, itemId: string) {
+    setCartGroups((currentGroups) =>
+      currentGroups
+        .map((group) =>
+          group.id === groupId
+            ? { ...group, items: group.items.filter((item) => item.id !== itemId) }
+            : group,
+        )
+        .filter((group) => group.items.length > 0),
+    )
+  }
+
+  function clearCart() {
+    setCartGroups([])
+  }
+
+  return (
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
       <main className="mx-auto flex w-full max-w-[var(--layout-container-max)] flex-grow flex-col px-[var(--space-margin-mobile)] pt-12 pb-32 md:px-[var(--space-margin-desktop)] md:py-24">
         <header className="mb-12 md:mb-16">
+          <nav aria-label="Breadcrumb" className="text-label-sm mb-4 flex items-center gap-2 text-[var(--color-on-surface-variant)]/70">
+            <Link to="/productos" className="transition-colors hover:text-[var(--color-primary)]">
+              Catálogo
+            </Link>
+            <ChevronRight size={14} strokeWidth={1.8} />
+            <span className="text-[var(--color-on-surface)]">Carrito</span>
+          </nav>
           <h1 className="text-display-lg text-[var(--color-on-surface)]">Tu cesta</h1>
         </header>
 
-        <div className="flex flex-col gap-[var(--space-gutter)] lg:flex-row">
-          <div className="flex w-full flex-grow flex-col gap-12 lg:w-2/3">
-            {cartGroups.map((group) => (
-              <ProducerCartGroup key={group.name} group={group} />
-            ))}
+        {cartGroups.length > 0 ? (
+          <div className="flex flex-col gap-[var(--space-gutter)] lg:flex-row">
+            <div className="flex w-full flex-grow flex-col gap-12 lg:w-2/3">
+              {cartGroups.map((group) => (
+                <ProducerCartGroup
+                  key={group.id}
+                  group={group}
+                  onDecrease={(itemId) => updateItemQuantity(group.id, itemId, -1)}
+                  onIncrease={(itemId) => updateItemQuantity(group.id, itemId, 1)}
+                  onRemove={(itemId) => removeItem(group.id, itemId)}
+                />
+              ))}
 
-            <CartActions className="hidden lg:flex" />
+              <CartActions className="hidden lg:flex" onClearCart={clearCart} />
+            </div>
+
+            <OrderSummary productSubtotal={productSubtotal} onClearCart={clearCart} />
           </div>
-
-          <OrderSummary />
-        </div>
+        ) : (
+          <EmptyCartState />
+        )}
       </main>
 
-      <CartFooter />
       <MobileBottomNav />
     </div>
   )
 }
 
-function CartHeader() {
-  return (
-    <header className="fixed top-0 left-0 z-50 flex h-20 w-full items-center justify-between border-b border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-background)] px-[var(--space-margin-mobile)] md:px-[var(--space-margin-desktop)]">
-      <Link to="/" className="text-display-lg text-[30px] leading-none tracking-tight text-[var(--color-primary)] italic sm:text-[36px] md:text-[48px]">
-        ALICANTE ORIGIN
-      </Link>
+function ProducerCartGroup({ group, onDecrease, onIncrease, onRemove }: { group: ProducerGroup; onDecrease: (itemId: string) => void; onIncrease: (itemId: string) => void; onRemove: (itemId: string) => void }) {
+  const groupSubtotal = group.items.reduce((total, item) => total + item.unitPriceValue * item.quantity, 0)
 
-      <nav className="hidden h-full items-center gap-8 md:flex" aria-label="Navegación principal">
-        {navItems.map((item) => (
-          <a key={item} href="#" className="text-body-md text-[var(--color-on-surface-variant)] transition-colors duration-300 hover:text-[var(--color-primary)]">
-            {item}
-          </a>
-        ))}
-        <Link to="/carrito" className="flex items-center gap-2 border-b-2 border-[var(--color-primary)] pb-1 font-bold text-[var(--color-primary)]">
-          <ShoppingCart size={18} strokeWidth={1.8} />
-          Basket
-        </Link>
-      </nav>
-
-      <div className="flex items-center gap-4 text-[var(--color-primary)]">
-        <button type="button" aria-label="Notificaciones" className="transition-colors hover:text-[var(--color-primary-container)]">
-          <Bell size={20} strokeWidth={1.8} />
-        </button>
-        <button type="button" aria-label="Perfil" className="transition-colors hover:text-[var(--color-primary-container)]">
-          <User size={20} strokeWidth={1.8} />
-        </button>
-        <Link to="/carrito" aria-label="Carrito" className="transition-colors hover:text-[var(--color-primary-container)] md:hidden">
-          <ShoppingCart size={20} strokeWidth={1.8} />
-        </Link>
-      </div>
-    </header>
-  )
-}
-
-function ProducerCartGroup({ group }: { group: ProducerGroup }) {
   return (
     <section className="flex flex-col gap-6">
       <header className="flex items-end justify-between border-b border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] pb-2">
@@ -147,28 +191,38 @@ function ProducerCartGroup({ group }: { group: ProducerGroup }) {
       </header>
 
       {group.items.map((item) => (
-        <CartItemRow key={item.name} item={item} />
+        <CartItemRow
+          key={item.id}
+          item={item}
+          onDecrease={() => onDecrease(item.id)}
+          onIncrease={() => onIncrease(item.id)}
+          onRemove={() => onRemove(item.id)}
+        />
       ))}
 
       <div className="mt-2 flex items-center justify-between border-t border-[color-mix(in_srgb,var(--color-surface-variant)_85%,transparent)] pt-4">
         <span className="text-body-md text-[var(--color-on-surface-variant)]">Subtotal {group.name}</span>
-        <span className="text-label-md text-[var(--color-on-surface)]">{group.subtotal}</span>
+        <span className="text-label-md text-[var(--color-on-surface)]">{formatPrice(groupSubtotal)}</span>
       </div>
     </section>
   )
 }
 
-function CartItemRow({ item }: { item: CartItem }) {
+function CartItemRow({ item, onDecrease, onIncrease, onRemove }: { item: CartItem; onDecrease: () => void; onIncrease: () => void; onRemove: () => void }) {
+  const itemTotal = formatPrice(item.unitPriceValue * item.quantity)
+
   return (
     <article className="group relative flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-      <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-[var(--radius-default)] bg-[var(--color-surface-container)] sm:h-32 sm:w-32">
+      <Link to={item.productPath} className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-[var(--radius-default)] bg-[var(--color-surface-container)] sm:h-32 sm:w-32">
         <img src={item.image} alt={item.name} className="size-full object-cover opacity-90 mix-blend-multiply transition-transform duration-700 group-hover:scale-105" />
-      </div>
+      </Link>
 
       <div className="flex w-full flex-grow flex-col gap-2">
         <div className="flex w-full items-start justify-between">
           <div>
-            <h3 className="text-body-lg text-[var(--color-on-surface)]">{item.name}</h3>
+            <Link to={item.productPath} className="text-body-lg text-[var(--color-on-surface)] transition-colors hover:text-[var(--color-primary)]">
+              {item.name}
+            </Link>
             <p className="text-label-md mt-1 text-[var(--color-on-surface-variant)]">{item.unitPrice}</p>
             {item.warning ? (
               <span className="text-label-sm mt-2 inline-flex items-center gap-1 rounded-[var(--radius-sm)] bg-[var(--color-surface-variant)] px-2 py-1 text-[var(--color-on-surface-variant)]">
@@ -177,29 +231,30 @@ function CartItemRow({ item }: { item: CartItem }) {
               </span>
             ) : null}
           </div>
-          <button type="button" aria-label={`Eliminar ${item.name}`} className="-mr-2 p-2 text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-error)]">
+          <button type="button" onClick={onRemove} aria-label={`Eliminar ${item.name}`} className="-mr-2 p-2 text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-error)]">
             <X size={20} strokeWidth={1.8} />
           </button>
         </div>
 
         <div className="mt-4 flex items-end justify-between">
-          <QuantitySelector quantity={item.quantity} disableIncrease={item.disableIncrease} />
-          <span className="text-label-md text-[var(--color-on-surface)]">{item.total}</span>
+          <QuantitySelector quantity={item.quantity} disableIncrease={item.disableIncrease} onDecrease={onDecrease} onIncrease={onIncrease} />
+          <span className="text-label-md text-[var(--color-on-surface)]">{itemTotal}</span>
         </div>
       </div>
     </article>
   )
 }
 
-function QuantitySelector({ quantity, disableIncrease = false }: { quantity: number; disableIncrease?: boolean }) {
+function QuantitySelector({ quantity, disableIncrease = false, onDecrease, onIncrease }: { quantity: number; disableIncrease?: boolean; onDecrease: () => void; onIncrease: () => void }) {
   return (
     <div className="flex items-center overflow-hidden rounded-[var(--radius-default)] border border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-surface)]">
-      <button type="button" aria-label="Reducir cantidad" className="flex size-8 items-center justify-center text-[var(--color-on-surface-variant)] transition-colors hover:bg-[var(--color-surface-variant)]">
+      <button type="button" onClick={onDecrease} aria-label="Reducir cantidad" className="flex size-8 items-center justify-center text-[var(--color-on-surface-variant)] transition-colors hover:bg-[var(--color-surface-variant)]">
         <Minus size={14} strokeWidth={1.8} />
       </button>
       <span className="text-label-md w-8 text-center text-[var(--color-on-surface)]">{quantity}</span>
       <button
         type="button"
+        onClick={onIncrease}
         aria-label="Aumentar cantidad"
         disabled={disableIncrease}
         className="flex size-8 items-center justify-center text-[var(--color-on-surface-variant)] transition-colors hover:bg-[var(--color-surface-variant)] disabled:cursor-not-allowed disabled:bg-[var(--color-surface-container)] disabled:text-[var(--color-outline-variant)]"
@@ -210,7 +265,7 @@ function QuantitySelector({ quantity, disableIncrease = false }: { quantity: num
   )
 }
 
-function OrderSummary() {
+function OrderSummary({ productSubtotal, onClearCart }: { productSubtotal: number; onClearCart: () => void }) {
   return (
     <aside className="mt-12 w-full lg:mt-0 lg:w-1/3">
       <div className="sticky top-32 flex flex-col gap-6 rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-surface-container-lowest)] p-6 shadow-[0_4px_20px_rgba(26,26,26,0.02)] lg:p-8">
@@ -219,7 +274,7 @@ function OrderSummary() {
         <div className="text-body-md flex flex-col gap-4">
           <div className="flex items-center justify-between text-[var(--color-on-surface)]">
             <span>Subtotal productos</span>
-            <span>{orderTotal}</span>
+            <span>{formatPrice(productSubtotal)}</span>
           </div>
           <div className="flex items-center justify-between text-[var(--color-on-surface-variant)]">
             <span>
@@ -231,7 +286,7 @@ function OrderSummary() {
 
         <div className="mt-2 flex items-end justify-between border-t border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] pt-6">
           <span className="text-body-lg text-[var(--color-on-surface)]">Total productos</span>
-          <span className="text-headline-md text-[24px] leading-8 text-[var(--color-on-surface)]">{orderTotal}</span>
+          <span className="text-headline-md text-[24px] leading-8 text-[var(--color-on-surface)]">{formatPrice(productSubtotal)}</span>
         </div>
 
         <p className="mt-2 text-center text-xs text-[var(--color-on-surface-variant)] italic">
@@ -243,39 +298,41 @@ function OrderSummary() {
           <ArrowRight className="text-[var(--color-on-primary)]" size={15} strokeWidth={1.8} />
         </Link>
 
-        <CartActions className="flex lg:hidden" mobile />
+        <CartActions className="flex lg:hidden" mobile onClearCart={onClearCart} />
       </div>
     </aside>
   )
 }
 
-function CartActions({ className, mobile = false }: { className: string; mobile?: boolean }) {
+function CartActions({ className, mobile = false, onClearCart }: { className: string; mobile?: boolean; onClearCart: () => void }) {
   return (
     <div className={`${className} ${mobile ? 'mt-4 flex-col items-center gap-4 border-t border-[color-mix(in_srgb,var(--color-surface-variant)_85%,transparent)] pt-8' : 'mt-8 items-center justify-between border-t border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] pt-8'}`}>
       <Link to="/productos" className="text-body-md flex items-center gap-2 text-[var(--color-on-surface-variant)] underline decoration-[var(--color-outline-variant)] underline-offset-4 transition-colors hover:text-[var(--color-primary)] hover:decoration-[var(--color-primary)]">
         <ArrowLeft size={15} strokeWidth={1.8} />
         Seguir comprando
       </Link>
-      <button type="button" className={`text-body-md text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-error)] ${mobile ? 'mt-4 text-sm' : 'text-sm'}`}>
+      <button type="button" onClick={onClearCart} className={`text-body-md text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-error)] ${mobile ? 'mt-4 text-sm' : 'text-sm'}`}>
         Vaciar carrito
       </button>
     </div>
   )
 }
 
-function CartFooter() {
+function EmptyCartState() {
   return (
-    <footer className="mt-auto hidden w-full flex-col items-center border-t border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-surface-container)] px-[var(--space-margin-desktop)] py-16 md:flex">
-      <div className="text-display-lg mb-8 text-[48px] leading-none text-[var(--color-primary)] italic">ALICANTE ORIGIN</div>
-      <nav className="mb-12 flex gap-8" aria-label="Enlaces de pie de página">
-        {['The Producers', 'Shipping', 'Terms of Service', 'Provenance Guide'].map((item) => (
-          <a key={item} href="#" className="text-body-md text-[var(--color-on-secondary-fixed-variant)] transition-colors hover:text-[var(--color-primary)]">
-            {item}
-          </a>
-        ))}
-      </nav>
-      <p className="text-body-md text-[var(--color-on-secondary-fixed-variant)]">© 2024 Alicante Origin. Artisanal Heritage & Provenance.</p>
-    </footer>
+    <section className="mx-auto flex max-w-2xl flex-col items-center gap-6 rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] px-8 py-14 text-center shadow-[0_4px_20px_rgba(26,26,26,0.02)]">
+      <ShoppingBag size={36} strokeWidth={1.6} className="text-[var(--color-primary)]" />
+      <div className="space-y-3">
+        <h2 className="text-headline-lg text-[var(--color-on-surface)]">Tu carrito está vacío</h2>
+        <p className="text-body-md text-[var(--color-on-surface-variant)]">
+          Añade productos artesanales para preparar tu próximo pedido.
+        </p>
+      </div>
+      <Link to="/productos" className="text-label-md inline-flex items-center gap-2 rounded-[var(--radius-default)] bg-[var(--color-primary-container)] px-8 py-4 uppercase tracking-widest text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)]">
+        <span className="text-[var(--color-on-primary)]">Ir al catálogo</span>
+        <ArrowRight className="text-[var(--color-on-primary)]" size={16} strokeWidth={1.8} />
+      </Link>
+    </section>
   )
 }
 

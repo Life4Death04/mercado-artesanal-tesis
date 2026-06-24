@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ExternalLink, LogOut, Mail, MapPin, Plus, ShoppingBag, UserCircle } from 'lucide-react'
-import { AgregarDireccionModal } from '../componentes/ProfileModals'
+import { Link, useNavigate } from 'react-router-dom'
+import { ChevronRight, ExternalLink, LogOut, MapPin, Plus } from 'lucide-react'
+import { AgregarDireccionModal, EditarDireccionModal, type NewAddressInput, type EditAddressInput } from '../componentes/ProfileModals'
 
 type Address = {
   id: string
@@ -11,7 +11,12 @@ type Address = {
   isDefault: boolean
 }
 
-const addresses: Address[] = [
+type ProfileFormState = {
+  name: string
+  phone: string
+}
+
+const initialAddresses: Address[] = [
   {
     id: 'addr-1',
     alias: 'Casa',
@@ -28,23 +33,86 @@ const addresses: Address[] = [
   },
 ]
 
+const initialProfile: ProfileFormState = {
+  name: 'Alejandro Valls',
+  phone: '+34 600 000 000',
+}
+
 export function PerfilPage() {
+  const navigate = useNavigate()
+  const [isEditing, setIsEditing] = useState(false)
+  const [profile, setProfile] = useState(initialProfile)
+  const [addresses, setAddresses] = useState(initialAddresses)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  function handleToggleEdit() {
+    setIsEditing((editing) => !editing)
+  }
+
+  function handleSaveAddress(address: NewAddressInput) {
+    setAddresses((currentAddresses) => {
+      const nextAddresses = address.isDefault
+        ? currentAddresses.map((currentAddress) => ({ ...currentAddress, isDefault: false }))
+        : currentAddresses
+
+      return [
+        ...nextAddresses,
+        {
+          id: `addr-${Date.now()}`,
+          alias: address.alias,
+          line1: address.line1,
+          line2: address.line2,
+          isDefault: address.isDefault,
+        },
+      ]
+    })
+  }
+
+  function handleEditAddress(addressId: string, updates: EditAddressInput) {
+    setAddresses((currentAddresses) =>
+      currentAddresses.map((address) => {
+        if (address.id !== addressId) {
+          return updates.isDefault ? { ...address, isDefault: false } : address
+        }
+
+        return { ...address, ...updates }
+      }),
+    )
+  }
+
+  function handleDeleteAddress(addressId: string) {
+    setAddresses((currentAddresses) => currentAddresses.filter((address) => address.id !== addressId))
+  }
+
+  function handleMarkDefault(addressId: string) {
+    setAddresses((currentAddresses) =>
+      currentAddresses.map((address) => ({
+        ...address,
+        isDefault: address.id === addressId,
+      })),
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#FAF7F0] text-[#1A1A1A]">
-      <ProfileHeader />
-
       <main className="mx-auto max-w-[800px] px-[var(--space-margin-mobile)] py-16 md:px-0">
-        {/* Page title */}
         <section className="mb-16">
+          <nav aria-label="Breadcrumb" className="text-label-sm mb-4 flex items-center gap-2 text-[var(--color-on-surface-variant)]/70">
+            <Link to="/productos" className="transition-colors hover:text-[var(--color-primary)]">
+              Área consumidor
+            </Link>
+            <ChevronRight size={14} strokeWidth={1.8} />
+            <span className="text-[var(--color-on-surface)]">Mi perfil</span>
+          </nav>
           <h1 className="text-headline-lg text-[var(--color-on-surface)]">Mi perfil</h1>
           <p className="text-body-md mt-2 text-[var(--color-on-surface-variant)]">
             Gestiona tu información personal, direcciones y preferencias de cuenta.
           </p>
         </section>
 
-        {/* Datos personales */}
         <section className="mb-20">
           <div className="mb-8 flex items-end justify-between">
             <h2 className="text-headline-md text-[var(--color-on-surface)]">Datos personales</h2>
@@ -52,8 +120,8 @@ export function PerfilPage() {
 
           <div className="space-y-10">
             <div className="grid grid-cols-1 gap-[var(--space-gutter)] md:grid-cols-2">
-              <EditorialField id="nombre" label="Nombre" defaultValue="Alejandro Valls" type="text" />
-              <EditorialField id="telefono" label="Teléfono (opcional)" placeholder="+34 600 000 000" type="tel" />
+              <EditorialField id="nombre" label="Nombre" value={profile.name} onChange={(value) => setProfile((current) => ({ ...current, name: value }))} type="text" disabled={!isEditing} />
+              <EditorialField id="telefono" label="Teléfono (opcional)" value={profile.phone} onChange={(value) => setProfile((current) => ({ ...current, phone: value }))} placeholder="+34 600 000 000" type="tel" disabled={!isEditing} />
             </div>
 
             <div className="grid grid-cols-1 items-center gap-[var(--space-gutter)] md:grid-cols-2">
@@ -87,9 +155,10 @@ export function PerfilPage() {
             <div className="pt-6">
               <button
                 type="button"
+                onClick={handleToggleEdit}
                 className="text-label-md bg-[#7A2E3A] px-10 py-4 uppercase tracking-widest text-white shadow-[0_10px_30px_-15px_rgba(122,46,58,0.08)] transition-opacity hover:opacity-90"
               >
-                Guardar cambios
+                {isEditing ? 'Guardar cambios' : 'Editar perfil'}
               </button>
             </div>
           </div>
@@ -97,7 +166,6 @@ export function PerfilPage() {
 
         <Divider />
 
-        {/* Mis direcciones */}
         <section className="mb-20">
           <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <h2 className="text-headline-md text-[var(--color-on-surface)]">Mis direcciones</h2>
@@ -113,17 +181,17 @@ export function PerfilPage() {
 
           <div className="grid grid-cols-1 gap-[var(--space-gutter)] md:grid-cols-2">
             {addresses.map((addr) => (
-              <AddressCard key={addr.id} address={addr} />
+              <AddressCard key={addr.id} address={addr} onEdit={() => setEditingAddress(addr)} onDelete={() => handleDeleteAddress(addr.id)} onMarkDefault={() => handleMarkDefault(addr.id)} />
             ))}
           </div>
         </section>
 
         <Divider />
 
-        {/* Account actions */}
         <section className="flex flex-col items-center justify-between gap-6 pb-20 md:flex-row">
           <button
             type="button"
+            onClick={() => setShowLogoutConfirm(true)}
             className="text-label-md flex items-center gap-2 text-[var(--color-on-surface-variant)] transition-colors hover:text-[#7A2E3A]"
           >
             <LogOut size={20} strokeWidth={1.8} />
@@ -131,6 +199,7 @@ export function PerfilPage() {
           </button>
           <button
             type="button"
+            onClick={() => setShowDeleteConfirm(true)}
             className="text-label-md text-[var(--color-error)]/60 underline decoration-dotted underline-offset-4 transition-colors hover:text-[var(--color-error)]"
           >
             Eliminar cuenta permanentemente
@@ -138,43 +207,42 @@ export function PerfilPage() {
         </section>
       </main>
 
-      <ProfileFooter />
 
-      {showAddModal ? <AgregarDireccionModal onClose={() => setShowAddModal(false)} /> : null}
+      {showAddModal ? <AgregarDireccionModal onClose={() => setShowAddModal(false)} onSave={handleSaveAddress} /> : null}
+      {editingAddress ? (
+        <EditarDireccionModal
+          address={editingAddress}
+          onClose={() => setEditingAddress(null)}
+          onSave={(updates) => {
+            handleEditAddress(editingAddress.id, updates)
+            setEditingAddress(null)
+          }}
+        />
+      ) : null}
+      {showLogoutConfirm ? (
+        <ConfirmationModal
+          title="Cerrar sesión"
+          description="¿Deseas cerrar tu sesión actual y volver al acceso principal?"
+          confirmLabel="Cerrar sesión"
+          onCancel={() => setShowLogoutConfirm(false)}
+          onConfirm={() => navigate('/login')}
+        />
+      ) : null}
+      {showDeleteConfirm ? (
+        <ConfirmationModal
+          title="Eliminar cuenta"
+          description="Esta acción es solo demostrativa para la tesis. Se cerrará la sesión y volverás al acceso principal."
+          confirmLabel="Eliminar cuenta"
+          danger
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={() => navigate('/login')}
+        />
+      ) : null}
     </div>
   )
 }
 
-function ProfileHeader() {
-  return (
-    <header className="sticky top-0 z-50 border-b border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] bg-[var(--color-surface)]/80 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-[var(--layout-container-max)] items-center justify-between px-[var(--space-margin-mobile)] py-4 md:px-[var(--space-margin-desktop)]">
-        <div className="flex items-center gap-8">
-          <Link to="/" className="text-headline-md font-semibold text-[var(--color-primary)]">
-            L'Essence d'Alicante
-          </Link>
-          <nav className="hidden gap-6 md:flex">
-            {['Le Marché', 'Our Story', 'Producers'].map((item) => (
-              <a key={item} href="#" className="text-label-md text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-primary)]">
-                {item}
-              </a>
-            ))}
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link to="/carrito" aria-label="Carrito" className="text-[var(--color-on-surface)] transition-opacity hover:opacity-80">
-            <ShoppingBag size={22} strokeWidth={1.8} />
-          </Link>
-          <button type="button" aria-label="Perfil" className="border-b-2 border-[var(--color-primary)] pb-1 text-[var(--color-primary)]">
-            <UserCircle size={22} strokeWidth={1.8} />
-          </button>
-        </div>
-      </div>
-    </header>
-  )
-}
-
-function AddressCard({ address }: { address: Address }) {
+function AddressCard({ address, onEdit, onDelete, onMarkDefault }: { address: Address; onEdit: () => void; onDelete: () => void; onMarkDefault: () => void }) {
   return (
     <div
       className={`group border p-8 bg-white transition-all ${
@@ -202,14 +270,14 @@ function AddressCard({ address }: { address: Address }) {
       </div>
 
       <div className="flex gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] pt-4">
-        <button type="button" className="text-label-sm text-[var(--color-on-surface-variant)] transition-colors hover:text-[#7A2E3A]">
+        <button type="button" onClick={onEdit} className="text-label-sm text-[var(--color-on-surface-variant)] transition-colors hover:text-[#7A2E3A]">
           Editar
         </button>
-        <button type="button" className="text-label-sm text-[var(--color-on-surface-variant)] transition-colors hover:text-[#7A2E3A]">
+        <button type="button" onClick={onDelete} className="text-label-sm text-[var(--color-on-surface-variant)] transition-colors hover:text-[#7A2E3A]">
           Eliminar
         </button>
         {!address.isDefault ? (
-          <button type="button" className="text-label-sm ml-auto text-[#7A2E3A]/60 transition-colors hover:text-[#7A2E3A]">
+          <button type="button" onClick={onMarkDefault} className="text-label-sm ml-auto text-[#7A2E3A]/60 transition-colors hover:text-[#7A2E3A]">
             Marcar predeterminada
           </button>
         ) : null}
@@ -221,15 +289,19 @@ function AddressCard({ address }: { address: Address }) {
 function EditorialField({
   id,
   label,
-  defaultValue,
+  value,
+  onChange,
   placeholder,
   type = 'text',
+  disabled = false,
 }: {
   id: string
   label: string
-  defaultValue?: string
+  value: string
+  onChange: (value: string) => void
   placeholder?: string
   type?: string
+  disabled?: boolean
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -242,9 +314,11 @@ function EditorialField({
       <input
         id={id}
         type={type}
-        defaultValue={defaultValue}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="text-body-md border-b border-[var(--color-outline-variant)] bg-transparent py-2 transition-colors focus:border-[#7A2E3A] focus:outline-none"
+        disabled={disabled}
+        className={`text-body-md border-b border-[var(--color-outline-variant)] bg-transparent py-2 transition-colors focus:border-[#7A2E3A] focus:outline-none ${disabled ? 'cursor-not-allowed opacity-70' : ''}`}
       />
     </div>
   )
@@ -254,38 +328,21 @@ function Divider() {
   return <hr className="mb-20 h-px border-0 bg-[var(--color-outline-variant)] opacity-50" />
 }
 
-function ProfileFooter() {
-  const columns = [
-    { title: 'Company', links: ['The Manifesto', 'Our Story'] },
-    { title: 'Support', links: ['Shipping & Returns', 'Privacy Policy'] },
-    { title: 'Connect', links: ['Contact Us'] },
-  ]
-
+function ConfirmationModal({ title, description, confirmLabel, danger = false, onCancel, onConfirm }: { title: string; description: string; confirmLabel: string; danger?: boolean; onCancel: () => void; onConfirm: () => void }) {
   return (
-    <footer className="border-t border-[color-mix(in_srgb,var(--color-outline-variant)_50%,transparent)] bg-[var(--color-surface-container-low)]">
-      <div className="mx-auto grid max-w-[var(--layout-container-max)] grid-cols-1 gap-[var(--space-gutter)] px-[var(--space-margin-mobile)] py-16 md:grid-cols-4 md:px-[var(--space-margin-desktop)]">
-        <div className="flex flex-col gap-4">
-          <span className="text-headline-md text-[var(--color-primary)]">L'Essence d'Alicante</span>
-          <p className="text-body-md text-[var(--color-on-surface-variant)]">
-            © 2024 L'Essence d'Alicante. Artisanal Heritage.
-          </p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-on-surface)]/40 p-4 backdrop-blur-[1px]" role="dialog" aria-modal="true" aria-labelledby="profile-confirmation-title">
+      <div className="w-full max-w-md bg-[#FAF7F0] p-8 shadow-2xl">
+        <h2 id="profile-confirmation-title" className="text-headline-md text-[var(--color-on-surface)]">{title}</h2>
+        <p className="text-body-md mt-3 text-[var(--color-on-surface-variant)]">{description}</p>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button type="button" onClick={onCancel} className="text-label-md border border-[var(--color-outline-variant)] px-6 py-3 text-[var(--color-on-surface-variant)] transition-colors hover:bg-[var(--color-surface-container-low)]">
+            Cancelar
+          </button>
+          <button type="button" onClick={onConfirm} className={`text-label-md px-6 py-3 text-white transition-colors ${danger ? 'bg-[var(--color-error)] hover:brightness-110' : 'bg-[#7A2E3A] hover:bg-[#63222d]'}`}>
+            {confirmLabel}
+          </button>
         </div>
-        {columns.map((col) => (
-          <div key={col.title} className="flex flex-col gap-3">
-            <span className="text-label-md uppercase tracking-widest text-[var(--color-outline)]">{col.title}</span>
-            {col.links.map((link) => (
-              <a key={link} href="#" className="text-label-md text-[var(--color-on-surface-variant)] underline transition-all hover:text-[var(--color-primary)]">
-                {link}
-              </a>
-            ))}
-            {col.title === 'Connect' && (
-              <div className="mt-2 flex gap-4">
-                <Mail size={20} strokeWidth={1.8} className="text-[var(--color-on-surface-variant)]" />
-              </div>
-            )}
-          </div>
-        ))}
       </div>
-    </footer>
+    </div>
   )
 }

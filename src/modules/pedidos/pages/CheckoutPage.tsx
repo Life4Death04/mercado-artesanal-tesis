@@ -1,24 +1,27 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Car, Check, CreditCard, Info, Lock, MapPin, Plus, Smartphone, Store, Truck, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Car, Check, ChevronRight, CreditCard, Info, Lock, MapPin, Plus, Smartphone, Store, Truck } from 'lucide-react'
 
 type CheckoutStep = 1 | 2 | 3
 
 type DeliveryOption = {
-  icon: ReactNode
+  icon: 'truck' | 'store' | 'car'
   name: string
   price: string
+  priceValue: number
   description: string
-  selected?: boolean
 }
 
 type ShippingGroup = {
+  id: string
   producer: string
   location: string
   product: string
+  productPriceValue: number
   image: string
   warning?: string
+  selectedDeliveryName: string
   deliveryOptions: DeliveryOption[]
   address?: {
     label: string
@@ -28,9 +31,11 @@ type ShippingGroup = {
 
 const shippingGroups: ShippingGroup[] = [
   {
+    id: 'aceites-montana',
     producer: 'Aceites de la Montaña',
     location: 'Beniardá, Alicante',
     product: '2x Extra Virgin Olive Oil 500ml',
+    productPriceValue: 42.5,
     warning: 'Solo quedan 2 unidades de este producto.',
     image:
       'https://lh3.googleusercontent.com/aida-public/AB6AXuDOT4B3IlpDVZUGzctOQtw1MWGY3iKsbsXm_UrK0dg5JYk6RP8pzTh1P0FT4Z6wN2CcjMGdYtpOoFKQZHkJTkw7jGbld27hIxtD60q-7vdK7AdEUr21nXtmAMx6C6j-cBZMl3qkLnA7QZKgohVbxZf4RCoLdH7K28ngbXD_SNmy14ZZKOavxiUXoU-_0VX7XSx7OD3G8Bc19rmBX0WyblFnbSlMb01Q5Se1dA2ySn3ZFVgA_Qw4kt80emuRXdu4Dk8WFlXA3h6tDkk',
@@ -38,41 +43,47 @@ const shippingGroups: ShippingGroup[] = [
       label: 'Casa',
       value: 'Calle Mayor 12, 3º B, 03001 Alicante',
     },
+    selectedDeliveryName: 'Mensajería',
     deliveryOptions: [
       {
-        icon: <Truck size={20} strokeWidth={1.8} />,
+        icon: 'truck',
         name: 'Mensajería',
         price: '4.95€',
+        priceValue: 4.95,
         description: 'Envío estándar (2-3 días hábiles).',
-        selected: true,
       },
       {
-        icon: <Store size={20} strokeWidth={1.8} />,
+        icon: 'store',
         name: 'Recogida en Punto',
         price: 'Gratis',
+        priceValue: 0,
         description: 'Recoge tu pedido en establecimientos asociados.',
       },
     ],
   },
   {
+    id: 'queseria-san-antonio',
     producer: 'Quesería San Antonio',
     location: 'Elche, Alicante',
     product: '1x Goat Cheese with Rosemary',
+    productPriceValue: 2,
     image:
       'https://lh3.googleusercontent.com/aida-public/AB6AXuACPw5Xagty6uEGbAZPt7ougTRDN902sBzFlMw3a1iad08kHrucHlAZMuCm45n0aFBm-2n17K219zgG62l8PedvWPwNE0hrPq846JdPvDYCL0qp8yGaOj0PExI84qrkFo64pdWvec7foqLbWpWkQ8XXpFmRULcVowwlI6qZWaorxT7kb8QKGFfkDkRsKSRlKGzEfGGi2ds5Yaidpwzkz8vuj6rHRKJ9pJPvHvaTjJjaxGr3h738OZCdMRzZTOD1XjMBHz1tKaYdXE0',
+    selectedDeliveryName: 'Mensajería',
     deliveryOptions: [
       {
-        icon: <Car size={20} strokeWidth={1.8} />,
+        icon: 'car',
         name: 'Entrega Personal',
         price: '2.00€',
+        priceValue: 2,
         description: 'Entrega directa por el productor en zonas habilitadas.',
       },
       {
-        icon: <Truck size={20} strokeWidth={1.8} />,
+        icon: 'truck',
         name: 'Mensajería',
         price: '5.50€',
+        priceValue: 5.5,
         description: 'Envío estándar refrigerado.',
-        selected: true,
       },
     ],
   },
@@ -114,44 +125,80 @@ const confirmationOrders = [
 
 export function CheckoutPage() {
   const [currentStep, setCurrentStep] = useState<CheckoutStep>(1)
+  const [checkoutGroups, setCheckoutGroups] = useState(shippingGroups)
+  const [showAddressModalFor, setShowAddressModalFor] = useState<string | null>(null)
+
+  const subtotalProducts = checkoutGroups.reduce((total, group) => total + group.productPriceValue, 0)
+  const shippingTotal = checkoutGroups.reduce((total, group) => {
+    const selectedOption = group.deliveryOptions.find((option) => option.name === group.selectedDeliveryName)
+    return total + (selectedOption?.priceValue ?? 0)
+  }, 0)
+  const grandTotal = subtotalProducts + shippingTotal
+
+  function handleSelectDelivery(groupId: string, optionName: string) {
+    setCheckoutGroups((currentGroups) =>
+      currentGroups.map((group) =>
+        group.id === groupId ? { ...group, selectedDeliveryName: optionName } : group,
+      ),
+    )
+  }
+
+  function handleSaveAddress(groupId: string, address: ShippingGroup['address']) {
+    setCheckoutGroups((currentGroups) =>
+      currentGroups.map((group) =>
+        group.id === groupId ? { ...group, address } : group,
+      ),
+    )
+    setShowAddressModalFor(null)
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
-      <CheckoutHeader compact={currentStep === 3} />
-
       {currentStep === 3 ? (
         <ConfirmationStep />
       ) : (
         <main className="mx-auto w-full max-w-[var(--layout-container-max)] px-[var(--space-margin-mobile)] py-12 md:px-[var(--space-margin-desktop)] md:py-16">
+          <CheckoutPageHeader currentStep={currentStep} />
           <CheckoutStepper currentStep={currentStep} />
 
           <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-16">
             <div className="flex flex-col gap-10 lg:col-span-8">
-              {currentStep === 1 ? <ShippingDetailsStep /> : <PaymentMethodStep onBack={() => setCurrentStep(1)} />}
+              {currentStep === 1 ? <ShippingDetailsStep groups={checkoutGroups} onSelectDelivery={handleSelectDelivery} onOpenAddressModal={setShowAddressModalFor} /> : <PaymentMethodStep onBack={() => setCurrentStep(1)} />}
             </div>
 
-            <OrderSummaryPanel currentStep={currentStep} onContinue={() => setCurrentStep(currentStep === 1 ? 2 : 3)} />
+            <OrderSummaryPanel currentStep={currentStep} subtotalProducts={subtotalProducts} shippingTotal={shippingTotal} grandTotal={grandTotal} onContinue={() => setCurrentStep(currentStep === 1 ? 2 : 3)} />
           </div>
         </main>
       )}
 
-      <CheckoutFooter compact={currentStep === 3} />
+      {showAddressModalFor ? (
+        <AddressModal
+          onClose={() => setShowAddressModalFor(null)}
+          onSave={(address) => handleSaveAddress(showAddressModalFor, address)}
+        />
+      ) : null}
+
     </div>
   )
 }
 
-function CheckoutHeader({ compact }: { compact: boolean }) {
+function CheckoutPageHeader({ currentStep }: { currentStep: CheckoutStep }) {
+  const title = currentStep === 1 ? 'Detalles de Envío' : 'Método de Pago'
+  const description = currentStep === 1
+    ? 'Define cómo recibirá cada producto su comprador final.'
+    : 'Selecciona un método de pago para completar tu compra.'
+
   return (
-    <header className={`flex w-full items-center border-b border-[color-mix(in_srgb,var(--color-outline-variant)_70%,transparent)] px-[var(--space-margin-mobile)] md:px-[var(--space-margin-desktop)] ${compact ? 'justify-center py-8' : 'h-20 justify-between'}`}>
-      <Link to="/" className={`text-display-lg leading-none text-[var(--color-primary)] ${compact ? 'text-[38px] md:text-[48px]' : 'text-[28px] sm:text-[36px] md:text-[34px]'}`}>
-        ALICANTE GOURMET
-      </Link>
-      {!compact ? (
-        <Link to="/carrito" className="text-label-md flex items-center gap-2 text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-primary)]">
-          <X size={16} strokeWidth={1.8} />
-          Cancelar
+    <header className="mb-12">
+      <nav aria-label="Breadcrumb" className="text-label-sm mb-4 flex items-center gap-2 text-[var(--color-on-surface-variant)]/70">
+        <Link to="/carrito" className="transition-colors hover:text-[var(--color-primary)]">
+          Carrito
         </Link>
-      ) : null}
+        <ChevronRight size={14} strokeWidth={1.8} />
+        <span className="text-[var(--color-on-surface)]">Checkout</span>
+      </nav>
+      <h1 className="text-display-lg text-[var(--color-on-surface)]">{title}</h1>
+      <p className="text-body-md mt-3 max-w-2xl text-[var(--color-on-surface-variant)]">{description}</p>
     </header>
   )
 }
@@ -189,18 +236,17 @@ function CheckoutStepper({ currentStep }: { currentStep: CheckoutStep }) {
   )
 }
 
-function ShippingDetailsStep() {
+function ShippingDetailsStep({ groups, onSelectDelivery, onOpenAddressModal }: { groups: ShippingGroup[]; onSelectDelivery: (groupId: string, optionName: string) => void; onOpenAddressModal: (groupId: string) => void }) {
   return (
     <>
-      <h1 className="text-display-lg text-[var(--color-on-surface)]">Detalles de Envío</h1>
-      {shippingGroups.map((group) => (
-        <ShippingProducerCard key={group.producer} group={group} />
+      {groups.map((group) => (
+        <ShippingProducerCard key={group.id} group={group} onSelectDelivery={onSelectDelivery} onOpenAddressModal={onOpenAddressModal} />
       ))}
     </>
   )
 }
 
-function ShippingProducerCard({ group }: { group: ShippingGroup }) {
+function ShippingProducerCard({ group, onSelectDelivery, onOpenAddressModal }: { group: ShippingGroup; onSelectDelivery: (groupId: string, optionName: string) => void; onOpenAddressModal: (groupId: string) => void }) {
   return (
     <section className="border border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-surface-container-lowest)] p-6 md:p-8">
       <div className="mb-6 border-b border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] pb-4">
@@ -231,7 +277,7 @@ function ShippingProducerCard({ group }: { group: ShippingGroup }) {
         <h3 className="text-label-md mb-4 text-[var(--color-on-surface)]">Método de entrega</h3>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {group.deliveryOptions.map((option) => (
-            <DeliveryOptionCard key={option.name} option={option} groupName={group.producer} />
+            <DeliveryOptionCard key={option.name} option={option} groupName={group.producer} selected={group.selectedDeliveryName === option.name} onSelect={() => onSelectDelivery(group.id, option.name)} />
           ))}
         </div>
       </div>
@@ -248,31 +294,45 @@ function ShippingProducerCard({ group }: { group: ShippingGroup }) {
               <Check size={14} strokeWidth={2} />
             </span>
           </div>
-          <button type="button" className="text-label-md flex items-center gap-1 text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-container)]">
+          <button type="button" onClick={() => onOpenAddressModal(group.id)} className="text-label-md flex items-center gap-1 text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-container)]">
+            <Plus size={18} strokeWidth={1.8} />
+            {group.address ? 'Cambiar dirección' : 'Añadir nueva dirección'}
+          </button>
+        </div>
+      ) : (
+        <div className="mt-6 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] pt-6">
+          <h3 className="text-label-md mb-4 text-[var(--color-on-surface)]">Dirección de envío</h3>
+          <button type="button" onClick={() => onOpenAddressModal(group.id)} className="text-label-md flex items-center gap-1 text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-container)]">
             <Plus size={18} strokeWidth={1.8} />
             Añadir nueva dirección
           </button>
         </div>
-      ) : null}
+      )}
     </section>
   )
 }
 
-function DeliveryOptionCard({ option, groupName }: { option: DeliveryOption; groupName: string }) {
+function DeliveryOptionCard({ option, groupName, selected, onSelect }: { option: DeliveryOption; groupName: string; selected: boolean; onSelect: () => void }) {
+  const icon = option.icon === 'truck'
+    ? <Truck size={20} strokeWidth={1.8} />
+    : option.icon === 'store'
+      ? <Store size={20} strokeWidth={1.8} />
+      : <Car size={20} strokeWidth={1.8} />
+
   return (
-    <label className={`relative cursor-pointer p-4 transition-colors ${option.selected ? 'border-2 border-[var(--color-primary)] bg-[var(--color-surface-container-low)]' : 'border border-[var(--color-outline-variant)] hover:border-[var(--color-primary)]'}`}>
-      <input className="sr-only" name={`delivery-${groupName}`} type="radio" defaultChecked={option.selected} />
-      <div className="mb-2 flex items-start justify-between gap-4">
-        <span className={`text-label-md flex items-center gap-2 ${option.selected ? 'text-[var(--color-on-surface)]' : 'text-[var(--color-on-surface)]'}`}>
-          <span className={option.selected ? 'text-[var(--color-primary)]' : 'text-[var(--color-on-surface-variant)]'}>{option.icon}</span>
+    <label className={`relative cursor-pointer p-4 transition-colors ${selected ? 'border-2 border-[var(--color-primary)] bg-[var(--color-surface-container-low)]' : 'border border-[var(--color-outline-variant)] hover:border-[var(--color-primary)]'}`}>
+      <input className="sr-only" name={`delivery-${groupName}`} type="radio" checked={selected} onChange={onSelect} />
+      <div className="mb-3 flex items-start gap-4">
+        <span className={`text-label-md flex flex-1 items-center gap-2 text-[var(--color-on-surface)]`}>
+          <span className={selected ? 'text-[var(--color-primary)]' : 'text-[var(--color-on-surface-variant)]'}>{icon}</span>
           {option.name}
         </span>
-        <span className={`text-label-md ${option.price === 'Gratis' ? 'text-[var(--color-primary)]' : 'text-[var(--color-on-surface)]'}`}>{option.price}</span>
+        <span className={`text-label-md shrink-0 ${option.price === 'Gratis' ? 'text-[var(--color-primary)]' : 'text-[var(--color-on-surface)]'}`}>{option.price}</span>
+        <span className={`mt-0.5 flex size-4 items-center justify-center rounded-full ${selected ? 'border-2 border-[var(--color-primary)]' : 'border border-[var(--color-outline-variant)]'}`}>
+          {selected ? <span className="size-2 rounded-full bg-[var(--color-primary)]" /> : null}
+        </span>
       </div>
       <p className="text-label-sm text-[var(--color-on-surface-variant)]">{option.description}</p>
-      <span className={`absolute top-4 right-4 flex size-4 items-center justify-center rounded-full ${option.selected ? 'border-2 border-[var(--color-primary)]' : 'border border-[var(--color-outline-variant)]'}`}>
-        {option.selected ? <span className="size-2 rounded-full bg-[var(--color-primary)]" /> : null}
-      </span>
     </label>
   )
 }
@@ -280,11 +340,6 @@ function DeliveryOptionCard({ option, groupName }: { option: DeliveryOption; gro
 function PaymentMethodStep({ onBack }: { onBack: () => void }) {
   return (
     <>
-      <div>
-        <h1 className="text-display-lg text-[var(--color-on-surface)]">Método de Pago</h1>
-        <p className="text-body-md mt-2 text-[var(--color-on-surface-variant)]">Selecciona un método de pago para completar tu compra.</p>
-      </div>
-
       <fieldset className="mt-4">
         <legend className="sr-only">Método de pago</legend>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -346,7 +401,7 @@ function PaymentOption({ icon, title, detail, selected = false }: { icon: ReactN
   )
 }
 
-function OrderSummaryPanel({ currentStep, onContinue }: { currentStep: CheckoutStep; onContinue: () => void }) {
+function OrderSummaryPanel({ currentStep, subtotalProducts, shippingTotal, grandTotal, onContinue }: { currentStep: CheckoutStep; subtotalProducts: number; shippingTotal: number; grandTotal: number; onContinue: () => void }) {
   return (
     <aside className="relative lg:col-span-4">
       <div className="sticky top-24 overflow-hidden rounded-[var(--radius-xl)] border border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-surface-container-lowest)] p-6 shadow-sm md:p-8">
@@ -378,22 +433,22 @@ function OrderSummaryPanel({ currentStep, onContinue }: { currentStep: CheckoutS
         <div className="mb-6 flex flex-col gap-3 text-[var(--color-on-surface-variant)]">
           <div className="text-body-md flex justify-between">
             <span>Subtotal Productos</span>
-            <span>42.50€</span>
+            <span>{subtotalProducts.toFixed(2)}€</span>
           </div>
           <div className="text-body-md flex justify-between">
             <span>Gastos de Envío</span>
-            <span>6.95€</span>
+            <span>{shippingTotal.toFixed(2)}€</span>
           </div>
         </div>
 
         <div className="mb-8 flex items-end justify-between border-t border-[var(--color-outline-variant)] pt-6">
           <span className="text-label-md text-[var(--color-on-surface)]">Total</span>
-          <span className="text-headline-md text-[28px] text-[var(--color-primary)]">49.45€</span>
+          <span className="text-headline-md text-[28px] text-[var(--color-primary)]">{grandTotal.toFixed(2)}€</span>
         </div>
 
         <div className="flex flex-col gap-4">
           <button type="button" onClick={onContinue} className="text-label-md flex w-full items-center justify-center gap-2 bg-[var(--color-primary)] px-6 py-4 text-[var(--color-on-primary)] transition-colors duration-300 hover:bg-[var(--color-primary-container)]">
-            {currentStep === 1 ? 'Continuar al pago' : 'Confirmar y pagar 49.45€'}
+            {currentStep === 1 ? 'Continuar al pago' : `Confirmar y pagar ${grandTotal.toFixed(2)}€`}
             {currentStep === 2 ? <Lock size={16} strokeWidth={1.8} /> : <ArrowRight size={16} strokeWidth={1.8} />}
           </button>
           <Link to="/carrito" className="text-label-md w-full border border-transparent py-2 text-center text-[var(--color-on-surface-variant)] transition-colors hover:border-[var(--color-outline-variant)] hover:text-[var(--color-primary)]">
@@ -402,6 +457,52 @@ function OrderSummaryPanel({ currentStep, onContinue }: { currentStep: CheckoutS
         </div>
       </div>
     </aside>
+  )
+}
+
+function AddressModal({ onClose, onSave }: { onClose: () => void; onSave: (address: NonNullable<ShippingGroup['address']>) => void }) {
+  const [label, setLabel] = useState('Casa')
+  const [value, setValue] = useState('')
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A1A1A]/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="address-modal-title">
+      <div className="w-full max-w-xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-6 shadow-2xl md:p-8">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h2 id="address-modal-title" className="text-headline-md text-[var(--color-on-surface)]">Añadir dirección de entrega</h2>
+            <p className="text-body-md mt-2 text-[var(--color-on-surface-variant)]">Guarda una dirección rápida para este envío.</p>
+          </div>
+          <button type="button" onClick={onClose} className="text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-primary)]">
+            <Plus size={18} strokeWidth={1.8} className="rotate-45" />
+          </button>
+        </div>
+
+        <form
+          className="flex flex-col gap-5"
+          onSubmit={(event) => {
+            event.preventDefault()
+            onSave({ label, value })
+          }}
+        >
+          <label className="flex flex-col gap-2">
+            <span className="text-label-md text-[var(--color-on-surface)]">Etiqueta</span>
+            <input value={label} onChange={(event) => setLabel(event.target.value)} className="border border-[var(--color-outline-variant)] bg-[var(--color-background)] px-4 py-3 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none" />
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-label-md text-[var(--color-on-surface)]">Dirección completa</span>
+            <textarea value={value} onChange={(event) => setValue(event.target.value)} rows={4} required className="resize-none border border-[var(--color-outline-variant)] bg-[var(--color-background)] px-4 py-3 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none" placeholder="Ej. Avenida Maisonnave 18, 2º A, 03003 Alicante" />
+          </label>
+          <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button type="button" onClick={onClose} className="text-label-md border border-[var(--color-outline-variant)] px-6 py-3 text-[var(--color-on-surface-variant)] transition-colors hover:bg-[var(--color-surface-container-low)]">
+              Cancelar
+            </button>
+            <button type="submit" className="text-label-md bg-[var(--color-primary)] px-6 py-3 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary-container)]">
+              Guardar dirección
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   )
 }
 
@@ -453,29 +554,5 @@ function ConfirmationStep() {
         </Link>
       </div>
     </main>
-  )
-}
-
-function CheckoutFooter({ compact }: { compact: boolean }) {
-  return (
-    <footer className={`${compact ? 'py-8 text-center' : 'mt-auto flex flex-col items-center justify-between gap-4 px-[var(--space-margin-mobile)] py-[var(--space-gutter)] md:flex-row md:px-[var(--space-margin-desktop)]'} border-t border-[color-mix(in_srgb,var(--color-outline-variant)_60%,transparent)] bg-[var(--color-surface-container-lowest)]`}>
-      {compact ? (
-        <p className="text-label-sm text-[color-mix(in_srgb,var(--color-on-surface)_50%,transparent)]">© 2024 Alicante Mercado. Artisanal quality from the Mediterranean soil.</p>
-      ) : (
-        <>
-          <div className="text-center md:text-left">
-            <h2 className="text-headline-md mb-2 text-[var(--color-on-surface)] italic">L'Essence d'Alicante</h2>
-            <p className="text-label-sm text-[var(--color-on-surface-variant)]">© 2024 L'Essence d'Alicante. Artisanal Mediterranean Excellence.</p>
-          </div>
-          <nav className="flex flex-wrap justify-center gap-6" aria-label="Enlaces de soporte">
-            {['Privacy Policy', 'Terms of Service', 'Contact Support'].map((item) => (
-              <a key={item} href="#" className="text-label-sm text-[var(--color-on-surface-variant)] opacity-80 transition-all hover:text-[var(--color-primary)] hover:underline hover:opacity-100">
-                {item}
-              </a>
-            ))}
-          </nav>
-        </>
-      )}
-    </footer>
   )
 }

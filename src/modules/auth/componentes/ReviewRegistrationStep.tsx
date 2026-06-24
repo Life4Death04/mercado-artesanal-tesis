@@ -3,10 +3,9 @@ import type { RegistrationWizardData } from './registrationWizard.types'
 
 type ReviewRegistrationStepProps = {
   data: RegistrationWizardData
-  stepLabel: string
 }
 
-export function ReviewRegistrationStep({ data, stepLabel }: ReviewRegistrationStepProps) {
+export function ReviewRegistrationStep({ data }: ReviewRegistrationStepProps) {
   const summaryRows = [
     { label: 'Perfil', value: data.role === 'productor' ? 'Productor' : 'Consumidor' },
     { label: 'Nombre', value: data.name },
@@ -23,16 +22,6 @@ export function ReviewRegistrationStep({ data, stepLabel }: ReviewRegistrationSt
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-[var(--space-margin-mobile)] py-10 md:py-16">
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <p className="text-label-md uppercase tracking-widest text-[var(--color-primary-container)]">{stepLabel}</p>
-          <p className="text-label-md text-[var(--color-outline)]">Finalizar</p>
-        </div>
-        <div className="h-1 w-full overflow-hidden rounded-[var(--radius-full)] bg-[var(--color-surface-variant)]">
-          <div className="h-full w-full rounded-[var(--radius-full)] bg-[var(--color-primary-container)]" />
-        </div>
-      </div>
-
       <section className="flex flex-col gap-2">
         <h2 className="text-display-lg text-[var(--color-on-surface)]">Revisa y finaliza</h2>
         <p className="text-body-md text-[var(--color-outline)]">

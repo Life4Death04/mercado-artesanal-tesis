@@ -1,27 +1,26 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import { Menu } from 'lucide-react'
 import { RoleSidebar } from './RoleSidebar'
+import { AuthenticatedTopbar } from './AuthenticatedTopbar'
+import { ConsumerFooter } from './ConsumerFooter'
 
 export function DashboardLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
   return (
     <>
-      <button
-        type="button"
-        aria-label="Abrir navegación"
-        onClick={() => setMobileSidebarOpen(true)}
-        className="fixed left-4 top-4 z-40 grid size-11 place-items-center rounded-full border border-[var(--color-outline-variant)] bg-[var(--color-background)] text-[var(--color-secondary)] shadow-sm md:hidden"
-      >
-        <Menu size={22} strokeWidth={1.8} />
-      </button>
       <RoleSidebar
         variant="producer"
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
       />
+      <div className="flex min-h-screen flex-col pt-20 ">
+      <AuthenticatedTopbar onMenuClick={() => setMobileSidebarOpen(true)} />
+      <main>
       <Outlet />
+      </main>
+      <ConsumerFooter />
+      </div>
     </>
   )
 }

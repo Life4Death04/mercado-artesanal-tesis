@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { Bell, ChevronDown, Info, ShoppingBag } from 'lucide-react'
+import { Bell, ChevronDown, Info, ShoppingBag, X } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -159,20 +159,30 @@ export function BandejaNotificaciones({
             role="dialog"
             aria-modal="true"
             aria-label="Bandeja de notificaciones"
-            className="absolute right-0 top-12 z-50 w-[360px] overflow-hidden border border-[var(--color-outline-variant)] bg-[#FAF7F0] shadow-[0_10px_30px_-10px_rgba(122,46,58,0.08)] sm:w-[400px]"
+            className="absolute right-0 top-12 z-50 w-[min(calc(100vw-2rem),360px)] overflow-hidden border border-[var(--color-outline-variant)] bg-[#FAF7F0] shadow-[0_10px_30px_-10px_rgba(122,46,58,0.08)] sm:w-[400px]"
             style={{ animation: 'notifSlideIn 0.22s ease-out forwards' }}
           >
             {/* Panel header */}
-            <div className="flex items-baseline justify-between border-b border-[var(--color-outline-variant)] px-6 py-5">
-              <h3 className="text-headline-md text-[24px] leading-tight text-[#1A1A1A]">
-                Notificaciones
-              </h3>
+            <div className="flex items-start justify-between gap-4 border-b border-[var(--color-outline-variant)] px-6 py-5">
+              <div>
+                <h3 className="text-headline-md text-[24px] leading-tight text-[#1A1A1A]">
+                  Notificaciones
+                </h3>
+                <button
+                  type="button"
+                  onClick={markAllRead}
+                  className="text-label-sm mt-2 text-[#8A8275] transition-all hover:text-[#1A1A1A] hover:underline"
+                >
+                  Marcar todas como leídas
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={markAllRead}
-                className="text-label-sm text-[#8A8275] transition-all hover:text-[#1A1A1A] hover:underline"
+                aria-label="Cerrar notificaciones"
+                onClick={() => setIsOpen(false)}
+                className="grid size-9 shrink-0 place-items-center rounded-full text-[#8A8275] transition-colors hover:bg-white hover:text-[#1A1A1A]"
               >
-                Marcar todas como leídas
+                <X size={18} strokeWidth={1.8} />
               </button>
             </div>
 

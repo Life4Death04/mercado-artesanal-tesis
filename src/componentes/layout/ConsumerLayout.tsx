@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import { Menu } from 'lucide-react'
+import { AuthenticatedTopbar } from './AuthenticatedTopbar'
+import { ConsumerFooter } from './ConsumerFooter'
 import { RoleSidebar } from './RoleSidebar'
 
 export function ConsumerLayout() {
@@ -10,23 +11,19 @@ export function ConsumerLayout() {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
-      <button
-        type="button"
-        aria-label="Abrir navegación"
-        onClick={() => setMobileSidebarOpen(true)}
-        className="fixed left-4 top-4 z-40 grid size-11 place-items-center rounded-full border border-[var(--color-outline-variant)] bg-[var(--color-background)] text-[var(--color-secondary)] shadow-sm md:hidden"
-      >
-        <Menu size={22} strokeWidth={1.8} />
-      </button>
       <RoleSidebar
         variant={isProducerBrowsingStore ? 'producer' : 'consumer'}
         producerConsumerMode={isProducerBrowsingStore}
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
       />
-      <main className="md:ml-64">
-        <Outlet />
-      </main>
+      <div className="flex min-h-screen flex-col pt-20 md:ml-64">
+        <AuthenticatedTopbar onMenuClick={() => setMobileSidebarOpen(true)} />
+        <main className="flex-1">
+          <Outlet />
+        </main>
+        <ConsumerFooter />
+      </div>
     </div>
   )
 }
