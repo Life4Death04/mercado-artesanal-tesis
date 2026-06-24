@@ -23,7 +23,6 @@ const consumerRouteMeta: RouteMeta[] = [
 ]
 
 const producerRouteMeta: RouteMeta[] = [
-  { match: (pathname) => pathname === '/productor', title: 'Panel', breadcrumb: 'Panel' },
   { match: (pathname) => pathname === '/productor/pedidos', title: 'Mis pedidos', breadcrumb: 'Mis pedidos' },
   { match: (pathname) => pathname === '/productor/productos', title: 'Mi catálogo', breadcrumb: 'Mi catálogo' },
   { match: (pathname) => pathname === '/productor/inventario', title: 'Inventario', breadcrumb: 'Inventario' },
@@ -51,17 +50,17 @@ export function AuthenticatedTopbar({ onMenuClick }: AuthenticatedTopbarProps) {
       </button>
 
       <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-1.5 min-[771px]:hidden">
-        <Link to={isProducerArea ? '/productor' : '/productos'} className="text-label-sm shrink-0 text-[var(--color-secondary)] transition-colors hover:text-[var(--color-primary)]">
-          {areaLabel}
-        </Link>
+          <Link to={isProducerArea ? '/productor/pedidos' : '/productos'} className="text-label-sm shrink-0 text-[var(--color-secondary)] transition-colors hover:text-[var(--color-primary)]">
+            {areaLabel}
+          </Link>
         <ChevronRight size={13} strokeWidth={1.8} className="shrink-0 text-[var(--color-outline-variant)]" />
         <span className="text-label-sm truncate text-[var(--color-on-surface-variant)]">{meta.breadcrumb}</span>
       </nav>
 
       <div className="hidden min-w-0 flex-1 items-baseline gap-3 min-[771px]:flex">
-        <Link to={isProducerArea ? '/productor' : '/productos'} className="text-label-sm shrink-0 text-[var(--color-secondary)] transition-colors hover:text-[var(--color-primary)]">
-          {areaLabel}
-        </Link>
+          <Link to={isProducerArea ? '/productor/pedidos' : '/productos'} className="text-label-sm shrink-0 text-[var(--color-secondary)] transition-colors hover:text-[var(--color-primary)]">
+            {areaLabel}
+          </Link>
         <ChevronRight size={14} strokeWidth={1.8} className="shrink-0 text-[var(--color-outline-variant)]" />
         <span className="text-headline-md truncate text-[var(--color-on-surface)] md:text-[28px]">{meta.title}</span>
       </div>
