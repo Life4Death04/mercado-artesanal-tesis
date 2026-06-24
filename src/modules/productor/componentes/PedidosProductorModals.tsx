@@ -68,9 +68,10 @@ type DetallePedidoModalProps = {
   pedido: PedidoProductor
   onClose: () => void
   onCancel: () => void
+  onAdvanceStatus: () => void
 }
 
-export function DetallePedidoModal({ pedido, onClose, onCancel }: DetallePedidoModalProps) {
+export function DetallePedidoModal({ pedido, onClose, onCancel, onAdvanceStatus }: DetallePedidoModalProps) {
   // Business rule: tracking number block only when Mensajería + Enviado
   const showTracking =
     pedido.status === 'Enviado' &&
@@ -85,26 +86,26 @@ export function DetallePedidoModal({ pedido, onClose, onCancel }: DetallePedidoM
       aria-modal="true"
       aria-labelledby="detalle-pedido-title"
     >
-      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden border border-[var(--color-outline-variant)] bg-[#FAF7F0] shadow-2xl">
-        {/* Header */}
-        <header className="flex items-center justify-between border-b border-[var(--color-outline-variant)] bg-white/50 px-8 py-6">
-          <div className="flex items-center gap-4">
-            <h2 className="text-headline-md text-[24px] text-[var(--color-on-surface)]" id="detalle-pedido-title">
-              Pedido {pedido.id}
-            </h2>
-            <StatusBadge status={pedido.status} />
-          </div>
+        <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden border border-[var(--color-outline-variant)] bg-[#FAF7F0] shadow-2xl">
+          {/* Header */}
+          <header className="flex flex-col gap-4 border-b border-[var(--color-outline-variant)] bg-white/50 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-8 md:py-6">
+            <div className="flex flex-wrap items-center gap-3 md:gap-4">
+              <h2 className="text-headline-md text-[24px] text-[var(--color-on-surface)]" id="detalle-pedido-title">
+                Pedido {pedido.id}
+              </h2>
+              <StatusBadge status={pedido.status} />
+            </div>
           <button type="button" aria-label="Cerrar modal" onClick={onClose} className="p-2 text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)]">
             <X size={22} strokeWidth={1.8} />
           </button>
         </header>
 
         {/* Body (scrollable) */}
-        <div className="flex-1 space-y-10 overflow-y-auto p-8">
+        <div className="flex-1 space-y-8 overflow-y-auto p-5 md:space-y-10 md:p-8">
           <StatusStepper status={pedido.status} />
 
           {/* Info grid */}
-          <section className="grid grid-cols-2 gap-[var(--space-gutter)]">
+          <section className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-[var(--space-gutter)]">
             {/* Cliente */}
             <div className="space-y-4">
               <SectionTitle>Cliente</SectionTitle>
@@ -178,7 +179,7 @@ export function DetallePedidoModal({ pedido, onClose, onCancel }: DetallePedidoM
 
           {/* Totals */}
           <section className="flex justify-end">
-            <div className="w-64 space-y-3">
+            <div className="w-full max-w-64 space-y-3">
               <div className="flex justify-between text-sm text-[var(--color-secondary)]">
                 <span>Subtotal</span>
                 <span>{pedido.subtotal}</span>
@@ -225,12 +226,12 @@ export function DetallePedidoModal({ pedido, onClose, onCancel }: DetallePedidoM
             </div>
           ) : null}
 
-          <div className="flex w-full items-center justify-between">
+          <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             {pedido.status !== 'Cancelado' && pedido.status !== 'Entregado' ? (
               <button
                 type="button"
                 onClick={onCancel}
-                className="text-label-md text-sm text-[var(--color-error)] transition-all hover:underline"
+                className="text-label-md text-left text-sm text-[var(--color-error)] transition-all hover:underline"
               >
                 Cancelar pedido
               </button>
@@ -241,6 +242,7 @@ export function DetallePedidoModal({ pedido, onClose, onCancel }: DetallePedidoM
             {cta ? (
               <button
                 type="button"
+                onClick={onAdvanceStatus}
                 className="text-label-md rounded-[var(--radius-default)] bg-[#7A2E3A] px-10 py-4 text-white shadow-lg transition-all duration-150 hover:bg-[var(--color-primary)] active:scale-95"
               >
                 {cta}
@@ -268,7 +270,7 @@ type CancelarPedidoModalProps = {
   onConfirm: () => void
 }
 
-export function CancelarPedidoModal({ onClose, onConfirm }: CancelarPedidoModalProps) {
+export function CancelarPedidoModal({ pedido, onClose, onConfirm }: CancelarPedidoModalProps) {
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-[var(--color-on-surface)]/40 p-4"
@@ -291,6 +293,7 @@ export function CancelarPedidoModal({ onClose, onConfirm }: CancelarPedidoModalP
           <p className="text-body-lg mb-4 text-[var(--color-on-surface-variant)]">
             ¿Seguro que deseas cancelar este pedido? Esta acción no se puede deshacer.
           </p>
+          <p className="text-label-md mb-4 text-[var(--color-primary)]">Pedido {pedido.id}</p>
           <div className="rounded-[var(--radius-default)] border-l-4 border-[var(--color-primary)] bg-[var(--color-surface-container)] p-4 text-left">
             <p className="text-body-md text-sm italic text-[var(--color-on-surface-variant)]">
               El pago ya fue procesado; deberás gestionar la devolución conforme a la política de la plataforma.
