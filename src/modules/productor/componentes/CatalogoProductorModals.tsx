@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ImagePlus, Trash2, TriangleAlert, X } from 'lucide-react'
+import { ChevronDown, ImagePlus, Pencil, Trash2, TriangleAlert, X } from 'lucide-react'
 import type { ProductoCatalogo } from '../pages/ProductosProductorPage'
 
 // ---------------------------------------------------------------------------
@@ -168,9 +168,6 @@ export function AgregarProductoModal({ onClose }: AgregarProductoModalProps) {
           <button type="button" onClick={onClose} className="text-label-md w-full rounded-[var(--radius-lg)] px-5 py-2.5 text-[var(--color-on-surface-variant)] transition-colors hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)] focus:ring-2 focus:ring-[var(--color-primary)] focus:outline-none sm:w-auto">
             Cancelar
           </button>
-          <button type="button" className="text-label-md w-full rounded-[var(--radius-lg)] border border-[var(--color-outline)] px-5 py-2.5 text-[var(--color-on-surface)] transition-colors hover:border-[var(--color-on-surface)] hover:bg-[var(--color-surface-container-low)] focus:ring-2 focus:ring-[var(--color-primary)] focus:outline-none sm:w-auto">
-            Guardar borrador
-          </button>
           <button type="submit" className="text-label-md w-full rounded-[var(--radius-lg)] bg-[var(--color-primary)] px-6 py-2.5 text-[var(--color-on-primary)] shadow-sm transition-colors hover:bg-[var(--color-surface-tint)] focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:outline-none sm:w-auto">
             Guardar y publicar
           </button>
@@ -319,11 +316,96 @@ export function AvisoStockModal({ onClose, onPublish }: AvisoStockModalProps) {
   )
 }
 
+type EditarProductoModalProps = {
+  producto: ProductoCatalogo
+  onClose: () => void
+  onSave: (producto: ProductoCatalogo) => void
+}
+
+export function EditarProductoModal({ producto, onClose, onSave }: EditarProductoModalProps) {
+  const [draft, setDraft] = useState(producto)
+
+  return (
+    <ModalOverlay zIndex={65}>
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="editar-producto-title">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-6 py-5">
+          <div className="flex items-center gap-3">
+            <Pencil size={20} strokeWidth={1.8} className="text-[var(--color-primary)]" />
+            <h2 className="text-headline-md text-[24px] text-[var(--color-primary)]" id="editar-producto-title">Editar publicación</h2>
+          </div>
+          <button type="button" aria-label="Cerrar modal" onClick={onClose} className="rounded-full p-1 text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-primary)]">
+            <X size={22} strokeWidth={1.8} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <FormFieldLine id="edit-name" label="Nombre del producto" placeholder="Nombre del producto" value={draft.nombre} onChange={(value) => setDraft((current) => ({ ...current, nombre: value }))} />
+            <FormFieldLine id="edit-price" label="Precio" placeholder="0.00EUR" value={draft.precio} onChange={(value) => setDraft((current) => ({ ...current, precio: value }))} />
+            <FormFieldLine id="edit-category" label="Categoría" placeholder="Categoría" value={draft.categoria} onChange={(value) => setDraft((current) => ({ ...current, categoria: value }))} />
+            <FormFieldLine id="edit-stock" label="Stock" placeholder="0" type="number" value={String(draft.stock)} onChange={(value) => setDraft((current) => ({ ...current, stock: Math.max(0, Number(value) || 0) }))} />
+            <div className="sm:col-span-2">
+              <FormFieldLine id="edit-denomination" label="Denominación" placeholder="Opcional" value={draft.denominacion ?? ''} onChange={(value) => setDraft((current) => ({ ...current, denominacion: value || undefined }))} />
+            </div>
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 z-10 flex flex-col items-center justify-end gap-3 border-t border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] px-6 py-4 sm:flex-row sm:gap-4">
+          <button type="button" onClick={onClose} className="text-label-md w-full rounded-[var(--radius-lg)] px-5 py-2.5 text-[var(--color-on-surface-variant)] transition-colors hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)] sm:w-auto">Cancelar</button>
+          <button type="button" onClick={() => onSave({ ...draft, status: draft.stock === 0 && draft.status === 'Publicado' ? 'Sin disponibilidad' : draft.status })} className="text-label-md w-full rounded-[var(--radius-lg)] bg-[var(--color-primary)] px-6 py-2.5 text-[var(--color-on-primary)] shadow-sm transition-colors hover:bg-[var(--color-surface-tint)] sm:w-auto">Guardar cambios</button>
+        </div>
+      </div>
+    </ModalOverlay>
+  )
+}
+
+type PublicacionProductoModalProps = {
+  producto: ProductoCatalogo
+  onClose: () => void
+  onConfirm: () => void
+}
+
+export function PublicacionProductoModal({ producto, onClose, onConfirm }: PublicacionProductoModalProps) {
+  const isCurrentlyUnpublished = producto.status === 'Despublicado'
+  const title = isCurrentlyUnpublished ? 'Publicar producto' : 'Despublicar producto'
+  const description = isCurrentlyUnpublished
+    ? 'Este producto volverá a mostrarse en la tienda del productor según su disponibilidad de stock.'
+    : 'El producto dejará de ser visible en la tienda, pero conservará su información para futuras publicaciones.'
+
+  return (
+    <ModalOverlay zIndex={58}>
+      <div className="w-full max-w-lg overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] shadow-[0_8px_30px_rgba(28,28,24,0.12)]" role="alertdialog" aria-modal="true" aria-labelledby="publicacion-producto-title">
+        <div className="flex items-start justify-between border-b border-[var(--color-outline-variant)]/50 px-8 pb-6 pt-8">
+          <div className="flex items-center gap-3 text-[var(--color-primary)]">
+            <TriangleAlert size={24} strokeWidth={1.8} />
+            <h2 className="text-headline-md text-[24px] text-[var(--color-on-surface)]" id="publicacion-producto-title">{title}</h2>
+          </div>
+          <button type="button" aria-label="Cerrar" onClick={onClose} className="p-1 text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-on-surface)]">
+            <X size={22} strokeWidth={1.8} />
+          </button>
+        </div>
+        <div className="px-8 py-6">
+          <p className="text-body-md mb-6 text-[var(--color-on-surface-variant)]">{description}</p>
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)]/50 bg-[var(--color-surface-container-low)] p-4">
+            <p className="text-label-sm mb-2 uppercase tracking-wider text-[var(--color-secondary)]">Producto seleccionado</p>
+            <h3 className="text-headline-md text-[var(--color-on-surface)]">{producto.nombre}</h3>
+            <p className="text-body-md mt-1 text-[var(--color-secondary)]">Estado actual: {producto.status}</p>
+          </div>
+        </div>
+        <div className="flex justify-end gap-4 border-t border-[var(--color-outline-variant)]/50 bg-[var(--color-surface-container-low)] px-8 py-6">
+          <button type="button" onClick={onClose} className="text-label-md rounded-[var(--radius-default)] border border-[var(--color-secondary)] px-6 py-2.5 text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-variant)]">Cancelar</button>
+          <button type="button" onClick={onConfirm} className="text-label-md rounded-[var(--radius-default)] bg-[var(--color-primary)] px-6 py-2.5 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-surface-tint)]">Confirmar</button>
+        </div>
+      </div>
+    </ModalOverlay>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Shared small components
 // ---------------------------------------------------------------------------
 
-function FormFieldLine({ id, label, placeholder, type = 'text' }: { id: string; label: string; placeholder?: string; type?: string }) {
+function FormFieldLine({ id, label, placeholder, type = 'text', value, onChange }: { id: string; label: string; placeholder?: string; type?: string; value?: string; onChange?: (value: string) => void }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-label-md text-[var(--color-on-surface)]" htmlFor={id}>{label}</label>
@@ -331,6 +413,8 @@ function FormFieldLine({ id, label, placeholder, type = 'text' }: { id: string; 
         id={id}
         type={type}
         placeholder={placeholder}
+        value={value}
+        onChange={onChange ? (event) => onChange(event.target.value) : undefined}
         className="text-body-md w-full border-0 border-b border-[var(--color-outline)] bg-transparent py-2 text-[var(--color-on-surface)] transition-colors placeholder:text-[var(--color-on-surface-variant)] hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] focus:ring-0 focus:outline-none"
       />
     </div>
