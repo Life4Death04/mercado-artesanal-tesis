@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import { ConsumerTopbar } from './ConsumerTopbar'
+import { AuthenticatedTopbar } from './AuthenticatedTopbar'
+import { ConsumerFooter } from './ConsumerFooter'
 import { RoleSidebar } from './RoleSidebar'
 
 export function ConsumerLayout() {
@@ -16,11 +17,12 @@ export function ConsumerLayout() {
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
       />
-      <div className="md:ml-64">
-        <ConsumerTopbar onMenuClick={() => setMobileSidebarOpen(true)} />
-        <main>
+      <div className="flex min-h-screen flex-col pt-20 md:ml-64">
+        <AuthenticatedTopbar onMenuClick={() => setMobileSidebarOpen(true)} />
+        <main className="flex-1">
           <Outlet />
         </main>
+        <ConsumerFooter />
       </div>
     </div>
   )
