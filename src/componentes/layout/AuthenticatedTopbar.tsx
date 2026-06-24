@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Bell, ChevronRight, Menu, ShoppingCart, UserCircle } from 'lucide-react'
+import { ChevronRight, Menu, ShoppingCart, UserCircle } from 'lucide-react'
 import { BandejaNotificaciones } from '../ui/BandejaNotificaciones'
 
 type AuthenticatedTopbarProps = {
@@ -15,6 +15,7 @@ type RouteMeta = {
 const consumerRouteMeta: RouteMeta[] = [
   { match: (pathname) => pathname === '/productos', title: 'Catálogo', breadcrumb: 'Catálogo' },
   { match: (pathname) => pathname.startsWith('/productos/'), title: 'Detalle de producto', breadcrumb: 'Detalle de producto' },
+  { match: (pathname) => pathname.startsWith('/productores/'), title: 'Perfil del productor', breadcrumb: 'Perfil del productor' },
   { match: (pathname) => pathname === '/carrito', title: 'Carrito', breadcrumb: 'Carrito' },
   { match: (pathname) => pathname === '/checkout', title: 'Checkout', breadcrumb: 'Checkout' },
   { match: (pathname) => pathname === '/pedidos', title: 'Mis pedidos', breadcrumb: 'Mis pedidos' },
@@ -66,32 +67,19 @@ export function AuthenticatedTopbar({ onMenuClick }: AuthenticatedTopbarProps) {
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        {isProducerArea ? (
-          <button
-            type="button"
-            aria-label="Notificaciones"
+        <BandejaNotificaciones />
+        {!isProducerArea ? (
+          <Link
+            to="/carrito"
+            aria-label="Carrito"
             className="relative rounded-full p-2 text-[var(--color-on-surface-variant)] transition-all duration-150 hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-primary)] active:scale-95"
           >
-            <Bell size={22} strokeWidth={1.8} />
+            <ShoppingCart size={22} strokeWidth={1.8} />
             <span className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-[var(--color-primary)] text-[10px] font-bold text-[var(--color-on-primary)] ring-2 ring-[var(--color-surface)]">
               2
             </span>
-          </button>
-        ) : (
-          <>
-            <BandejaNotificaciones />
-            <Link
-              to="/carrito"
-              aria-label="Carrito"
-              className="relative rounded-full p-2 text-[var(--color-on-surface-variant)] transition-all duration-150 hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-primary)] active:scale-95"
-            >
-              <ShoppingCart size={22} strokeWidth={1.8} />
-              <span className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-[var(--color-primary)] text-[10px] font-bold text-[var(--color-on-primary)] ring-2 ring-[var(--color-surface)]">
-                2
-              </span>
-            </Link>
-          </>
-        )}
+          </Link>
+        ) : null}
         <Link
           to={isProducerArea ? '/productor/perfil' : '/perfil'}
           aria-label={isProducerArea ? 'Mi perfil de ventas' : 'Mi perfil'}
