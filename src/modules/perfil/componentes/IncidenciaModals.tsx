@@ -1,6 +1,7 @@
 import { Camera, ChevronDown, Image, X } from 'lucide-react'
 
 type ReportarIncidenciaModalProps = {
+  initialPedidoLabel?: string
   onClose: () => void
 }
 
@@ -20,7 +21,11 @@ const pedidosAsociados = [
   'Otro / No listado',
 ]
 
-export function ReportarIncidenciaModal({ onClose }: ReportarIncidenciaModalProps) {
+export function ReportarIncidenciaModal({ initialPedidoLabel, onClose }: ReportarIncidenciaModalProps) {
+  const pedidoOptions = initialPedidoLabel && !pedidosAsociados.includes(initialPedidoLabel)
+    ? [initialPedidoLabel, ...pedidosAsociados]
+    : pedidosAsociados
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 sm:p-6"
@@ -85,14 +90,15 @@ export function ReportarIncidenciaModal({ onClose }: ReportarIncidenciaModalProp
               Pedido asociado
             </label>
             <div className="relative">
-              <select
-                id="pedido-asociado"
-                className="text-body-md w-full cursor-pointer appearance-none border-0 border-b border-[var(--color-outline)] bg-transparent py-3 pr-10 text-[var(--color-on-surface)] transition-colors focus:border-[#7A2E3A] focus:ring-0 focus:outline-none"
-              >
-                {pedidosAsociados.map((pedido) => (
-                  <option key={pedido}>{pedido}</option>
-                ))}
-              </select>
+                <select
+                  id="pedido-asociado"
+                  defaultValue={initialPedidoLabel ?? pedidoOptions[0]}
+                  className="text-body-md w-full cursor-pointer appearance-none border-0 border-b border-[var(--color-outline)] bg-transparent py-3 pr-10 text-[var(--color-on-surface)] transition-colors focus:border-[#7A2E3A] focus:ring-0 focus:outline-none"
+                >
+                  {pedidoOptions.map((pedido) => (
+                    <option key={pedido}>{pedido}</option>
+                  ))}
+                </select>
               <ChevronDown size={18} strokeWidth={1.6} className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[var(--color-outline)]" />
             </div>
           </div>

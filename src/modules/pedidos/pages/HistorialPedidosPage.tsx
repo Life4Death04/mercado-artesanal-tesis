@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Filter, Search, SlidersHorizontal } from 'lucide-react'
 import { OrderDetailModal, ProductReviewModal } from '../componentes/ConsumerOrderModals'
+import { ReportarIncidenciaModal } from '../../perfil/componentes/IncidenciaModals'
 
 export type ConsumerOrderStatus = 'Pendiente' | 'Confirmado' | 'En preparación' | 'En camino' | 'Entregado' | 'Cancelado'
 
@@ -40,6 +41,11 @@ export type ConsumerOrder = {
   subOrders: ConsumerSubOrder[]
 }
 
+type ReviewTarget = {
+  product: ConsumerOrderProduct
+  subOrderId: string
+}
+
 type DateFilters = {
   from: string
   to: string
@@ -55,7 +61,7 @@ const orderStatusFilters: Array<ConsumerOrderStatus | 'Todos'> = [
   'Cancelado',
 ]
 
-const orders: ConsumerOrder[] = [
+const initialOrders: ConsumerOrder[] = [
   {
     id: '#AG-8821',
     date: '12/05/2026',
@@ -68,7 +74,7 @@ const orders: ConsumerOrder[] = [
         id: '#AG-8821-A',
         producer: 'Aceites de la Montaña',
         location: 'Beniardá, Alicante',
-        status: 'En camino',
+        status: 'Entregado',
         deliveryMethod: 'Mensajería Urgente Frío',
         deliveryAddress: 'Calle Mayor 42, 3º B\n03002 Alicante, España',
         tracking: 'SEUR-882910399X',
@@ -306,8 +312,21 @@ export function HistorialPedidosPage() {
   const [dateFilters, setDateFilters] = useState<DateFilters>({ from: '', to: '' })
   const [showDateFilters, setShowDateFilters] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [selectedOrder, setSelectedOrder] = useState<ConsumerOrder | null>(null)
-  const [reviewProduct, setReviewProduct] = useState<ConsumerOrderProduct | null>(null)
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null)
+  const [reportPedidoLabel, setReportPedidoLabel] = useState<string | null>(null)
+  const [reviewedKeys, setReviewedKeys] = useState<string[]>([])
+
+  const orders = initialOrders.map((order) => ({
+    ...order,
+    subOrders: order.subOrders.map((subOrder) => ({
+      ...subOrder,
+      products: subOrder.products.map((product) => ({
+        ...product,
+        reviewed: product.reviewed || reviewedKeys.includes(getReviewKey(subOrder.id, product.name)),
+      })),
+    })),
+  }))
 
   const normalizedSearch = search.trim().toLowerCase()
   const filteredOrders = orders.filter((order) => {
@@ -332,6 +351,7 @@ export function HistorialPedidosPage() {
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize))
   const safePage = Math.min(currentPage, totalPages)
   const visibleOrders = filteredOrders.slice((safePage - 1) * pageSize, safePage * pageSize)
+  const selectedOrder = selectedOrderId ? orders.find((order) => order.id === selectedOrderId) ?? null : null
 
   function updateSearch(value: string) {
     setSearch(value)
@@ -417,8 +437,8 @@ export function HistorialPedidosPage() {
         </section>
 
         <div className="flex flex-col gap-4">
-          {visibleOrders.map((order) => (
-            <OrderRow key={order.id} order={order} highlighted={normalizedSearch.length > 0 && order.id.toLowerCase().includes(normalizedSearch)} onView={() => setSelectedOrder(order)} />
+            {visibleOrders.map((order) => (
+            <OrderRow key={order.id} order={order} highlighted={normalizedSearch.length > 0 && order.id.toLowerCase().includes(normalizedSearch)} onView={() => setSelectedOrderId(order.id)} />
           ))}
         </div>
 
@@ -437,14 +457,30 @@ export function HistorialPedidosPage() {
       {selectedOrder ? (
         <OrderDetailModal
           order={selectedOrder}
-          onClose={() => setSelectedOrder(null)}
-          onReview={(product) => setReviewProduct(product)}
+          onClose={() => setSelectedOrderId(null)}
+          onReport={(subOrder) => setReportPedidoLabel(`Pedido ${selectedOrder.id} · ${subOrder.producer}`)}
+          onReview={(subOrderId, product) => setReviewTarget({ subOrderId, product })}
         />
       ) : null}
 
-      {reviewProduct ? <ProductReviewModal product={reviewProduct} onClose={() => setReviewProduct(null)} /> : null}
+      {reviewTarget ? (
+        <ProductReviewModal
+          product={reviewTarget.product}
+          onClose={() => setReviewTarget(null)}
+          onSubmit={() => {
+            setReviewedKeys((current) => [...new Set([...current, getReviewKey(reviewTarget.subOrderId, reviewTarget.product.name)])])
+            setReviewTarget(null)
+          }}
+        />
+      ) : null}
+
+      {reportPedidoLabel ? <ReportarIncidenciaModal initialPedidoLabel={reportPedidoLabel} onClose={() => setReportPedidoLabel(null)} /> : null}
     </div>
   )
+}
+
+function getReviewKey(subOrderId: string, productName: string) {
+  return `${subOrderId}:${productName}`
 }
 
 function DateField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {

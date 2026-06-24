@@ -1,22 +1,23 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Download, Flag, Star, Truck, X } from 'lucide-react'
 import type { ConsumerOrder, ConsumerOrderProduct, ConsumerOrderStatus, ConsumerSubOrder } from '../pages/HistorialPedidosPage'
 
 type OrderDetailModalProps = {
   order: ConsumerOrder
   onClose: () => void
-  onReview: (product: ConsumerOrderProduct) => void
+  onReport: (subOrder: ConsumerSubOrder) => void
+  onReview: (subOrderId: string, product: ConsumerOrderProduct) => void
 }
 
 type ProductReviewModalProps = {
   product: ConsumerOrderProduct
   onClose: () => void
+  onSubmit: () => void
 }
 
 const statusSteps: ConsumerOrderStatus[] = ['Pendiente', 'Confirmado', 'En preparación', 'En camino', 'Entregado']
 
-export function OrderDetailModal({ order, onClose, onReview }: OrderDetailModalProps) {
+export function OrderDetailModal({ order, onClose, onReport, onReview }: OrderDetailModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#1A1A1A]/60 p-4 backdrop-blur-sm sm:p-[var(--space-margin-mobile)] md:p-[var(--space-margin-desktop)]" role="dialog" aria-modal="true" aria-labelledby="order-detail-title">
       <div className="relative flex max-h-full w-full max-w-5xl flex-col border border-[color-mix(in_srgb,var(--color-outline)_20%,transparent)] bg-[#FAF7F0] shadow-2xl">
@@ -39,7 +40,7 @@ export function OrderDetailModal({ order, onClose, onReview }: OrderDetailModalP
 
           <div className="grid gap-5">
             {order.subOrders.map((subOrder) => (
-              <SubOrderPanel key={subOrder.id} subOrder={subOrder} onReview={onReview} />
+              <SubOrderPanel key={subOrder.id} subOrder={subOrder} onReport={onReport} onReview={onReview} />
             ))}
           </div>
 
@@ -58,7 +59,7 @@ export function OrderDetailModal({ order, onClose, onReview }: OrderDetailModalP
   )
 }
 
-function SubOrderPanel({ subOrder, onReview }: { subOrder: ConsumerSubOrder; onReview: (product: ConsumerOrderProduct) => void }) {
+function SubOrderPanel({ subOrder, onReport, onReview }: { subOrder: ConsumerSubOrder; onReport: (subOrder: ConsumerSubOrder) => void; onReview: (subOrderId: string, product: ConsumerOrderProduct) => void }) {
   return (
     <section className="border border-[color-mix(in_srgb,var(--color-outline)_14%,transparent)] bg-[var(--color-surface)] p-5 md:p-6">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -95,13 +96,13 @@ function SubOrderPanel({ subOrder, onReview }: { subOrder: ConsumerSubOrder; onR
               <span className="text-body-lg font-medium text-[#1A1A1A]">{product.total}</span>
               {subOrder.status === 'Entregado' ? (
                 product.reviewed ? (
-                  <span className="text-label-sm inline-flex items-center gap-1 text-green-700">
-                    <Star size={14} strokeWidth={1.8} fill="currentColor" />
+                  <span className="text-label-md inline-flex items-center gap-1 text-green-700">
+                    <Star size={18} strokeWidth={1.8} fill="currentColor" />
                     Valorado
                   </span>
                 ) : (
-                  <button type="button" onClick={() => onReview(product)} className="text-label-sm flex items-center gap-1 text-[var(--color-primary)] hover:underline">
-                    <Star size={14} strokeWidth={1.8} />
+                  <button type="button" onClick={() => onReview(subOrder.id, product)} className="text-label-md flex items-center gap-1 text-[var(--color-primary)] hover:underline">
+                    <Star size={18} strokeWidth={1.8} />
                     Valorar
                   </button>
                 )
@@ -114,16 +115,17 @@ function SubOrderPanel({ subOrder, onReview }: { subOrder: ConsumerSubOrder; onR
       <div className="mt-6 grid gap-5 border-t border-[color-mix(in_srgb,var(--color-outline)_10%,transparent)] pt-6 md:grid-cols-[1fr_auto] md:items-end">
         <div className="grid gap-4 sm:grid-cols-3">
           <DetailField label="Método" value={subOrder.deliveryMethod} />
-          <DetailField label="Seguimiento" value={subOrder.tracking} mono />
+          <TrackingField value={subOrder.tracking} />
           <DetailField label="Dirección" value={subOrder.deliveryAddress} preserveLineBreaks />
         </div>
-        <Link
-          to={`/incidencias?search=${encodeURIComponent(subOrder.incidentId ?? subOrder.id)}`}
+        <button
+          type="button"
+          onClick={() => onReport(subOrder)}
           className="text-label-md inline-flex items-center justify-center gap-2 border border-[#7A2E3A] px-5 py-3 uppercase tracking-wider text-[#7A2E3A] transition-colors hover:bg-[#7A2E3A] hover:text-white"
         >
           <Flag size={16} strokeWidth={1.8} />
           Reportar
-        </Link>
+        </button>
       </div>
 
       <div className="mt-5 flex justify-end gap-5 text-body-md text-[var(--color-on-surface-variant)]">
@@ -167,7 +169,7 @@ function StatusPill({ status }: { status: ConsumerOrderStatus }) {
   )
 }
 
-export function ProductReviewModal({ product, onClose }: ProductReviewModalProps) {
+export function ProductReviewModal({ product, onClose, onSubmit }: ProductReviewModalProps) {
   const [rating, setRating] = useState(0)
 
   return (
@@ -190,7 +192,7 @@ export function ProductReviewModal({ product, onClose }: ProductReviewModalProps
             </div>
           </header>
 
-          <form className="flex flex-col gap-8" onSubmit={(event) => { event.preventDefault(); onClose() }}>
+          <form className="flex flex-col gap-8" onSubmit={(event) => { event.preventDefault(); onSubmit(); onClose() }}>
             <div className="flex flex-col gap-3 border-t border-[var(--color-outline-variant)] pt-6">
               <label className="text-label-md uppercase text-[#1A1A1A]">Puntuación</label>
               <div className="flex w-fit gap-1" aria-label="Puntuación de 5 estrellas">
@@ -230,6 +232,15 @@ function DetailField({ label, value, preserveLineBreaks = false, mono = false }:
     <div>
       <p className="text-label-sm mb-1 text-[var(--color-on-surface-variant)]">{label}</p>
       <p className={`text-body-md text-[#1A1A1A] ${preserveLineBreaks ? 'whitespace-pre-line leading-relaxed' : ''} ${mono ? 'font-mono' : ''}`}>{value}</p>
+    </div>
+  )
+}
+
+function TrackingField({ value }: { value: string }) {
+  return (
+    <div className="border border-[color-mix(in_srgb,#7A2E3A_28%,transparent)] bg-[color-mix(in_srgb,#7A2E3A_8%,white)] p-4">
+      <p className="text-label-sm mb-1 text-[var(--color-on-surface-variant)]">Seguimiento</p>
+      <p className="text-body-md font-mono text-[#1A1A1A]">{value}</p>
     </div>
   )
 }
