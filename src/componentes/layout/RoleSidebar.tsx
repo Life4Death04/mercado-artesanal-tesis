@@ -163,27 +163,7 @@ function SidebarFooter({
   isProducerAsConsumer: boolean
   onMobileClose?: () => void
 }) {
-  if (variant === 'admin') {
-    return (
-      <div className="mt-auto flex flex-col gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] pt-6">
-        <NavLink
-          to="/productos"
-          className="text-label-md flex w-full items-center justify-center gap-2 border border-[color-mix(in_srgb,var(--color-on-surface)_15%,transparent)] px-4 py-3 text-[var(--color-on-surface)] transition-colors hover:border-[var(--color-primary-container)] hover:bg-[var(--color-primary-container)] hover:text-[var(--color-on-primary)]"
-        >
-          Ver tienda
-          <ExternalLink size={16} strokeWidth={1.8} />
-        </NavLink>
-        <NavLink
-          to="/login"
-          onClick={onMobileClose}
-          className="text-label-md flex items-center gap-4 rounded-[var(--radius-lg)] px-4 py-3 text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]"
-        >
-          <LogOut size={21} strokeWidth={1.8} />
-          <span>Cerrar sesión</span>
-        </NavLink>
-      </div>
-    )
-  }
+  
 
   if (variant === 'producer') {
     return (
