@@ -29,7 +29,6 @@ import { PerfilProductorPublicoPage } from '../modules/productor/pages/PerfilPro
 import { ProductosProductorPage } from '../modules/productor/pages/ProductosProductorPage'
 import { EstadisticasProductorPage } from '../modules/productor/pages/EstadisticasProductorPage'
 import { InventarioProductorPage } from '../modules/productor/pages/InventarioProductorPage'
-import { ProductorDashboardPage } from '../modules/productor/pages/ProductorDashboardPage'
 import { ModalidadesEntregaPage } from '../modules/productor/pages/ModalidadesEntregaPage'
 import { EditarPerfilPublicoPage } from '../modules/productor/pages/EditarPerfilPublicoPage'
 
@@ -51,7 +50,7 @@ export function AppRouter() {
           <Route path="incidencias" element={<MisIncidenciasPage />} />
         </Route>
         <Route element={<DashboardLayout />}>
-          <Route path="productor" element={<ProductorDashboardPage />} />
+          <Route path="productor" element={<Navigate to="/productor/pedidos" replace />} />
           <Route path="productor/productos" element={<ProductosProductorPage />} />
           <Route path="productor/pedidos" element={<PedidosProductorPage />} />
           <Route path="productor/inventario" element={<InventarioProductorPage />} />
