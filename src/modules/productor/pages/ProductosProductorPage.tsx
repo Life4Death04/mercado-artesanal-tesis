@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BarChart2, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff, HelpCircle, Package, Pencil, Plus, Search, ShoppingBag, Trash2, TriangleAlert, Truck, User } from 'lucide-react'
-import { AgregarProductoModal, AvisoStockModal, EliminarProductoModal } from '../componentes/CatalogoProductorModals'
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import { ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff, Filter, Pencil, Plus, Search, SlidersHorizontal, Trash2, TriangleAlert } from 'lucide-react'
+import {
+  AgregarProductoModal,
+  AvisoStockModal,
+  EditarProductoModal,
+  EliminarProductoModal,
+  PublicacionProductoModal,
+} from '../componentes/CatalogoProductorModals'
 
 export type ProductoStatus = 'Publicado' | 'Despublicado' | 'Sin disponibilidad'
 
@@ -18,311 +20,391 @@ export type ProductoCatalogo = {
   stock: number
   status: ProductoStatus
   imagen: string
-  lowStock?: boolean
-  agotado?: boolean
 }
 
-// ---------------------------------------------------------------------------
-// Mock data
-// ---------------------------------------------------------------------------
-
-const productos: ProductoCatalogo[] = [
+const productosIniciales: ProductoCatalogo[] = [
   {
     id: 'prod-1',
     nombre: 'Aceite de Oliva Virgen Extra Coupage',
     categoria: 'Aceites',
     denominacion: 'D.O. Alicante',
-    precio: '18,50€',
+    precio: '18,50EUR',
     stock: 15,
     status: 'Publicado',
-    imagen:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDmn-HTPgkmzjU1O02KsCIOcA21nIIlWPRCx2yI2dnd31yatEf8Dqbbj_pdqDy9DlzqllOxTPgvfPOYmc5wi6u-8z6tH9bGbHbFP_mGo1ewuC99f5oI91WEmESl-UBfs00gHE6N_c6J-R4TYRY_evXPcFb4qBoLe-mjamQiVbi9gNu2SD1_MnP6xZxtcEWVybmp2mJ6Ily0t2e0P3Kt2abWSS1IgutzgkpJHMMktLVtXYWAnjM_sdM38c6xXuWR3vfl4fUVFMkAtC4',
+    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmn-HTPgkmzjU1O02KsCIOcA21nIIlWPRCx2yI2dnd31yatEf8Dqbbj_pdqDy9DlzqllOxTPgvfPOYmc5wi6u-8z6tH9bGbHbFP_mGo1ewuC99f5oI91WEmESl-UBfs00gHE6N_c6J-R4TYRY_evXPcFb4qBoLe-mjamQiVbi9gNu2SD1_MnP6xZxtcEWVybmp2mJ6Ily0t2e0P3Kt2abWSS1IgutzgkpJHMMktLVtXYWAnjM_sdM38c6xXuWR3vfl4fUVFMkAtC4',
   },
   {
     id: 'prod-2',
-    nombre: 'Turrón de Jijona Artesanal 300g',
+    nombre: 'Turron de Jijona Artesanal 300g',
     categoria: 'Dulces',
     denominacion: 'I.G.P. Jijona',
-    precio: '12,90€',
+    precio: '12,90EUR',
     stock: 3,
     status: 'Publicado',
-    lowStock: true,
-    imagen:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAwpcRUxi2UfppBSrCMAcTt51NRZZlO15MAeuTzzQXfz9A7N1RdQimEZVJYMwdV8AbGK0UGKqUDWrlv_qqZ2zB7GmIyZZR09nsOYyyfpp59JLdcg3kiid6xsixF6F0j67VmKJ3CP2ErDYn8bE0kHfm8s1_r7MBdDyYtVioKOMTml2BgJS7g-6GKob2dYMxUePh6M4tkiO4uP1cJ0iqbb3fFDhOjd8ryRfzy70FFlcLzrZ5Rkj-WQY5c0FwXkxlScPiCkZ9OlOqWjZQ',
+    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAwpcRUxi2UfppBSrCMAcTt51NRZZlO15MAeuTzzQXfz9A7N1RdQimEZVJYMwdV8AbGK0UGKqUDWrlv_qqZ2zB7GmIyZZR09nsOYyyfpp59JLdcg3kiid6xsixF6F0j67VmKJ3CP2ErDYn8bE0kHfm8s1_r7MBdDyYtVioKOMTml2BgJS7g-6GKob2dYMxUePh6M4tkiO4uP1cJ0iqbb3fFDhOjd8ryRfzy70FFlcLzrZ5Rkj-WQY5c0FwXkxlScPiCkZ9OlOqWjZQ',
   },
   {
     id: 'prod-3',
     nombre: "Vino Tinto Monastrell 'Herencia'",
     categoria: 'Vinos',
     denominacion: 'D.O. Alicante',
-    precio: '24,00€',
+    precio: '24,00EUR',
     stock: 0,
     status: 'Despublicado',
-    agotado: true,
-    imagen:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAL7mQ1mh2Id6cvQAygTJ0NC34fJRJiUwV_jt5FnvB-ukAzx5YcjlCh9uMkvk5QCjMOwBn7FbNBVJxEfVEL23nS5T82p58T3Q3R5uCqHYv65EraLsuyupp23ImjKTHs1qI8t5PikDUHLr-a7vNRQb8PVBIdRrw05kkeOgRpNGbWeKpFsS9jj-YGuMoxLwR5kJj9ZyAwqOpVsi9rSz2fOah-hYkJDyIrppQBLfIfh2_7lYz-yJ0vAR5uyw6p50JiT9T22LgNxJCCk-k',
+    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAL7mQ1mh2Id6cvQAygTJ0NC34fJRJiUwV_jt5FnvB-ukAzx5YcjlCh9uMkvk5QCjMOwBn7FbNBVJxEfVEL23nS5T82p58T3Q3R5uCqHYv65EraLsuyupp23ImjKTHs1qI8t5PikDUHLr-a7vNRQb8PVBIdRrw05kkeOgRpNGbWeKpFsS9jj-YGuMoxLwR5kJj9ZyAwqOpVsi9rSz2fOah-hYkJDyIrppQBLfIfh2_7lYz-yJ0vAR5uyw6p50JiT9T22LgNxJCCk-k',
   },
   {
     id: 'prod-4',
-    nombre: 'Sobrasada de la Montaña (Tradicional)',
+    nombre: 'Sobrasada de la Montana (Tradicional)',
     categoria: 'Embutidos',
-    precio: '9,20€',
+    precio: '9,20EUR',
     stock: 42,
     status: 'Sin disponibilidad',
-    imagen:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAEY3Fecj6qqT00nrb2x88DkYDCeu4A2G--2C0cKzQljqXJJYvzO9iqF8dLpRv-YXw5bGLwkLC50hP__V_vVmJS_14UHt23dBGz0CRV5AwD-fUz7YKVDAZzLyLX5nPaY_gnEyB7YuZ9Uv3s6aNoyn_T2RT3te2TqEWuU4RsEMZkl4swCG4WEGWWij9e9zhcUg5AH-F68a-wL9chzcqp6olO1HJ2YQ2MEextBE3ZHlk9c7WV-FetmqUm2nuWbYcdDjv-s6BTuaeiF-I',
+    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAEY3Fecj6qqT00nrb2x88DkYDCeu4A2G--2C0cKzQljqXJJYvzO9iqF8dLpRv-YXw5bGLwkLC50hP__V_vVmJS_14UHt23dBGz0CRV5AwD-fUz7YKVDAZzLyLX5nPaY_gnEyB7YuZ9Uv3s6aNoyn_T2RT3te2TqEWuU4RsEMZkl4swCG4WEGWWij9e9zhcUg5AH-F68a-wL9chzcqp6olO1HJ2YQ2MEextBE3ZHlk9c7WV-FetmqUm2nuWbYcdDjv-s6BTuaeiF-I',
+  },
+  {
+    id: 'prod-5',
+    nombre: 'Miel cruda de azahar',
+    categoria: 'Dulces',
+    precio: '10,40EUR',
+    stock: 11,
+    status: 'Publicado',
+    imagen: 'https://images.unsplash.com/photo-1587049633312-d628ae50a8ae?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    id: 'prod-6',
+    nombre: 'Conserva de bonito artesana',
+    categoria: 'Conservas',
+    precio: '8,90EUR',
+    stock: 0,
+    status: 'Sin disponibilidad',
+    imagen: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=80',
   },
 ]
 
-const FILTROS_ESTADO = ['Todos', 'Publicados', 'Despublicados'] as const
-const CATEGORIAS_FILTER = ['Todas las categorías', 'Aceites', 'Embutidos', 'Vinos', 'Dulces']
-const NAV_ITEMS = [
-  { icon: ShoppingBag, label: 'Mis pedidos', to: '/productor/pedidos', active: false },
-  { icon: BookOpen, label: 'Mi catálogo', to: '/productor/productos', active: true },
-  { icon: Package, label: 'Inventario', to: '/productor/inventario', active: false },
-  { icon: BarChart2, label: 'Estadísticas', to: '/productor/estadisticas', active: false },
-  { icon: Truck, label: 'Configuración de entregas', to: '/productor/entregas', active: false },
-]
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
+const statusFilters = ['Todos', 'Publicado', 'Despublicado', 'Sin disponibilidad'] as const
+const categoryFilters = ['Todas las categorías', 'Aceites', 'Dulces', 'Vinos', 'Embutidos', 'Conservas'] as const
+const pageSize = 4
 
 export function ProductosProductorPage() {
-  const [filtroEstado, setFiltroEstado] = useState<(typeof FILTROS_ESTADO)[number]>('Todos')
+  const [productos, setProductos] = useState(productosIniciales)
+  const [search, setSearch] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<(typeof categoryFilters)[number]>('Todas las categorías')
+  const [selectedStatus, setSelectedStatus] = useState<(typeof statusFilters)[number]>('Todos')
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
   const [showAgregarModal, setShowAgregarModal] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<ProductoCatalogo | null>(null)
-  const [showStockWarning, setShowStockWarning] = useState(false)
+  const [editingTargetId, setEditingTargetId] = useState<string | null>(null)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [publicationTargetId, setPublicationTargetId] = useState<string | null>(null)
+  const [showStockWarningForId, setShowStockWarningForId] = useState<string | null>(null)
+
+  const normalizedSearch = search.trim().toLowerCase()
+  const filteredProducts = productos.filter((producto) => {
+    const matchesSearch = !normalizedSearch || [producto.nombre, producto.categoria, producto.denominacion ?? '', producto.precio].join(' ').toLowerCase().includes(normalizedSearch)
+    const matchesCategory = selectedCategory === 'Todas las categorías' || producto.categoria === selectedCategory
+    const matchesStatus = selectedStatus === 'Todos' || producto.status === selectedStatus
+    return matchesSearch && matchesCategory && matchesStatus
+  })
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize))
+  const safePage = Math.min(currentPage, totalPages)
+  const visibleProducts = filteredProducts.slice((safePage - 1) * pageSize, safePage * pageSize)
+  const editingTarget = editingTargetId ? productos.find((producto) => producto.id === editingTargetId) ?? null : null
+  const deleteTarget = deleteTargetId ? productos.find((producto) => producto.id === deleteTargetId) ?? null : null
+  const publicationTarget = publicationTargetId ? productos.find((producto) => producto.id === publicationTargetId) ?? null : null
+  const stockWarningTarget = showStockWarningForId ? productos.find((producto) => producto.id === showStockWarningForId) ?? null : null
+
+  function updateSearch(value: string) {
+    setSearch(value)
+    setCurrentPage(1)
+  }
+
+  function updateCategory(value: (typeof categoryFilters)[number]) {
+    setSelectedCategory(value)
+    setCurrentPage(1)
+  }
+
+  function updateStatus(value: (typeof statusFilters)[number]) {
+    setSelectedStatus(value)
+    setCurrentPage(1)
+  }
+
+  function saveProductEdition(updatedProduct: ProductoCatalogo) {
+    setProductos((current) => current.map((producto) => (producto.id === updatedProduct.id ? updatedProduct : producto)))
+    setEditingTargetId(null)
+  }
+
+  function removeProduct(productId: string) {
+    setProductos((current) => current.filter((producto) => producto.id !== productId))
+    setDeleteTargetId(null)
+  }
+
+  function togglePublication(producto: ProductoCatalogo) {
+    if (producto.status === 'Despublicado' && producto.stock === 0) {
+      setPublicationTargetId(null)
+      setShowStockWarningForId(producto.id)
+      return
+    }
+
+    setProductos((current) => current.map((item) => {
+      if (item.id !== producto.id) return item
+      if (item.status === 'Despublicado') {
+        return { ...item, status: item.stock > 0 ? 'Publicado' : 'Sin disponibilidad' }
+      }
+      return { ...item, status: 'Despublicado' }
+    }))
+    setPublicationTargetId(null)
+  }
+
+  function publishWithoutStock(productId: string) {
+    setProductos((current) => current.map((item) => (item.id === productId ? { ...item, status: 'Sin disponibilidad' } : item)))
+    setShowStockWarningForId(null)
+  }
 
   return (
-    <div className="flex min-h-screen bg-[#FAF7F0] text-[var(--color-on-surface)]">
-      {/* ── Sidebar ── */}
-      <aside className="hidden">
-        <div className="mb-10">
-          <Link to="/" className="text-headline-md italic text-[var(--color-primary)]">Alicante Gourmet</Link>
-          <p className="text-body-md mt-1 italic text-[var(--color-secondary)]">Artesano de Denia</p>
-        </div>
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
+      <main className="mx-auto w-full max-w-[var(--layout-container-max)] px-[var(--space-margin-mobile)] py-12 md:px-[var(--space-margin-desktop)] md:py-16">
+        <section className="mb-10">
+          <nav aria-label="Breadcrumb" className="text-label-sm mb-6 flex items-center gap-2 text-[var(--color-secondary)]">
+            <Link to="/productor/pedidos" className="transition-colors hover:text-[var(--color-primary)]">Area Productor</Link>
+            <ChevronRight size={14} strokeWidth={1.8} />
+            <span className="text-[var(--color-primary)]">Mi catálogo</span>
+          </nav>
 
-        <nav className="flex flex-1 flex-col gap-2">
-          {NAV_ITEMS.map(({ icon: Icon, label, to, active }) => (
-            <Link
-              key={label}
-              to={to}
-              className={`flex items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 transition-all duration-200 ${active ? 'translate-x-0.5 bg-[var(--color-secondary-container)] font-semibold text-[var(--color-primary)]' : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-container-high)]'}`}
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="mb-4 flex flex-wrap items-center gap-3">
+                <h1 className="text-display-lg text-[var(--color-primary)]">Mi catálogo</h1>
+                <span className="text-body-md rounded-full bg-[var(--color-secondary-container)] px-3 py-0.5 text-[var(--color-on-secondary-container)]">
+                  {filteredProducts.length} productos
+                </span>
+              </div>
+              <p className="text-body-md max-w-2xl text-[var(--color-on-surface-variant)]">
+                Revisa tu catálogo, edita publicaciones activas y controla qué productos están visibles para los clientes.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowAgregarModal(true)}
+              className="text-label-md inline-flex items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-[var(--color-primary)] px-6 py-3 text-[var(--color-on-primary)] shadow-md transition-all hover:brightness-110 active:scale-95"
             >
-              <Icon size={20} strokeWidth={1.8} />
-              <span className="text-label-md">{label}</span>
-            </Link>
-          ))}
-        </nav>
-
-        <div className="mt-auto border-t border-[var(--color-outline-variant)] pt-6">
-          <Link to="/productor/perfil" className="flex items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 text-[var(--color-secondary)] transition-all hover:bg-[var(--color-surface-container-high)]">
-            <User size={20} strokeWidth={1.8} />
-            <span className="text-label-md">Mi perfil</span>
-          </Link>
-        </div>
-      </aside>
-
-      {/* ── Main ── */}
-      <main className="min-h-screen flex-1 px-[var(--space-margin-mobile)] py-12 md:px-[var(--space-margin-desktop)]">
-        {/* Header */}
-        <header className="mb-16 flex items-end justify-between">
-          <div>
-            <nav className="mb-4">
-              <span className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">Panel de Productor</span>
-            </nav>
-            <div className="flex items-baseline gap-4">
-              <h1 className="text-headline-md text-[var(--color-on-surface)]">Mi catálogo</h1>
-              <span className="text-body-md rounded-full bg-[var(--color-secondary-container)] px-3 py-0.5 text-[var(--color-on-secondary-fixed-variant)]">
-                24 productos
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowAgregarModal(true)}
-            className="text-label-md flex items-center gap-2 rounded-[var(--radius-lg)] bg-[var(--color-primary-container)] px-8 py-3 text-white shadow-md transition-all hover:brightness-110 active:scale-95"
-          >
-            <Plus size={18} strokeWidth={2} />
-            Añadir producto
-          </button>
-        </header>
-
-        {/* Search & Filters */}
-        <section className="mb-10 flex flex-col items-center justify-between gap-6 md:flex-row">
-          <div className="flex w-full items-center gap-4 md:w-auto">
-            {/* Search */}
-            <div className="group relative w-full md:w-80">
-              <Search size={18} strokeWidth={1.8} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-secondary)] transition-colors group-focus-within:text-[var(--color-primary)]" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre..."
-                className="text-body-md w-full border-0 border-b border-[var(--color-outline)] bg-[var(--color-surface)] py-2.5 pl-10 pr-4 transition-all focus:border-[var(--color-primary-container)] focus:ring-0 focus:outline-none"
-              />
-            </div>
-
-            {/* Category filter */}
-            <div className="relative min-w-[160px]">
-              <select className="text-label-md w-full cursor-pointer appearance-none rounded-[var(--radius-lg)] border-0 bg-[var(--color-surface-container-low)] py-2.5 pl-4 pr-10 text-[var(--color-secondary)] focus:ring-1 focus:ring-[var(--color-primary-container)] focus:outline-none">
-                {CATEGORIAS_FILTER.map((c) => <option key={c}>{c}</option>)}
-              </select>
-              <ChevronDown size={16} strokeWidth={1.8} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-secondary)]" />
-            </div>
-          </div>
-
-          {/* Status pills */}
-          <div className="flex rounded-full bg-[var(--color-surface-container-high)] p-1">
-            {FILTROS_ESTADO.map((f) => (
-              <button
-                key={f}
-                type="button"
-                onClick={() => setFiltroEstado(f)}
-                className={`text-label-md rounded-full px-6 py-1.5 transition-all ${filtroEstado === f ? 'bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm' : 'text-[var(--color-secondary)] hover:text-[var(--color-primary)]'}`}
-              >
-                {f}
-              </button>
-            ))}
+              <Plus size={18} strokeWidth={2} />
+              Añadir producto
+            </button>
           </div>
         </section>
 
-        {/* Product list */}
-        <div className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface)] shadow-[0_4px_20px_rgba(26,26,26,0.04)]">
-          <div className="flex flex-col gap-4 p-6">
-            {productos.map((prod) => (
-              <ProductCard
-                key={prod.id}
-                producto={prod}
-                onDelete={() => setDeleteTarget(prod)}
-                onStockWarning={() => setShowStockWarning(true)}
+        <section className="mb-8 border border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-surface-container-lowest)] p-4 shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)] md:p-6" aria-label="Filtros del catálogo de productor">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+            <label className="relative flex-1">
+              <Search size={18} strokeWidth={1.8} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-outline)]" />
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => updateSearch(event.target.value)}
+                placeholder="Buscar por nombre, categoría o denominación..."
+                className="text-body-md w-full border border-[var(--color-outline-variant)] bg-[#FAF7F0] py-3 pl-11 pr-4 text-[#1A1A1A] placeholder:text-[var(--color-outline)] focus:border-[var(--color-primary)] focus:outline-none"
               />
-            ))}
+            </label>
+
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((value) => !value)}
+              aria-expanded={filtersOpen}
+              className="text-label-md inline-flex items-center justify-center gap-2 border border-[var(--color-outline-variant)] px-5 py-3 uppercase tracking-wider text-[var(--color-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] lg:hidden"
+            >
+              <SlidersHorizontal size={18} strokeWidth={1.8} />
+              Filtros
+            </button>
           </div>
 
-          {/* Pagination footer */}
-          <footer className="flex items-center justify-between border-t border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] px-8 py-6">
-            <span className="text-label-sm text-[var(--color-secondary)]">Mostrando {productos.length} de 24 productos</span>
-            <div className="flex items-center gap-2">
-              <button type="button" disabled className="flex size-10 items-center justify-center rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] text-[var(--color-secondary)] opacity-50 disabled:cursor-not-allowed">
-                <ChevronLeft size={18} strokeWidth={1.8} />
-              </button>
-              {[1, 2, 3].map((page) => (
-                <button key={page} type="button" className={`text-label-md flex size-10 items-center justify-center rounded-[var(--radius-lg)] ${page === 1 ? 'bg-[var(--color-primary-container)] text-white shadow-sm' : 'border border-[var(--color-outline-variant)] text-[var(--color-secondary)] hover:bg-[var(--color-surface)]'}`}>
-                  {page}
-                </button>
-              ))}
-              <button type="button" className="flex size-10 items-center justify-center rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] text-[var(--color-secondary)] hover:bg-[var(--color-surface)]">
-                <ChevronRight size={18} strokeWidth={1.8} />
-              </button>
+          <div className={`${filtersOpen ? 'mt-5 grid' : 'hidden'} min-w-0 gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] pt-5 lg:mt-5 lg:grid lg:grid-cols-[minmax(0,15rem)_1fr] lg:items-end`}>
+            <label className="block min-w-0">
+              <span className="text-label-sm mb-2 flex items-center gap-2 uppercase tracking-[0.18em] text-[var(--color-secondary)]">
+                <Filter size={16} strokeWidth={1.8} />
+                Categoría
+              </span>
+              <div className="relative min-w-0">
+                <select
+                  value={selectedCategory}
+                  onChange={(event) => updateCategory(event.target.value as (typeof categoryFilters)[number])}
+                  className="text-body-md w-full min-w-0 appearance-none border border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-4 py-3 pr-10 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none"
+                >
+                  {categoryFilters.map((category) => (
+                    <option key={category}>{category}</option>
+                  ))}
+                </select>
+                <ChevronDown size={18} strokeWidth={1.8} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-secondary)]" />
+              </div>
+            </label>
+
+            <div className="min-w-0">
+              <span className="text-label-sm mb-2 flex items-center gap-2 uppercase tracking-[0.18em] text-[var(--color-secondary)]">
+                <Filter size={16} strokeWidth={1.8} />
+                Estado de publicación
+              </span>
+              <div className="flex flex-wrap gap-3 pb-1">
+                {statusFilters.map((status) => {
+                  const count = status === 'Todos'
+                    ? productos.filter((producto) => selectedCategory === 'Todas las categorías' || producto.categoria === selectedCategory).filter((producto) => !normalizedSearch || [producto.nombre, producto.categoria, producto.denominacion ?? '', producto.precio].join(' ').toLowerCase().includes(normalizedSearch)).length
+                    : productos.filter((producto) => producto.status === status).filter((producto) => selectedCategory === 'Todas las categorías' || producto.categoria === selectedCategory).filter((producto) => !normalizedSearch || [producto.nombre, producto.categoria, producto.denominacion ?? '', producto.precio].join(' ').toLowerCase().includes(normalizedSearch)).length
+
+                  return (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => updateStatus(status)}
+                      className={`text-label-md max-w-full whitespace-normal rounded-full border px-4 py-2 text-left transition-all sm:whitespace-nowrap ${selectedStatus === status ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white' : 'border-[var(--color-outline-variant)] text-[var(--color-on-surface-variant)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'}`}
+                    >
+                      {status} ({count})
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </footer>
+          </div>
+        </section>
+
+        <div className="flex flex-col gap-4">
+          {visibleProducts.map((producto) => (
+            <ProductCard
+              key={producto.id}
+              producto={producto}
+              onEdit={() => setEditingTargetId(producto.id)}
+              onTogglePublication={() => setPublicationTargetId(producto.id)}
+              onDelete={() => setDeleteTargetId(producto.id)}
+            />
+          ))}
         </div>
+
+        {visibleProducts.length === 0 ? (
+          <div className="mt-10 border border-dashed border-[var(--color-outline-variant)] p-10 text-center">
+            <Filter className="mx-auto mb-3 text-[var(--color-outline)]" size={28} strokeWidth={1.8} />
+            <p className="text-body-md text-[var(--color-on-surface-variant)]">No hay productos que coincidan con los filtros aplicados.</p>
+          </div>
+        ) : null}
+
+        <section className="mt-12 flex flex-col gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] pt-8 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-label-sm italic text-[var(--color-outline)]">Mostrando {visibleProducts.length} de {filteredProducts.length} productos filtrados</p>
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button type="button" disabled={safePage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} className="flex size-10 items-center justify-center rounded-full border border-[var(--color-outline-variant)] text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)] disabled:cursor-not-allowed disabled:opacity-50">
+              <ChevronLeft size={18} strokeWidth={1.8} />
+            </button>
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+              <button key={page} type="button" onClick={() => setCurrentPage(page)} className={`text-label-md flex size-9 items-center justify-center rounded-full transition-colors ${page === safePage ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)]' : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-container-high)]'}`}>
+                {page}
+              </button>
+            ))}
+            <button type="button" disabled={safePage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} className="flex size-10 items-center justify-center rounded-full border border-[var(--color-outline-variant)] text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)] disabled:cursor-not-allowed disabled:opacity-50">
+              <ChevronRight size={18} strokeWidth={1.8} />
+            </button>
+          </div>
+        </section>
       </main>
 
-      {/* FAB help */}
-      <button type="button" className="group fixed right-8 bottom-8 flex size-12 items-center justify-center rounded-full bg-[var(--color-secondary-container)] text-[var(--color-secondary)] shadow-lg transition-transform hover:scale-110">
-        <HelpCircle size={22} strokeWidth={1.8} />
-        <span className="absolute right-14 whitespace-nowrap rounded bg-[var(--color-on-surface)] px-3 py-1 text-[10px] text-[var(--color-surface)] opacity-0 transition-opacity group-hover:opacity-100">
-          ¿Necesitas ayuda con tu catálogo?
-        </span>
-      </button>
-
-      {/* Modals */}
       {showAgregarModal ? <AgregarProductoModal onClose={() => setShowAgregarModal(false)} /> : null}
+
+      {editingTarget ? (
+        <EditarProductoModal
+          producto={editingTarget}
+          onClose={() => setEditingTargetId(null)}
+          onSave={saveProductEdition}
+        />
+      ) : null}
 
       {deleteTarget ? (
         <EliminarProductoModal
           producto={deleteTarget}
-          onClose={() => setDeleteTarget(null)}
-          onConfirm={() => setDeleteTarget(null)}
+          onClose={() => setDeleteTargetId(null)}
+          onConfirm={() => removeProduct(deleteTarget.id)}
         />
       ) : null}
 
-      {showStockWarning ? (
+      {publicationTarget ? (
+        <PublicacionProductoModal
+          producto={publicationTarget}
+          onClose={() => setPublicationTargetId(null)}
+          onConfirm={() => togglePublication(publicationTarget)}
+        />
+      ) : null}
+
+      {stockWarningTarget ? (
         <AvisoStockModal
-          onClose={() => setShowStockWarning(false)}
-          onPublish={() => setShowStockWarning(false)}
+          onClose={() => setShowStockWarningForId(null)}
+          onPublish={() => publishWithoutStock(stockWarningTarget.id)}
         />
       ) : null}
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Product card
-// ---------------------------------------------------------------------------
-
 type ProductCardProps = {
   producto: ProductoCatalogo
+  onEdit: () => void
+  onTogglePublication: () => void
   onDelete: () => void
-  onStockWarning: () => void
 }
 
-function ProductCard({ producto, onDelete, onStockWarning }: ProductCardProps) {
-  const isUnpublished = producto.status === 'Despublicado'
+function ProductCard({ producto, onEdit, onTogglePublication, onDelete }: ProductCardProps) {
+  const isInactive = producto.status === 'Despublicado'
+  const isOutOfStock = producto.stock === 0 || producto.status === 'Sin disponibilidad'
+  const publicationLabel = isInactive ? 'Publicar producto' : 'Despublicar producto'
 
   return (
-    <article className={`relative flex gap-6 rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-6 transition-colors hover:bg-[var(--color-surface-container)] ${isUnpublished ? 'border-dashed opacity-60' : ''}`}>
-      <img
-        src={producto.imagen}
-        alt={producto.nombre}
-        className={`size-24 rounded-[var(--radius-lg)] object-cover [border:0.5px_solid_#8A8275] ${isUnpublished ? 'grayscale-[0.5]' : ''}`}
-      />
+    <article className={`rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-outline-variant)_50%,transparent)] bg-[var(--color-surface-container-lowest)] p-5 shadow-[0_10px_30px_-20px_rgba(122,46,58,0.25)] transition-all md:p-6 ${isInactive ? 'border-dashed' : ''}`}>
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 gap-4 md:gap-5">
+          <img src={producto.imagen} alt={producto.nombre} className={`size-24 shrink-0 rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] object-cover md:size-28 ${isInactive ? 'grayscale-[0.55]' : ''}`} />
 
-      <div className="flex-grow">
-        <h4 className="text-headline-md mb-1 text-lg leading-7 text-[var(--color-on-surface)]">{producto.nombre}</h4>
-        <p className="text-label-sm mb-3 uppercase tracking-wider text-[var(--color-secondary)]">
-          {producto.categoria}{producto.denominacion ? ` · ${producto.denominacion}` : ''}
-        </p>
-        <div className="text-headline-md flex items-center gap-2 text-base">
-          <span>{producto.precio}</span>
-          <span className="text-[var(--color-secondary)]">·</span>
-          {producto.agotado ? (
-            <span className="flex items-center gap-1 font-semibold text-[var(--color-error)]">
-              <TriangleAlert size={16} strokeWidth={1.8} /> Agotado
-            </span>
-          ) : producto.lowStock ? (
-            <span className="flex items-center gap-1 font-semibold text-amber-700">
-              <TriangleAlert size={16} strokeWidth={1.8} /> {producto.stock} uds
-            </span>
-          ) : (
-            <span className="text-[var(--color-secondary)]">{producto.stock} uds</span>
-          )}
+          <div className="min-w-0 flex-1">
+            <div className="mb-3 flex flex-wrap items-start gap-3">
+              <h2 className="text-headline-md text-[var(--color-on-surface)]">{producto.nombre}</h2>
+              <StatusBadge status={producto.status} />
+            </div>
+
+            <p className="text-label-sm mb-3 uppercase tracking-[0.18em] text-[var(--color-secondary)]">
+              {producto.categoria}{producto.denominacion ? ` · ${producto.denominacion}` : ''}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-body-md text-[var(--color-on-surface)]">
+              <span className="font-semibold text-[var(--color-primary)]">{producto.precio}</span>
+              <span className="text-[var(--color-secondary)]">·</span>
+              {isOutOfStock ? (
+                <span className="inline-flex items-center gap-1 text-[var(--color-error)]">
+                  <TriangleAlert size={16} strokeWidth={1.8} />
+                  Sin stock
+                </span>
+              ) : producto.stock <= 5 ? (
+                <span className="inline-flex items-center gap-1 text-amber-700">
+                  <TriangleAlert size={16} strokeWidth={1.8} />
+                  {producto.stock} uds
+                </span>
+              ) : (
+                <span className="text-[var(--color-secondary)]">{producto.stock} uds</span>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Status badge — top right */}
-      <div className="absolute top-6 right-6">
-        <StatusBadge status={producto.status} />
-      </div>
-
-      {/* Actions — bottom right */}
-      <div className="absolute right-6 bottom-6 flex gap-2">
-        <ActionBtn aria-label="Editar producto">
-          <Pencil size={18} strokeWidth={1.8} />
-        </ActionBtn>
-
-        {isUnpublished ? (
-          <ActionBtn aria-label="Publicar producto" onClick={onStockWarning} className="text-[var(--color-primary)]">
-            <EyeOff size={18} strokeWidth={1.8} />
+        <div className="flex flex-wrap items-center gap-2 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] pt-4 lg:border-t-0 lg:pt-0">
+          <ActionBtn aria-label="Editar publicación" onClick={onEdit}>
+            <Pencil size={18} strokeWidth={1.8} />
           </ActionBtn>
-        ) : (
-          <ActionBtn aria-label="Ver producto">
-            <Eye size={18} strokeWidth={1.8} />
+          <ActionBtn aria-label={publicationLabel} onClick={onTogglePublication} className="text-[var(--color-primary)]">
+            {isInactive ? <Eye size={18} strokeWidth={1.8} /> : <EyeOff size={18} strokeWidth={1.8} />}
           </ActionBtn>
-        )}
-
-        <ActionBtn aria-label="Eliminar producto" onClick={onDelete} danger>
-          <Trash2 size={18} strokeWidth={1.8} />
-        </ActionBtn>
+          <ActionBtn aria-label="Eliminar producto" onClick={onDelete} danger>
+            <Trash2 size={18} strokeWidth={1.8} />
+          </ActionBtn>
+        </div>
       </div>
     </article>
   )
 }
 
-type ActionBtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  danger?: boolean
-}
+type ActionBtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { danger?: boolean }
 
 function ActionBtn({ children, danger, className = '', ...rest }: ActionBtnProps) {
   return (
@@ -339,23 +421,10 @@ function ActionBtn({ children, danger, className = '', ...rest }: ActionBtnProps
 function StatusBadge({ status }: { status: ProductoStatus }) {
   switch (status) {
     case 'Publicado':
-      return (
-        <span className="text-label-md inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
-          <span className="mr-2 size-1.5 rounded-full bg-emerald-500" />
-          Publicado
-        </span>
-      )
+      return <span className="text-label-md inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs text-emerald-700"><span className="mr-2 size-1.5 rounded-full bg-emerald-500" />Publicado</span>
     case 'Despublicado':
-      return (
-        <span className="text-label-md inline-flex items-center rounded-full border border-dashed border-[var(--color-outline)] bg-[var(--color-surface-container-highest)] px-3 py-1 text-xs text-[var(--color-secondary)]">
-          Despublicado
-        </span>
-      )
+      return <span className="text-label-md inline-flex items-center rounded-full border border-dashed border-[var(--color-outline)] bg-[var(--color-surface-container-highest)] px-3 py-1 text-xs text-[var(--color-secondary)]">Despublicado</span>
     case 'Sin disponibilidad':
-      return (
-        <span className="text-label-md inline-flex items-center rounded-full border border-red-100 bg-red-50 px-3 py-1 text-xs text-[var(--color-error)]">
-          Sin disponibilidad
-        </span>
-      )
+      return <span className="text-label-md inline-flex items-center rounded-full border border-red-100 bg-red-50 px-3 py-1 text-xs text-[var(--color-error)]">Sin disponibilidad</span>
   }
 }
