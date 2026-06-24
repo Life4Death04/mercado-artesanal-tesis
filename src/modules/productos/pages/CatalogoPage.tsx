@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Boxes,
@@ -14,7 +15,6 @@ import {
 
 type FilterOption = {
   label: string
-  active?: boolean
 }
 
 type Product = {
@@ -31,16 +31,18 @@ type Product = {
 }
 
 const categories: FilterOption[] = [
-  { label: 'Aceites', active: true },
+  { label: 'Aceites' },
   { label: 'Vinos' },
   { label: 'Embutidos' },
   { label: 'Turrones' },
+  { label: 'Miel' },
 ]
 
 const municipalities: FilterOption[] = [
   { label: 'Jijona' },
   { label: 'Pinoso' },
   { label: 'Villena' },
+  { label: 'Denia' },
 ]
 
 const products: Product[] = [
@@ -124,22 +126,84 @@ const products: Product[] = [
   },
 ]
 
+function parsePrice(price: string) {
+  return Number(price.replace('€', '').replace(',', '.').trim())
+}
+
 export function CatalogoPage() {
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedMunicipalities, setSelectedMunicipalities] = useState<string[]>([])
+  const [maxPrice, setMaxPrice] = useState(50)
+  const [stockOnly, setStockOnly] = useState(false)
+
+  const normalizedSearch = searchQuery.trim().toLowerCase()
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = !normalizedSearch || [product.name, product.category, product.producer, product.origin]
+      .join(' ')
+      .toLowerCase()
+      .includes(normalizedSearch)
+    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(product.category)
+    const matchesMunicipality = selectedMunicipalities.length === 0 || selectedMunicipalities.includes(product.origin)
+    const matchesPrice = parsePrice(product.price) <= maxPrice
+    const matchesStock = !stockOnly || product.stock === 'En stock'
+
+    return matchesSearch && matchesCategory && matchesMunicipality && matchesPrice && matchesStock
+  })
+
+  function toggleFilter(value: string, selectedValues: string[], updateSelectedValues: (values: string[]) => void) {
+    updateSelectedValues(
+      selectedValues.includes(value)
+        ? selectedValues.filter((selectedValue) => selectedValue !== value)
+        : [...selectedValues, value],
+    )
+  }
+
+  function resetFilters() {
+    setSearchQuery('')
+    setSelectedCategories([])
+    setSelectedMunicipalities([])
+    setMaxPrice(50)
+    setStockOnly(false)
+  }
+
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-background)] selection:bg-[var(--color-primary-fixed)] selection:text-[var(--color-on-primary-fixed)]">
-      <div className="mx-auto flex w-full max-w-[var(--layout-container-max)] flex-col gap-8 px-[var(--space-margin-mobile)] py-10 md:px-[var(--space-margin-desktop)] lg:flex-row lg:gap-16">
-        <CatalogFilters />
+      <div className="mx-auto flex w-full max-w-[var(--layout-container-max)] flex-col gap-8 px-[var(--space-margin-mobile)] py-10 md:px-[var(--space-margin-desktop)] min-[1300px]:flex-row min-[1300px]:gap-16">
+        <CatalogFilters
+          filtersOpen={filtersOpen}
+          maxPrice={maxPrice}
+          selectedCategories={selectedCategories}
+          selectedMunicipalities={selectedMunicipalities}
+          stockOnly={stockOnly}
+          onToggleOpen={() => setFiltersOpen((open) => !open)}
+          onToggleCategory={(category) => toggleFilter(category, selectedCategories, setSelectedCategories)}
+          onToggleMunicipality={(municipality) => toggleFilter(municipality, selectedMunicipalities, setSelectedMunicipalities)}
+          onMaxPriceChange={setMaxPrice}
+          onStockOnlyChange={setStockOnly}
+          onReset={resetFilters}
+        />
 
         <main className="min-w-0 flex-1" aria-label="Catálogo de productos artesanales">
           <CatalogHeader />
-          <SearchPanel />
-          <CatalogToolbar />
+          <SearchPanel searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+          <CatalogToolbar count={filteredProducts.length} />
 
           <section className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 xl:grid-cols-3" aria-label="Productos disponibles">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </section>
+
+          {filteredProducts.length === 0 ? (
+            <div className="mt-10 border border-dashed border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-10 text-center">
+              <p className="text-body-md text-[var(--color-on-surface-variant)]">No hay productos que coincidan con la búsqueda o filtros aplicados.</p>
+              <button type="button" onClick={resetFilters} className="text-label-md mt-5 border border-[var(--color-primary)] px-6 py-3 uppercase tracking-wider text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)]">
+                Restablecer filtros
+              </button>
+            </div>
+          ) : null}
 
           <Pagination />
         </main>
@@ -166,25 +230,51 @@ function CatalogHeader() {
   )
 }
 
-function CatalogFilters() {
+type CatalogFiltersProps = {
+  filtersOpen: boolean
+  maxPrice: number
+  selectedCategories: string[]
+  selectedMunicipalities: string[]
+  stockOnly: boolean
+  onToggleOpen: () => void
+  onToggleCategory: (category: string) => void
+  onToggleMunicipality: (municipality: string) => void
+  onMaxPriceChange: (price: number) => void
+  onStockOnlyChange: (checked: boolean) => void
+  onReset: () => void
+}
+
+function CatalogFilters({
+  filtersOpen,
+  maxPrice,
+  selectedCategories,
+  selectedMunicipalities,
+  stockOnly,
+  onToggleOpen,
+  onToggleCategory,
+  onToggleMunicipality,
+  onMaxPriceChange,
+  onStockOnlyChange,
+  onReset,
+}: CatalogFiltersProps) {
   return (
-    <aside className="border-[color-mix(in_srgb,var(--color-outline-variant)_85%,transparent)] pb-6 lg:sticky lg:top-28 lg:flex lg:h-[calc(100dvh-9rem)] lg:w-80 lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:border-r lg:pr-8">
-      <div className="mb-8 flex items-end justify-between gap-4 lg:block">
+    <aside className="border-[color-mix(in_srgb,var(--color-outline-variant)_85%,transparent)] min-[1300px]:sticky min-[1300px]:top-28 min-[1300px]:flex min-[1300px]:h-[calc(100dvh-9rem)] min-[1300px]:w-80 min-[1300px]:shrink-0 min-[1300px]:flex-col min-[1300px]:overflow-y-auto min-[1300px]:border-r min-[1300px]:pr-8">
+      <div className="flex items-end justify-between gap-4 border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-4 min-[1300px]:mb-8 min-[1300px]:block min-[1300px]:border-0 min-[1300px]:bg-transparent min-[1300px]:p-0">
         <div>
           <h2 className="text-title-lg text-[var(--color-secondary)]">Filtros</h2>
           <p className="text-label-sm mt-1 text-[var(--color-on-surface-variant)]">Refina tu búsqueda</p>
         </div>
-        <button type="button" className="text-label-sm flex items-center gap-2 text-[var(--color-primary)] lg:hidden">
+        <button type="button" onClick={onToggleOpen} aria-expanded={filtersOpen} className="text-label-sm flex items-center gap-2 text-[var(--color-primary)] min-[1300px]:hidden">
           <SlidersHorizontal size={17} strokeWidth={1.8} />
-          Ajustar
+          {filtersOpen ? 'Ocultar' : 'Ajustar'}
         </button>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2 lg:flex lg:flex-col lg:gap-0">
-        <FilterGroup icon={Boxes} title="Categorías" options={categories} />
-        <FilterGroup icon={MapPin} title="Municipios" options={municipalities} />
+      <div className={`${filtersOpen ? 'grid' : 'hidden'} mt-4 gap-8 border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-5 md:grid-cols-2 min-[1300px]:mt-0 min-[1300px]:flex min-[1300px]:border-0 min-[1300px]:bg-transparent min-[1300px]:p-0 min-[1300px]:flex-col min-[1300px]:gap-0`}>
+        <FilterGroup icon={Boxes} title="Categorías" options={categories} selectedOptions={selectedCategories} onToggle={onToggleCategory} />
+        <FilterGroup icon={MapPin} title="Municipios" options={municipalities} selectedOptions={selectedMunicipalities} onToggle={onToggleMunicipality} />
 
-        <section className="border-b border-[var(--color-outline-variant)] pb-6 lg:pt-6">
+        <section className="border-b border-[var(--color-outline-variant)] pb-6 min-[1300px]:pt-6">
           <FilterTitle icon={WalletCards} title="Rango de precio" />
           <div className="px-2">
             <input
@@ -193,40 +283,42 @@ function CatalogFilters() {
               max="100"
               min="0"
               type="range"
-              defaultValue="50"
+              value={maxPrice}
+              onChange={(event) => onMaxPriceChange(Number(event.target.value))}
             />
             <div className="text-label-sm mt-3 flex justify-between text-[var(--color-on-surface-variant)]">
               <span>0 €</span>
-              <span className="font-semibold text-[var(--color-on-surface)]">Hasta 50 €</span>
+              <span className="font-semibold text-[var(--color-on-surface)]">Hasta {maxPrice} €</span>
               <span>100 €</span>
             </div>
           </div>
         </section>
 
-        <section className="pb-6 lg:pt-6">
+        <section className="pb-6 min-[1300px]:pt-6">
           <FilterTitle icon={PackageCheck} title="Disponibilidad" />
-          <FilterCheckbox option={{ label: 'Solo con stock' }} />
+          <FilterCheckbox label="Solo con stock" checked={stockOnly} onChange={onStockOnlyChange} />
         </section>
-      </div>
 
-      <button
-        type="button"
-        className="text-label-md mt-8 w-full border border-[var(--color-outline)] px-6 py-3 uppercase tracking-wider text-[var(--color-secondary)] transition-colors duration-300 hover:bg-[var(--color-surface-container)] hover:text-[var(--color-primary)] lg:mt-auto"
-      >
-        Restablecer filtros
-      </button>
+        <button
+          type="button"
+          onClick={onReset}
+          className="text-label-md w-full border border-[var(--color-outline)] px-6 py-3 uppercase tracking-wider text-[var(--color-secondary)] transition-colors duration-300 hover:bg-[var(--color-surface-container)] hover:text-[var(--color-primary)] min-[1300px]:mt-auto"
+        >
+          Restablecer filtros
+        </button>
+      </div>
     </aside>
   )
 }
 
-function FilterGroup({ icon, title, options }: { icon: typeof Boxes; title: string; options: FilterOption[] }) {
+function FilterGroup({ icon, title, options, selectedOptions, onToggle }: { icon: typeof Boxes; title: string; options: FilterOption[]; selectedOptions: string[]; onToggle: (option: string) => void }) {
   return (
-    <section className="border-b border-[var(--color-outline-variant)] pb-6 lg:pt-6 first:lg:pt-0">
+    <section className="border-b border-[var(--color-outline-variant)] pb-6 min-[1300px]:pt-6 first:min-[1300px]:pt-0">
       <FilterTitle icon={icon} title={title} />
       <ul className="space-y-3">
         {options.map((option) => (
           <li key={option.label}>
-            <FilterCheckbox option={option} />
+            <FilterCheckbox label={option.label} checked={selectedOptions.includes(option.label)} onChange={() => onToggle(option.label)} />
           </li>
         ))}
       </ul>
@@ -243,28 +335,29 @@ function FilterTitle({ icon: Icon, title }: { icon: typeof Boxes; title: string 
   )
 }
 
-function FilterCheckbox({ option }: { option: FilterOption }) {
+function FilterCheckbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
     <label className="group flex cursor-pointer items-center gap-3">
       <input
         type="checkbox"
-        defaultChecked={option.active}
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
         className="size-4 rounded-sm border-[var(--color-outline-variant)] bg-transparent accent-[var(--color-primary)] focus:ring-[var(--color-primary)]"
       />
       <span
         className={`text-body-md transition-colors group-hover:text-[var(--color-primary-container)] ${
-          option.active
+          checked
             ? 'font-bold text-[var(--color-primary)]'
             : 'text-[var(--color-on-surface-variant)]'
         }`}
       >
-        {option.label}
+        {label}
       </span>
     </label>
   )
 }
 
-function SearchPanel() {
+function SearchPanel({ searchQuery, onSearchChange }: { searchQuery: string; onSearchChange: (value: string) => void }) {
   return (
     <section className="mb-10">
       <label className="flex items-center rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-4 py-4 shadow-sm transition-all focus-within:border-[var(--color-primary)] focus-within:ring-1 focus-within:ring-[var(--color-primary)] md:px-6">
@@ -272,6 +365,8 @@ function SearchPanel() {
         <Search size={28} strokeWidth={1.7} className="mr-4 shrink-0 text-[var(--color-primary)]" />
         <input
           type="search"
+          value={searchQuery}
+          onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Busca vinos, turrones, embutidos..."
           className="text-body-lg w-full border-0 bg-transparent p-0 text-[var(--color-on-surface)] placeholder:text-[var(--color-outline)] focus:outline-none focus:ring-0"
         />
@@ -286,11 +381,11 @@ function SearchPanel() {
   )
 }
 
-function CatalogToolbar() {
+function CatalogToolbar({ count }: { count: number }) {
   return (
     <div className="mb-8 flex flex-col items-start justify-between gap-4 border-b border-[var(--color-outline-variant)] pb-4 sm:flex-row sm:items-center">
       <p className="text-body-md text-[var(--color-on-surface-variant)]">
-        <span className="font-semibold text-[var(--color-on-surface)]">124</span> productos encontrados
+        <span className="font-semibold text-[var(--color-on-surface)]">{count}</span> productos encontrados
       </p>
       <div className="flex items-center gap-4">
         <span className="text-label-md uppercase text-[var(--color-on-surface-variant)]">Ordenar por:</span>
