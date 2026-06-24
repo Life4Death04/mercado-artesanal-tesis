@@ -5,6 +5,7 @@ import productImage from '../../../../ReferenciasUI/LandingPage/assets/Producto.
 import producerImage from '../../../../ReferenciasUI/LandingPage/assets/Productor.png'
 import { PublicTopbar } from '../../../componentes/layout/PublicTopbar'
 import { APP_NAME } from '../../../lib/branding'
+import { ConsumerFooter } from '../../../componentes/layout/ConsumerFooter'
 
 const marketCategories = [
   {
@@ -148,6 +149,7 @@ export function LandingPage() {
           </div>
         </section>
       </main>
+      <ConsumerFooter />
     </div>
   )
 }

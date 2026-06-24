@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { ArrowLeft, LogOut, UtensilsCrossed } from 'lucide-react'
 import { PublicTopbar } from '../../../componentes/layout/PublicTopbar'
 import { APP_NAME } from '../../../lib/branding'
+import { ConsumerFooter } from '../../../componentes/layout/ConsumerFooter'
 
 type RegistrationWizardShellProps = {
   children: ReactNode
@@ -63,6 +64,7 @@ export function RegistrationWizardShell({
         </div>
       ) : null}
       {children}
+      <ConsumerFooter />
     </div>
   )
 }
