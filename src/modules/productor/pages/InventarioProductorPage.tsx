@@ -1,24 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  BarChart2,
-  BookOpen,
-  CheckCircle2,
-  CircleAlert,
-  Minus,
-  Package,
-  Pencil,
-  Plus,
-  Search,
-  ShoppingBag,
-  Truck,
-  TriangleAlert,
-  User,
-} from 'lucide-react'
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import { CheckCircle2, ChevronRight, CircleAlert, Minus, Pencil, Plus, Search, TriangleAlert } from 'lucide-react'
 
 type StockStatus = 'En stock' | 'Stock bajo' | 'Agotado'
 
@@ -30,10 +12,6 @@ type InventarioItem = {
   imagen: string
 }
 
-// ---------------------------------------------------------------------------
-// Mock data
-// ---------------------------------------------------------------------------
-
 const UMBRAL_STOCK_BAJO = 5
 
 const itemsIniciales: InventarioItem[] = [
@@ -42,38 +20,32 @@ const itemsIniciales: InventarioItem[] = [
     nombre: 'Aceite de Oliva Virgen Extra',
     categoria: 'Aceites y Vinagres',
     stock: 15,
-    imagen:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuClWartENzQpyYqJqC8C4CvjIiFaKAyZP8yX1LEAVF7YfPqWK3nOXErjiWhtizxf-lyP1uoUoMfZUE3arRlSWZ6qI-Xkt4aAAxLjLEsDE10Doa5JaG507RT_rtIbU9KbleQecy5AT5L4iwCL1t8eme21sfM4I60yTk6B0YnZoaprunc9Mk5o0djAiGVqudXiCiYihnUUFD2i667ajuXszCDMyWIAWwqoiIkmvfB8ZdKsBNWs6Mz3Q5oCA-XNfOIObhgzaQ29epkSIc',
+    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuClWartENzQpyYqJqC8C4CvjIiFaKAyZP8yX1LEAVF7YfPqWK3nOXErjiWhtizxf-lyP1uoUoMfZUE3arRlSWZ6qI-Xkt4aAAxLjLEsDE10Doa5JaG507RT_rtIbU9KbleQecy5AT5L4iwCL1t8eme21sfM4I60yTk6B0YnZoaprunc9Mk5o0djAiGVqudXiCiYihnUUFD2i667ajuXszCDMyWIAWwqoiIkmvfB8ZdKsBNWs6Mz3Q5oCA-XNfOIObhgzaQ29epkSIc',
   },
   {
     id: 'inv-2',
-    nombre: 'Turrón de Jijona',
+    nombre: 'Turron de Jijona',
     categoria: 'Dulces y Postres',
     stock: 3,
-    imagen:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBa3xANjK2EgB5yaNlw8gcPw-pY3zqpXxN9K59so5M-jXlpVsxulQD69-4SCqagHHU3k9WB4AlzLtXU9d_bWaym7koFMKvn3g4jo8cdXrXRK_bwdPDy5wXx0P7jIjFD1TfbA369Wv8Q_FK3hB0QHkiQ4DAc-2vxft4twZMKErAzLEG5JFf2wgZJbtgF3-Ti9qY49J2zsL1pDPE0F0NSrHyECC9sWFCX-Ex7p6fUKF8Ipan4Bk03Xhr1-dYZ4maLmxgjlOAMzv0nE2o',
+    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBa3xANjK2EgB5yaNlw8gcPw-pY3zqpXxN9K59so5M-jXlpVsxulQD69-4SCqagHHU3k9WB4AlzLtXU9d_bWaym7koFMKvn3g4jo8cdXrXRK_bwdPDy5wXx0P7jIjFD1TfbA369Wv8Q_FK3hB0QHkiQ4DAc-2vxft4twZMKErAzLEG5JFf2wgZJbtgF3-Ti9qY49J2zsL1pDPE0F0NSrHyECC9sWFCX-Ex7p6fUKF8Ipan4Bk03Xhr1-dYZ4maLmxgjlOAMzv0nE2o',
   },
   {
     id: 'inv-3',
     nombre: 'Vino Tinto Monastrell',
     categoria: 'Vinos y Licores',
     stock: 0,
-    imagen:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuC1bOu_zOWwTGLS4PhTTQTYYnJk9xAAGe-3FxShYcVG6zxBDq6yKZq5d7YYzbsd5A83FvIiwU-8BUnq5Nxj15fA6kARpABFqdDcRWcDAygwTz8NeF3bDKHeCBrfgetMLa1UsmR8cmTuBZsFZ_ZPG79eDLXDDNCD6JXwjdIeajtS3OYQAwteEszio_ukRGOgY3qKec8IiNA5aBFwtJZKVTNIpbLcs-D3wFzQ2u2K3NCsRTuhd90z8TfpeJAtG0Vm2wvqrxxVcnWV3qk',
+    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC1bOu_zOWwTGLS4PhTTQTYYnJk9xAAGe-3FxShYcVG6zxBDq6yKZq5d7YYzbsd5A83FvIiwU-8BUnq5Nxj15fA6kARpABFqdDcRWcDAygwTz8NeF3bDKHeCBrfgetMLa1UsmR8cmTuBZsFZ_ZPG79eDLXDDNCD6JXwjdIeajtS3OYQAwteEszio_ukRGOgY3qKec8IiNA5aBFwtJZKVTNIpbLcs-D3wFzQ2u2K3NCsRTuhd90z8TfpeJAtG0Vm2wvqrxxVcnWV3qk',
   },
   {
     id: 'inv-4',
-    nombre: 'Sobrasada de la Montaña',
+    nombre: 'Sobrasada de la Montana',
     categoria: 'Embutidos',
     stock: 42,
-    imagen:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBYs77QFQGe7CrEcNnV0iD57RGRXVyM75KeB4DGFhakPUZs2LXS4sy-Hb8oAD8WBFMj3LFFnEukuUThn7pPLkGCWGGSCjxioW9bNyyZbX5JWBOMDouZEKlh23d8ZpQSEIsoCwO9AMiywNMIF9jx-Kzx41dTLzf9Wm_BSwQ1D4NG_2F10G7uFO3Ht9OHQFbRoXV_4LmcGRzZH4olU35glgGUsDgykQzdmzHKk67NEYWR_iie2XBsftEfCtpME',
+    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBYs77QFQGe7CrEcNnV0iD57RGRXVyM75KeB4DGFhakPUZs2LXS4sy-Hb8oAD8WBFMj3LFFnEukuUThn7pPLkGCWGGSCjxioW9bNyyZbX5JWBOMDouZEKlh23d8ZpQSEIsoCwO9AMiywNMIF9jx-Kzx41dTLzf9Wm_BSwQ1D4NG_2F10G7uFO3Ht9OHQFbRoXV_4LmcGRzZH4olU35glgGUsDgykQzdmzHKk67NEYWR_iie2XBsftEfCtpME',
   },
 ]
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+type FiltroActivo = 'Todos' | 'Stock bajo' | 'Agotados'
 
 function getStatus(stock: number): StockStatus {
   if (stock === 0) return 'Agotado'
@@ -81,208 +53,143 @@ function getStatus(stock: number): StockStatus {
   return 'En stock'
 }
 
-const NAV_ITEMS = [
-  { icon: ShoppingBag, label: 'Mis pedidos', to: '/productor/pedidos', active: false },
-  { icon: BookOpen, label: 'Mi catálogo', to: '/productor/productos', active: false },
-  { icon: Package, label: 'Inventario', to: '/productor/inventario', active: true },
-  { icon: BarChart2, label: 'Estadísticas', to: '/productor/estadisticas', active: false },
-  { icon: Truck, label: 'Configuración de entregas', to: '/productor/entregas', active: false },
-]
-
-type FiltroActivo = 'Todos' | 'Stock bajo' | 'Agotados'
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
 export function InventarioProductorPage() {
   const [items, setItems] = useState<InventarioItem[]>(itemsIniciales)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draftStock, setDraftStock] = useState<Record<string, number>>({})
   const [filtro, setFiltro] = useState<FiltroActivo>('Todos')
+  const [search, setSearch] = useState('')
 
-  // Summary counters
-  const enStock = items.filter((i) => getStatus(i.stock) === 'En stock').length
-  const stockBajo = items.filter((i) => getStatus(i.stock) === 'Stock bajo').length
-  const agotados = items.filter((i) => getStatus(i.stock) === 'Agotado').length
-
-  // Filtered list
+  const normalizedSearch = search.trim().toLowerCase()
   const filtered = items.filter((item) => {
-    if (filtro === 'Stock bajo') return getStatus(item.stock) === 'Stock bajo'
-    if (filtro === 'Agotados') return getStatus(item.stock) === 'Agotado'
-    return true
+    const matchesSearch = !normalizedSearch || [item.nombre, item.categoria, String(item.stock)].join(' ').toLowerCase().includes(normalizedSearch)
+    const matchesStatus = filtro === 'Todos' || (filtro === 'Stock bajo' ? getStatus(item.stock) === 'Stock bajo' : getStatus(item.stock) === 'Agotado')
+    return matchesSearch && matchesStatus
   })
+
+  const enStock = items.filter((item) => getStatus(item.stock) === 'En stock').length
+  const stockBajo = items.filter((item) => getStatus(item.stock) === 'Stock bajo').length
+  const agotados = items.filter((item) => getStatus(item.stock) === 'Agotado').length
 
   function startEdit(item: InventarioItem) {
     setEditingId(item.id)
-    setDraftStock((prev) => ({ ...prev, [item.id]: item.stock }))
+    setDraftStock((current) => ({ ...current, [item.id]: item.stock }))
   }
 
   function saveEdit(id: string) {
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, stock: draftStock[id] ?? i.stock } : i)),
-    )
+    setItems((current) => current.map((item) => (item.id === id ? { ...item, stock: draftStock[id] ?? item.stock } : item)))
     setEditingId(null)
   }
 
   function changeDraft(id: string, delta: number) {
-    setDraftStock((prev) => ({
-      ...prev,
-      [id]: Math.max(0, (prev[id] ?? 0) + delta),
+    setDraftStock((current) => ({
+      ...current,
+      [id]: Math.max(0, (current[id] ?? 0) + delta),
+    }))
+  }
+
+  function updateDraft(id: string, value: number) {
+    setDraftStock((current) => ({
+      ...current,
+      [id]: Math.max(0, value),
     }))
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--color-surface)] text-[var(--color-on-surface)]">
-      {/* ── Sidebar ── */}
-      <aside className="hidden">
-        <div className="mb-12">
-          <Link to="/" className="text-headline-md font-bold text-[var(--color-primary)]">
-            Alicante Gourmet
-          </Link>
-          <p className="text-body-md mt-2 text-[var(--color-secondary)]">Artesano de Denia</p>
-        </div>
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
+      <main className="mx-auto w-full max-w-[var(--layout-container-max)] px-[var(--space-margin-mobile)] py-12 md:px-[var(--space-margin-desktop)] md:py-16">
+        <section className="mb-10">
+          <nav aria-label="Breadcrumb" className="text-label-sm mb-6 flex items-center gap-2 text-[var(--color-secondary)]">
+            <Link to="/productor/pedidos" className="transition-colors hover:text-[var(--color-primary)]">Area Productor</Link>
+            <ChevronRight size={14} strokeWidth={1.8} />
+            <span className="text-[var(--color-primary)]">Inventario</span>
+          </nav>
 
-        <nav className="flex flex-1 flex-col gap-2">
-          {NAV_ITEMS.map(({ icon: Icon, label, to, active }) => (
-            <Link
-              key={label}
-              to={to}
-              className={`flex items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 transition-all duration-200 ${active ? 'translate-x-0.5 bg-[var(--color-secondary-container)] font-semibold text-[var(--color-primary)]' : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-container-high)]'}`}
-            >
-              <Icon size={20} strokeWidth={active ? 2 : 1.8} />
-              <span className="text-label-md">{label}</span>
-            </Link>
-          ))}
-        </nav>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h1 className="text-display-lg mb-4 text-[var(--color-primary)]">Inventario</h1>
+              <p className="text-body-md max-w-2xl text-[var(--color-on-surface-variant)]">
+                Supervisa disponibilidad, detecta productos con stock bajo y ajusta unidades desde una vista compacta para móvil y escritorio.
+              </p>
+            </div>
 
-        <div className="mt-auto border-t border-[var(--color-outline-variant)] pt-4">
-          <Link to="/productor/perfil" className="flex items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 text-[var(--color-secondary)] transition-all hover:bg-[var(--color-surface-container-high)]">
-            <User size={20} strokeWidth={1.8} />
-            <span className="text-label-md">Mi perfil</span>
-          </Link>
-        </div>
-      </aside>
-
-      {/* ── Main ── */}
-      <main className="min-h-screen flex-1 px-[var(--space-margin-mobile)] py-12 pb-24 md:px-[var(--space-margin-desktop)]">
-        {/* Header */}
-        <header className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <div>
-            <h1 className="text-display-lg text-[var(--color-primary)]">Inventario</h1>
-            <p className="text-body-lg mt-2 text-[var(--color-secondary)]">
-              Umbral de stock bajo: {UMBRAL_STOCK_BAJO} unidades
-            </p>
+            <div className="border border-[color-mix(in_srgb,var(--color-outline-variant)_40%,transparent)] bg-white/45 px-5 py-4 text-right shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)]">
+              <span className="text-label-sm block uppercase tracking-[0.18em] text-[var(--color-outline)]">Umbral actual</span>
+              <strong className="text-headline-md text-[28px] text-[var(--color-primary)]">{UMBRAL_STOCK_BAJO} uds</strong>
+            </div>
           </div>
-          <button
-            type="button"
-            className="text-label-md flex items-center gap-2 self-start rounded-[var(--radius-default)] bg-[var(--color-primary)] px-6 py-3 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-on-primary-fixed-variant)] md:self-auto"
-          >
-            <Plus size={18} strokeWidth={2} />
-            Añadir producto
-          </button>
-        </header>
+        </section>
 
-        {/* Summary cards */}
-        <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-3">
-          <SummaryCard
-            label="En stock"
-            value={enStock}
-            icon={<CheckCircle2 size={24} strokeWidth={1.8} className="text-[#2E7D32]" />}
-            iconBg="#E8F5E9"
-          />
-          <SummaryCard
-            label="Stock bajo"
-            value={stockBajo}
-            icon={<TriangleAlert size={24} strokeWidth={1.8} className="text-[#EF6C00]" />}
-            iconBg="#FFF3E0"
-          />
-          <SummaryCard
-            label="Agotados"
-            value={agotados}
-            icon={<CircleAlert size={24} strokeWidth={1.8} className="text-[#C62828]" />}
-            iconBg="#FFEBEE"
-          />
-        </div>
+        <section className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <SummaryCard label="En stock" value={enStock} icon={<CheckCircle2 size={24} strokeWidth={1.8} className="text-[#2E7D32]" />} iconBg="#E8F5E9" />
+          <SummaryCard label="Stock bajo" value={stockBajo} icon={<TriangleAlert size={24} strokeWidth={1.8} className="text-[#EF6C00]" />} iconBg="#FFF3E0" />
+          <SummaryCard label="Agotados" value={agotados} icon={<CircleAlert size={24} strokeWidth={1.8} className="text-[#C62828]" />} iconBg="#FFEBEE" />
+        </section>
 
-        {/* Filters & search */}
-        <div className="mb-8 flex flex-col items-start justify-between gap-6 border-b border-[var(--color-outline-variant)] pb-6 md:flex-row md:items-center">
-          <div className="flex w-full gap-2 overflow-x-auto pb-2 md:w-auto md:pb-0" style={{ scrollbarWidth: 'none' }}>
-            {(['Todos', 'Stock bajo', 'Agotados'] as FiltroActivo[]).map((f) => (
-              <button
-                key={f}
-                type="button"
-                onClick={() => setFiltro(f)}
-                className={`text-label-md whitespace-nowrap rounded-full px-4 py-2 transition-colors ${filtro === f ? 'bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface)]' : 'border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] text-[var(--color-secondary)] hover:bg-[var(--color-surface-container-low)]'}`}
-              >
-                {f}
-              </button>
-            ))}
+        <section className="mb-8 border border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-surface-container-lowest)] p-4 shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)] md:p-6" aria-label="Filtros del inventario">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap gap-3">
+              {(['Todos', 'Stock bajo', 'Agotados'] as FiltroActivo[]).map((estado) => (
+                <button
+                  key={estado}
+                  type="button"
+                  onClick={() => setFiltro(estado)}
+                  className={`text-label-md rounded-full border px-4 py-2 transition-colors ${filtro === estado ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white' : 'border-[var(--color-outline-variant)] bg-[var(--color-surface)] text-[var(--color-secondary)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'}`}
+                >
+                  {estado}
+                </button>
+              ))}
+            </div>
+
+            <label className="relative w-full lg:max-w-xs">
+              <Search size={18} strokeWidth={1.8} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-outline)]" />
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Buscar producto o categoría..."
+                className="text-body-md w-full border border-[var(--color-outline-variant)] bg-[#FAF7F0] py-3 pl-11 pr-4 text-[#1A1A1A] placeholder:text-[var(--color-outline)] focus:border-[var(--color-primary)] focus:outline-none"
+              />
+            </label>
           </div>
+        </section>
 
-          <div className="relative w-full md:w-72">
-            <Search size={18} strokeWidth={1.8} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-secondary)]" />
-            <input
-              type="text"
-              placeholder="Buscar producto..."
-              className="text-body-md w-full rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] py-2 pl-10 pr-4 transition-all focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] focus:outline-none"
-            />
-          </div>
-        </div>
-
-        {/* Product rows */}
         <div className="flex flex-col gap-4">
           {filtered.map((item) => {
             const status = getStatus(item.stock)
             const isEditing = editingId === item.id
             const currentDraft = draftStock[item.id] ?? item.stock
 
-            if (isEditing) {
-              return (
-                <EditingRow
-                  key={item.id}
-                  item={item}
-                  draftStock={currentDraft}
-                  onDecrement={() => changeDraft(item.id, -1)}
-                  onIncrement={() => changeDraft(item.id, 1)}
-                  onChange={(v) => setDraftStock((prev) => ({ ...prev, [item.id]: Math.max(0, v) }))}
-                  onSave={() => saveEdit(item.id)}
-                />
-              )
-            }
-
-            return (
-              <NormalRow
+            return isEditing ? (
+              <EditingRow
                 key={item.id}
                 item={item}
-                status={status}
-                onEdit={() => startEdit(item)}
+                draftStock={currentDraft}
+                onDecrement={() => changeDraft(item.id, -1)}
+                onIncrement={() => changeDraft(item.id, 1)}
+                onChange={(value) => updateDraft(item.id, value)}
+                onSave={() => saveEdit(item.id)}
               />
+            ) : (
+              <NormalRow key={item.id} item={item} status={status} onEdit={() => startEdit(item)} />
             )
           })}
         </div>
+
+        {filtered.length === 0 ? (
+          <div className="mt-10 border border-dashed border-[var(--color-outline-variant)] p-10 text-center">
+            <Search className="mx-auto mb-3 text-[var(--color-outline)]" size={28} strokeWidth={1.8} />
+            <p className="text-body-md text-[var(--color-on-surface-variant)]">No hay productos que coincidan con la búsqueda o el filtro aplicado.</p>
+          </div>
+        ) : null}
       </main>
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Summary card
-// ---------------------------------------------------------------------------
-
-function SummaryCard({
-  label,
-  value,
-  icon,
-  iconBg,
-}: {
-  label: string
-  value: number
-  icon: React.ReactNode
-  iconBg: string
-}) {
+function SummaryCard({ label, value, icon, iconBg }: { label: string; value: number; icon: React.ReactNode; iconBg: string }) {
   return (
-    <div className="flex items-center justify-between rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-6">
+    <div className="flex items-center justify-between rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-5 md:p-6">
       <div>
         <p className="text-label-md mb-1 uppercase tracking-widest text-[var(--color-secondary)]">{label}</p>
         <p className="text-display-lg-mobile text-[var(--color-on-surface)]">{value}</p>
@@ -293,10 +200,6 @@ function SummaryCard({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-// Normal product row
-// ---------------------------------------------------------------------------
 
 type NormalRowProps = {
   item: InventarioItem
@@ -320,110 +223,84 @@ function NormalRow({ item, status, onEdit }: NormalRowProps) {
   const isAgotado = status === 'Agotado'
 
   return (
-    <article className={`flex flex-col items-start gap-6 rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-4 transition-colors hover:bg-[var(--color-surface-container-low)] md:flex-row md:items-center ${isAgotado ? 'opacity-75' : ''}`}>
-      <div className="flex min-w-0 flex-1 items-center gap-6">
-        <img
-          src={item.imagen}
-          alt={item.nombre}
-          className={`size-16 flex-shrink-0 rounded-[var(--radius-lg)] object-cover ${isAgotado ? 'grayscale' : ''}`}
-        />
-        <div className="min-w-0">
-          <h3 className="text-headline-md truncate text-[24px] leading-8 text-[var(--color-on-surface)]">{item.nombre}</h3>
-          <p className="text-body-md mt-1 text-[var(--color-secondary)]">{item.categoria}</p>
+    <article className={`rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-4 transition-colors hover:bg-[var(--color-surface-container-low)] md:p-5 ${isAgotado ? 'opacity-80' : ''}`}>
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-center gap-4 md:gap-5">
+          <img src={item.imagen} alt={item.nombre} className={`size-16 shrink-0 rounded-[var(--radius-lg)] object-cover md:size-20 ${isAgotado ? 'grayscale' : ''}`} />
+          <div className="min-w-0">
+            <h2 className="text-headline-md text-[var(--color-on-surface)] md:text-[24px] md:leading-8">{item.nombre}</h2>
+            <p className="text-body-md mt-1 text-[var(--color-secondary)]">{item.categoria}</p>
+          </div>
         </div>
-      </div>
 
-      <div className="flex w-full items-center justify-between gap-8 border-t border-[var(--color-outline-variant)] pt-4 md:w-auto md:justify-end md:border-t-0 md:pt-0">
-        <div className="flex items-center gap-2">
-          <span className="size-2 rounded-full" style={{ backgroundColor: STATUS_DOT[status] }} />
-          <span className={`text-label-sm uppercase tracking-widest ${STATUS_LABEL_CLASS[status]}`}>{status}</span>
+        <div className="flex flex-col gap-4 border-t border-[var(--color-outline-variant)] pt-4 sm:flex-row sm:items-center sm:justify-between lg:w-auto lg:border-t-0 lg:pt-0">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full" style={{ backgroundColor: STATUS_DOT[status] }} />
+            <span className={`text-label-sm uppercase tracking-widest ${STATUS_LABEL_CLASS[status]}`}>{status}</span>
+          </div>
+          <div className={`text-body-lg sm:min-w-[116px] sm:text-right ${isAgotado ? 'text-[var(--color-secondary)]' : 'text-[var(--color-on-surface)]'}`}>
+            {item.stock} unidades
+          </div>
+          <button type="button" aria-label={`Editar stock de ${item.nombre}`} onClick={onEdit} className="inline-flex items-center gap-2 self-start text-[var(--color-secondary)] transition-colors hover:text-[var(--color-primary)] sm:self-auto">
+            <Pencil size={18} strokeWidth={1.8} />
+            <span className="text-label-md sm:hidden">Editar stock</span>
+          </button>
         </div>
-        <div className={`text-body-lg min-w-[100px] text-right ${isAgotado ? 'text-[var(--color-secondary)]' : 'text-[var(--color-on-surface)]'}`}>
-          {item.stock} unidades
-        </div>
-        <button
-          type="button"
-          aria-label={`Editar stock de ${item.nombre}`}
-          onClick={onEdit}
-          className="p-2 text-[var(--color-secondary)] transition-colors hover:text-[var(--color-primary)]"
-        >
-          <Pencil size={20} strokeWidth={1.8} />
-        </button>
       </div>
     </article>
   )
 }
-
-// ---------------------------------------------------------------------------
-// Editing row (inline stepper — shown when a product is being edited)
-// ---------------------------------------------------------------------------
 
 type EditingRowProps = {
   item: InventarioItem
   draftStock: number
   onDecrement: () => void
   onIncrement: () => void
-  onChange: (v: number) => void
+  onChange: (value: number) => void
   onSave: () => void
 }
 
 function EditingRow({ item, draftStock, onDecrement, onIncrement, onChange, onSave }: EditingRowProps) {
   return (
-    <article className="relative flex flex-col items-start gap-6 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-outline)] bg-[var(--color-surface-container-highest)] p-4 shadow-sm md:flex-row md:items-center">
-      {/* Left orange accent bar */}
-      <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#EF6C00]" />
+    <article className="relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-outline)] bg-[var(--color-surface-container-highest)] p-4 shadow-sm md:p-5">
+      <div className="absolute bottom-0 left-0 top-0 w-1 bg-[#EF6C00]" />
 
-      <div className="flex min-w-0 flex-1 items-center gap-6 pl-2">
-        <img
-          src={item.imagen}
-          alt={item.nombre}
-          className="size-16 flex-shrink-0 rounded-[var(--radius-lg)] object-cover"
-        />
-        <div className="min-w-0">
-          <h3 className="text-headline-md truncate text-[24px] leading-8 text-[var(--color-on-surface)]">{item.nombre}</h3>
-          <p className="text-body-md mt-1 text-[var(--color-secondary)]">{item.categoria}</p>
-        </div>
-      </div>
-
-      <div className="flex w-full flex-col items-end gap-4 border-t border-[var(--color-outline-variant)] pl-2 pt-4 md:w-auto md:flex-row md:items-center md:border-t-0 md:pt-0">
-        <div className="mr-4 hidden items-center gap-2 md:flex">
-          <span className="size-2 rounded-full bg-[#EF6C00]" />
-          <span className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">Stock bajo</span>
+      <div className="flex flex-col gap-5 pl-2 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-center gap-4 md:gap-5">
+          <img src={item.imagen} alt={item.nombre} className="size-16 shrink-0 rounded-[var(--radius-lg)] object-cover md:size-20" />
+          <div className="min-w-0">
+            <h2 className="text-headline-md text-[var(--color-on-surface)] md:text-[24px] md:leading-8">{item.nombre}</h2>
+            <p className="text-body-md mt-1 text-[var(--color-secondary)]">{item.categoria}</p>
+          </div>
         </div>
 
-        {/* Stepper */}
-        <div className="flex items-center overflow-hidden rounded-[var(--radius-default)] border border-[var(--color-primary)] bg-[var(--color-surface-container-lowest)]">
-          <button
-            type="button"
-            aria-label="Reducir stock"
-            onClick={onDecrement}
-            className="flex size-10 items-center justify-center text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)]"
-          >
-            <Minus size={16} strokeWidth={2} />
-          </button>
-          <input
-            type="number"
-            value={draftStock}
-            onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)}
-            className="text-body-lg h-10 w-16 border-x border-[var(--color-outline-variant)] bg-transparent text-center text-[var(--color-on-surface)] focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-          />
-          <button
-            type="button"
-            aria-label="Aumentar stock"
-            onClick={onIncrement}
-            className="flex size-10 items-center justify-center text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)]"
-          >
-            <Plus size={16} strokeWidth={2} />
-          </button>
-        </div>
+        <div className="flex flex-col gap-4 border-t border-[var(--color-outline-variant)] pt-4 lg:w-auto lg:border-t-0 lg:pt-0">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-[#EF6C00]" />
+            <span className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">Edición de stock</span>
+          </div>
 
-        <button
-          type="button"
-          onClick={onSave}
-          className="text-label-md h-10 rounded-[var(--radius-default)] bg-[var(--color-primary-container)] px-6 py-2 text-[var(--color-on-primary-container)] transition-colors hover:bg-[var(--color-primary)]"
-        >
-          Guardar
-        </button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex items-center overflow-hidden rounded-[var(--radius-default)] border border-[var(--color-primary)] bg-[var(--color-surface-container-lowest)]">
+              <button type="button" aria-label="Reducir stock" onClick={onDecrement} className="flex size-10 items-center justify-center text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)]">
+                <Minus size={16} strokeWidth={2} />
+              </button>
+              <input
+                type="number"
+                value={draftStock}
+                onChange={(event) => onChange(parseInt(event.target.value, 10) || 0)}
+                className="text-body-lg h-10 w-20 border-x border-[var(--color-outline-variant)] bg-transparent text-center text-[var(--color-on-surface)] focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <button type="button" aria-label="Aumentar stock" onClick={onIncrement} className="flex size-10 items-center justify-center text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)]">
+                <Plus size={16} strokeWidth={2} />
+              </button>
+            </div>
+
+            <button type="button" onClick={onSave} className="text-label-md h-10 rounded-[var(--radius-default)] bg-[var(--color-primary-container)] px-6 py-2 text-[var(--color-on-primary-container)] transition-colors hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)]">
+              Guardar
+            </button>
+          </div>
+        </div>
       </div>
     </article>
   )
