@@ -167,7 +167,7 @@ export function EstadisticasProductorPage() {
       </aside>
 
       {/* ── Main content ── */}
-      <main className="mx-auto w-full max-w-[var(--layout-container-max)] flex-1 px-[var(--space-margin-mobile)] py-12 lg:ml-64 lg:px-[var(--space-margin-desktop)]">
+      <main className="mx-auto w-full max-w-[var(--layout-container-max)] flex-1 px-[var(--space-margin-mobile)] py-12 lg:px-[var(--space-margin-desktop)]">
         {/* Header + period tabs */}
         <header className="mb-16 flex flex-col justify-between border-b border-[var(--color-outline-variant)] pb-6 md:flex-row md:items-end md:pb-0">
           <h1 className="text-headline-md mb-6 text-[var(--color-on-surface)] md:mb-4 md:pb-2">Estadísticas</h1>

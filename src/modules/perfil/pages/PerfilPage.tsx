@@ -97,7 +97,7 @@ export function PerfilPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF7F0] text-[#1A1A1A]">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
       <main className="mx-auto max-w-[800px] px-[var(--space-margin-mobile)] py-16 md:px-0">
         <section className="mb-16">
           <nav aria-label="Breadcrumb" className="text-label-sm mb-4 flex items-center gap-2 text-[var(--color-on-surface-variant)]/70">

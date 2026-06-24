@@ -125,7 +125,7 @@ export function ProductosProductorPage() {
       </aside>
 
       {/* ── Main ── */}
-      <main className="ml-64 min-h-screen flex-1 px-[var(--space-margin-desktop)] py-12">
+      <main className="min-h-screen flex-1 px-[var(--space-margin-mobile)] py-12 md:px-[var(--space-margin-desktop)]">
         {/* Header */}
         <header className="mb-16 flex items-end justify-between">
           <div>

@@ -204,7 +204,7 @@ export function MisIncidenciasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF7F0] text-[var(--color-on-background)]">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
       <main className="mx-auto min-h-screen max-w-[var(--layout-container-max)] px-[var(--space-margin-mobile)] py-12 md:px-[var(--space-margin-desktop)]">
         <header className="mb-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div className="max-w-2xl">

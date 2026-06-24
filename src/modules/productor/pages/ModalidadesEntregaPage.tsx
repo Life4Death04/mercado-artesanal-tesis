@@ -139,7 +139,7 @@ export function ModalidadesEntregaPage() {
       </aside>
 
       {/* ── Main ── */}
-      <main className="ml-0 min-h-screen flex-1 px-[var(--space-margin-mobile)] py-12 pb-24 md:ml-64 md:px-[var(--space-margin-desktop)]">
+      <main className="min-h-screen flex-1 px-[var(--space-margin-mobile)] py-12 pb-24 md:px-[var(--space-margin-desktop)]">
         <div className="mx-auto max-w-4xl">
           {/* Page header */}
           <header className="mb-12 max-w-2xl">

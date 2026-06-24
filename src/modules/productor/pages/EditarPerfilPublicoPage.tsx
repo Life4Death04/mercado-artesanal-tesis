@@ -157,7 +157,7 @@ export function EditarPerfilPublicoPage() {
       </aside>
 
       {/* ── Main ── */}
-      <main className="ml-0 min-h-screen flex-1 pb-32 md:ml-64">
+      <main className="min-h-screen flex-1 pb-32">
         <div className="mx-auto max-w-[var(--container-max)] space-y-16 px-6 py-20 md:px-16 md:pt-24">
           {/* ─────────────────────────────────────────────────
               SECCIÓN 1: Vista pública de la tienda

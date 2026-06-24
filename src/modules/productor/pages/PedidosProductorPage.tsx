@@ -205,7 +205,7 @@ export function PedidosProductorPage() {
       </aside>
 
       {/* ── Main content ── */}
-      <main className="ml-64 min-h-screen flex-1 bg-[var(--color-surface)] px-[var(--space-margin-desktop)] py-12">
+      <main className="min-h-screen flex-1 bg-[var(--color-surface)] px-[var(--space-margin-mobile)] py-12 md:px-[var(--space-margin-desktop)]">
         {/* Header */}
         <header className="mb-12 flex items-end justify-between">
           <div>

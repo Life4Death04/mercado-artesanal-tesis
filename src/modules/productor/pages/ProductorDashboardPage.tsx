@@ -2,7 +2,7 @@ import { PendingDesignPage } from '../../../componentes/layout/PendingDesignPage
 
 export function ProductorDashboardPage() {
   return (
-    <div className="md:ml-64">
+    <div>
       <PendingDesignPage
         actor="Productor"
         title="Panel productor pendiente de diseño"

@@ -165,7 +165,7 @@ export function InventarioProductorPage() {
       </aside>
 
       {/* ── Main ── */}
-      <main className="ml-0 min-h-screen flex-1 px-[var(--space-margin-mobile)] py-12 pb-24 md:ml-64 md:px-[var(--space-margin-desktop)]">
+      <main className="min-h-screen flex-1 px-[var(--space-margin-mobile)] py-12 pb-24 md:px-[var(--space-margin-desktop)]">
         {/* Header */}
         <header className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
