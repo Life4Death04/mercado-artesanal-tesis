@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ArrowLeft, UtensilsCrossed } from 'lucide-react'
+import { ArrowLeft, LogOut, UtensilsCrossed } from 'lucide-react'
 import { PublicTopbar } from '../../../componentes/layout/PublicTopbar'
 import { APP_NAME } from '../../../lib/branding'
 
@@ -13,6 +13,7 @@ type RegistrationWizardShellProps = {
 export function RegistrationWizardShell({
   children,
   variant = 'full',
+  onExit,
   onBack,
 }: RegistrationWizardShellProps) {
   if (variant === 'success') {
@@ -49,6 +50,18 @@ export function RegistrationWizardShell({
   return (
     <div className="font-interface flex min-h-screen flex-col bg-[var(--color-background)] text-[var(--color-on-background)]">
       <PublicTopbar />
+      {onExit ? (
+        <div className="mx-auto flex w-full max-w-[var(--layout-container-max)] justify-end px-[var(--space-margin-mobile)] pt-4 md:px-[var(--space-margin-desktop)]">
+          <button
+            type="button"
+            onClick={onExit}
+            className="text-label-md inline-flex items-center gap-2 text-[var(--color-outline)] transition-colors hover:text-[var(--color-on-surface)]"
+          >
+            <LogOut size={16} strokeWidth={1.8} />
+            Salir
+          </button>
+        </div>
+      ) : null}
       {children}
     </div>
   )

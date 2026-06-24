@@ -4,9 +4,10 @@ import type { RegistrationRole } from './registrationWizard.types'
 
 type RegistrationSuccessStepProps = {
   role: RegistrationRole
+  onPrimaryAction: () => void
 }
 
-export function RegistrationSuccessStep({ role }: RegistrationSuccessStepProps) {
+export function RegistrationSuccessStep({ role, onPrimaryAction }: RegistrationSuccessStepProps) {
   const isProducer = role === 'productor'
 
   return (
@@ -25,9 +26,10 @@ export function RegistrationSuccessStep({ role }: RegistrationSuccessStepProps) 
           </div>
           <button
             type="button"
+            onClick={onPrimaryAction}
             className="text-label-md bg-[var(--color-primary-container)] px-12 py-4 uppercase text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)]"
           >
-            {isProducer ? 'Empezar a vender' : 'Explorar productos'}
+            {isProducer ? 'Empezar a vender' : 'Explorar Productos'}
           </button>
           {isProducer && (
             <div className="flex max-w-xl items-start gap-4 rounded-[var(--radius-lg)] bg-[var(--color-secondary-fixed)] p-6 text-left text-[var(--color-on-secondary-fixed)]">
