@@ -73,6 +73,7 @@ export function RoleSidebar({
   const location = useLocation()
   const isProducerArea = variant === 'producer' && location.pathname.startsWith('/productor') && !producerConsumerMode
   const isProducerAsConsumer = variant === 'producer' && !isProducerArea
+  const useProducerTheme = isProducerArea
 
   const items = variant === 'admin'
     ? adminItems
@@ -88,13 +89,29 @@ export function RoleSidebar({
         ? 'Área consumidor · Productor'
         : 'Área consumidor'
 
+  const shellClassName = useProducerTheme
+    ? 'border-r border-white/12 bg-[var(--color-primary-container)] text-[var(--color-on-primary)]'
+    : 'border-r border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-background)] text-[var(--color-on-surface)]'
+  const brandClassName = useProducerTheme
+    ? 'text-[var(--color-on-primary)]'
+    : 'text-[var(--color-primary-container)]'
+  const subtitleClassName = useProducerTheme
+    ? 'text-[color-mix(in_srgb,var(--color-on-primary)_78%,transparent)]'
+    : 'text-[var(--color-secondary)]'
+  const navBaseClassName = useProducerTheme
+    ? 'text-[color-mix(in_srgb,var(--color-on-primary)_82%,transparent)] hover:bg-white/10 hover:text-[var(--color-on-primary)]'
+    : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]'
+  const navActiveClassName = useProducerTheme
+    ? 'scale-[0.98] bg-white/14 font-bold text-[var(--color-on-primary)]'
+    : 'scale-[0.98] bg-[var(--color-surface-container-low)] font-bold text-[var(--color-primary-container)]'
+
   const content = (
     <>
       <div className="mb-12">
-        <h1 className="font-editorial text-headline-md text-[var(--color-primary-container)] tracking-tight">
+        <h1 className={`font-editorial text-headline-md tracking-tight ${brandClassName}`}>
           {APP_NAME}
         </h1>
-        <p className="text-label-sm mt-1 uppercase tracking-wider text-[var(--color-secondary)]">
+        <p className={`text-label-sm mt-1 uppercase tracking-wider ${subtitleClassName}`}>
           {subtitle}
         </p>
       </div>
@@ -108,10 +125,8 @@ export function RoleSidebar({
             onClick={onMobileClose}
             className={({ isActive }) =>
               `text-label-md flex items-center gap-4 rounded-[var(--radius-lg)] px-4 py-3 transition-colors ${
-                isActive
-                  ? 'scale-[0.98] bg-[var(--color-surface-container-low)] font-bold text-[var(--color-primary-container)]'
-                  : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]'
-              }`
+                isActive ? navActiveClassName : navBaseClassName
+               }`
             }
           >
             <Icon size={22} strokeWidth={1.8} />
@@ -131,7 +146,7 @@ export function RoleSidebar({
 
   return (
     <>
-      <aside className="fixed top-0 left-0 z-50 hidden h-full w-64 flex-col overflow-y-auto border-r border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-background)] p-6 md:flex">
+      <aside className={`fixed top-0 left-0 z-50 hidden h-full w-64 flex-col overflow-y-auto p-6 md:flex ${shellClassName}`}>
         {content}
       </aside>
 
@@ -143,7 +158,7 @@ export function RoleSidebar({
             onClick={onMobileClose}
             className="absolute inset-0 bg-[var(--color-inverse-surface)]/40 backdrop-blur-sm"
           />
-          <aside className="relative z-10 flex h-full w-[min(82vw,18rem)] flex-col overflow-y-auto border-r border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-background)] p-6 shadow-2xl">
+          <aside className={`relative z-10 flex h-full w-[min(82vw,18rem)] flex-col overflow-y-auto p-6 shadow-2xl ${shellClassName}`}>
             {content}
           </aside>
         </div>
@@ -166,7 +181,7 @@ function SidebarFooter({
 
   if (variant === 'producer') {
     return (
-      <div className="mt-auto flex flex-col gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] pt-6">
+      <div className={`mt-auto flex flex-col gap-4 pt-6 ${isProducerArea ? 'border-t border-white/12' : 'border-t border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)]'}`}>
         {isProducerArea ? (
           <NavLink
             to="/productos"
@@ -174,10 +189,10 @@ function SidebarFooter({
               window.localStorage.setItem('sidebar-owner', 'producer')
               onMobileClose?.()
             }}
-            className="text-label-md flex w-full items-center justify-center gap-2 border border-[var(--color-primary-container)] bg-[var(--color-primary-container)] px-4 py-3 text-[var(--color-on-primary-container)] transition-colors hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)]"
+            className="text-label-md flex w-full items-center justify-center gap-2 border border-white/75 bg-white px-4 py-3 text-[var(--color-on-surface)] transition-colors hover:border-white hover:bg-[var(--color-surface-container-low)]"
           >
-            Ver tienda
-            <ExternalLink size={16} strokeWidth={1.8} />
+            <span className="text-[var(--color-on-surface)]">Ver tienda</span>
+            <ExternalLink className="text-[var(--color-on-surface)]" size={16} strokeWidth={1.8} />
           </NavLink>
         ) : (
           <NavLink
@@ -186,10 +201,10 @@ function SidebarFooter({
               window.localStorage.setItem('sidebar-owner', 'producer')
               onMobileClose?.()
             }}
-            className="text-label-md flex w-full items-center justify-center gap-2 border border-[var(--color-primary-container)] bg-[var(--color-surface-container-low)] px-4 py-3 text-[var(--color-primary-container)] transition-colors hover:bg-[var(--color-primary-container)] hover:text-[var(--color-on-primary)]"
+            className="text-label-md flex w-full items-center justify-center gap-2 border border-[var(--color-primary-container)] bg-[var(--color-primary-container)] px-4 py-3 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)]"
           >
-            Volver al panel productor
-            <ExternalLink size={16} strokeWidth={1.8} />
+            <span className="text-[var(--color-on-primary)]">Volver al panel productor</span>
+            <ExternalLink className="text-[var(--color-on-primary)]" size={16} strokeWidth={1.8} />
           </NavLink>
         )}
         {isProducerAsConsumer && (
@@ -197,7 +212,7 @@ function SidebarFooter({
             Navegando como consumidor
           </p>
         )}
-        <LogoutLink onMobileClose={onMobileClose} />
+        <LogoutLink onMobileClose={onMobileClose} useProducerTheme={isProducerArea} />
       </div>
     )
   }
@@ -209,12 +224,22 @@ function SidebarFooter({
   )
 }
 
-function LogoutLink({ onMobileClose }: { onMobileClose?: () => void }) {
+function LogoutLink({
+  onMobileClose,
+  useProducerTheme = false,
+}: {
+  onMobileClose?: () => void
+  useProducerTheme?: boolean
+}) {
   return (
     <NavLink
       to="/login"
       onClick={onMobileClose}
-      className="text-label-md flex items-center gap-4 rounded-[var(--radius-lg)] px-4 py-3 text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]"
+      className={`text-label-md flex items-center gap-4 rounded-[var(--radius-lg)] px-4 py-3 transition-colors ${
+        useProducerTheme
+          ? 'text-[color-mix(in_srgb,var(--color-on-primary)_82%,transparent)] hover:bg-white/10 hover:text-[var(--color-on-primary)]'
+          : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]'
+      }`}
     >
       <LogOut size={21} strokeWidth={1.8} />
       <span>Cerrar sesión</span>
