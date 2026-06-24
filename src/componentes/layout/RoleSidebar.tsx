@@ -174,7 +174,7 @@ function SidebarFooter({
               window.localStorage.setItem('sidebar-owner', 'producer')
               onMobileClose?.()
             }}
-            className="text-label-md flex w-full items-center justify-center gap-2 border border-[var(--color-primary-container)] bg-[var(--color-primary-container)] px-4 py-3 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)]"
+            className="text-label-md flex w-full items-center justify-center gap-2 border border-[var(--color-primary-container)] bg-[var(--color-primary-container)] px-4 py-3 text-[var(--color-on-primary-container)] transition-colors hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)]"
           >
             Ver tienda
             <ExternalLink size={16} strokeWidth={1.8} />
