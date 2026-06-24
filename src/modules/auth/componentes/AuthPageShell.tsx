@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { HelpCircle } from 'lucide-react'
+import { PublicTopbar } from '../../../componentes/layout/PublicTopbar'
 import { APP_NAME } from '../../../lib/branding'
 
 type AuthPageShellProps = {
@@ -11,20 +11,7 @@ const footerLinks = ['Privacidad', 'Términos', 'Contacto']
 export function AuthPageShell({ children }: AuthPageShellProps) {
   return (
     <div className="font-interface flex min-h-screen flex-col bg-[var(--color-background)] text-[var(--color-on-background)]">
-      <header className="border-b border-[color-mix(in_srgb,var(--color-outline-variant)_70%,transparent)] bg-[var(--color-background)]">
-        <nav className="mx-auto flex w-full max-w-[var(--layout-container-max)] items-center justify-between px-[var(--space-margin-mobile)] py-4 md:px-[var(--space-margin-desktop)]">
-          <div className="font-editorial text-headline-md uppercase tracking-[0.18em] text-[var(--color-primary)]">
-            {APP_NAME}
-          </div>
-          <button
-            type="button"
-            aria-label="Ayuda"
-            className="text-[var(--color-on-surface-variant)] transition duration-300 hover:scale-105 hover:text-[var(--color-primary)]"
-          >
-            <HelpCircle size={22} strokeWidth={2} />
-          </button>
-        </nav>
-      </header>
+      <PublicTopbar />
 
       <main className="flex flex-1 items-center justify-center px-[var(--space-margin-mobile)] py-12 md:py-20">
         {children}
