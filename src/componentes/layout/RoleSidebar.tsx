@@ -7,7 +7,6 @@ import {
   BookOpen,
   ExternalLink,
   Gavel,
-  Home,
   LayoutDashboard,
   LogOut,
   Package,
@@ -49,8 +48,7 @@ const consumerItems: SidebarItem[] = [
 ]
 
 const producerItems: SidebarItem[] = [
-  { label: 'Inicio', to: '/productor', icon: Home, end: true },
-  { label: 'Mis pedidos', to: '/productor/pedidos', icon: ShoppingBag },
+  { label: 'Mis pedidos', to: '/productor/pedidos', icon: ShoppingBag, end: true },
   { label: 'Mi catálogo', to: '/productor/productos', icon: BookOpen },
   { label: 'Inventario', to: '/productor/inventario', icon: Package },
   { label: 'Estadísticas', to: '/productor/estadisticas', icon: BarChart2 },
@@ -197,14 +195,14 @@ function SidebarFooter({
               window.localStorage.setItem('sidebar-owner', 'producer')
               onMobileClose?.()
             }}
-            className="text-label-md flex w-full items-center justify-center gap-2 border border-[var(--color-primary-container)] bg-[var(--color-primary-container)] px-4 py-3 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)]"
+            className="text-label-md flex w-full items-center justify-center gap-2 border border-[var(--color-primary-container)] bg-[var(--color-primary-container)] px-4 py-3 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)]"
           >
             Ver tienda
             <ExternalLink size={16} strokeWidth={1.8} />
           </NavLink>
         ) : (
           <NavLink
-            to="/productor"
+            to="/productor/pedidos"
             onClick={() => {
               window.localStorage.setItem('sidebar-owner', 'producer')
               onMobileClose?.()
