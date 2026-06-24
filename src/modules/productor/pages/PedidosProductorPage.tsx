@@ -288,13 +288,13 @@ export function PedidosProductorPage() {
             </button>
           </div>
 
-          <div className={`${filtersOpen ? 'mt-5 flex' : 'hidden'} flex-col gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] pt-5 lg:mt-5 lg:flex lg:border-t lg:pt-5`}>
+          <div className={`${filtersOpen ? 'mt-5 flex' : 'hidden'} min-w-0 flex-col gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] pt-5 lg:mt-5 lg:flex lg:border-t lg:pt-5`}>
             <div className="flex items-center gap-2 text-[var(--color-secondary)]">
               <Filter size={16} strokeWidth={1.8} />
               <span className="text-label-sm uppercase tracking-[0.18em]">Estado del pedido</span>
             </div>
 
-            <div className="flex gap-3 overflow-x-auto pb-1">
+            <div className="flex flex-wrap gap-3 pb-1">
               {statusFilters.map((filter) => {
                 const count = filter === 'Todos'
                   ? searchFilteredOrders.length
@@ -305,7 +305,7 @@ export function PedidosProductorPage() {
                     key={filter}
                     type="button"
                     onClick={() => updateStatus(filter)}
-                    className={`text-label-md whitespace-nowrap rounded-full border px-4 py-2 transition-all ${statusFilter === filter ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white' : 'border-[var(--color-outline-variant)] bg-transparent text-[var(--color-on-surface-variant)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'}`}
+                    className={`text-label-md max-w-full whitespace-normal rounded-full border px-4 py-2 text-left transition-all sm:whitespace-nowrap ${statusFilter === filter ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white' : 'border-[var(--color-outline-variant)] bg-transparent text-[var(--color-on-surface-variant)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'}`}
                   >
                     {filter} ({count})
                   </button>
