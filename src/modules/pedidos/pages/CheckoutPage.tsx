@@ -178,7 +178,6 @@ export function CheckoutPage() {
         />
       ) : null}
 
-      <CheckoutFooter compact={currentStep === 3} />
     </div>
   )
 }
@@ -555,29 +554,5 @@ function ConfirmationStep() {
         </Link>
       </div>
     </main>
-  )
-}
-
-function CheckoutFooter({ compact }: { compact: boolean }) {
-  return (
-    <footer className={`${compact ? 'py-8 text-center' : 'mt-auto flex flex-col items-center justify-between gap-4 px-[var(--space-margin-mobile)] py-[var(--space-gutter)] md:flex-row md:px-[var(--space-margin-desktop)]'} border-t border-[color-mix(in_srgb,var(--color-outline-variant)_60%,transparent)] bg-[var(--color-surface-container-lowest)]`}>
-      {compact ? (
-        <p className="text-label-sm text-[color-mix(in_srgb,var(--color-on-surface)_50%,transparent)]">© 2024 Alicante Mercado. Artisanal quality from the Mediterranean soil.</p>
-      ) : (
-        <>
-          <div className="text-center md:text-left">
-            <h2 className="text-headline-md mb-2 text-[var(--color-on-surface)] italic">L'Essence d'Alicante</h2>
-            <p className="text-label-sm text-[var(--color-on-surface-variant)]">© 2024 L'Essence d'Alicante. Artisanal Mediterranean Excellence.</p>
-          </div>
-          <nav className="flex flex-wrap justify-center gap-6" aria-label="Enlaces de soporte">
-            {['Privacy Policy', 'Terms of Service', 'Contact Support'].map((item) => (
-              <a key={item} href="#" className="text-label-sm text-[var(--color-on-surface-variant)] opacity-80 transition-all hover:text-[var(--color-primary)] hover:underline hover:opacity-100">
-                {item}
-              </a>
-            ))}
-          </nav>
-        </>
-      )}
-    </footer>
   )
 }

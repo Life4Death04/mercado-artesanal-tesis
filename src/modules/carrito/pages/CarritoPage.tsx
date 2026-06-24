@@ -167,7 +167,6 @@ export function CarritoPage() {
         )}
       </main>
 
-      <CartFooter />
       <MobileBottomNav />
     </div>
   )
@@ -334,22 +333,6 @@ function EmptyCartState() {
         <ArrowRight className="text-[var(--color-on-primary)]" size={16} strokeWidth={1.8} />
       </Link>
     </section>
-  )
-}
-
-function CartFooter() {
-  return (
-    <footer className="mt-auto hidden w-full flex-col items-center border-t border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-surface-container)] px-[var(--space-margin-desktop)] py-16 md:flex">
-      <div className="text-display-lg mb-8 text-[48px] leading-none text-[var(--color-primary)] italic">ALICANTE ORIGIN</div>
-      <nav className="mb-12 flex gap-8" aria-label="Enlaces de pie de página">
-        {['The Producers', 'Shipping', 'Terms of Service', 'Provenance Guide'].map((item) => (
-          <a key={item} href="#" className="text-body-md text-[var(--color-on-secondary-fixed-variant)] transition-colors hover:text-[var(--color-primary)]">
-            {item}
-          </a>
-        ))}
-      </nav>
-      <p className="text-body-md text-[var(--color-on-secondary-fixed-variant)]">© 2024 Alicante Origin. Artisanal Heritage & Provenance.</p>
-    </footer>
   )
 }
 

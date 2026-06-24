@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronRight, ExternalLink, LogOut, Mail, MapPin, Plus } from 'lucide-react'
+import { ChevronRight, ExternalLink, LogOut, MapPin, Plus } from 'lucide-react'
 import { AgregarDireccionModal, EditarDireccionModal, type NewAddressInput, type EditAddressInput } from '../componentes/ProfileModals'
 
 type Address = {
@@ -207,7 +207,6 @@ export function PerfilPage() {
         </section>
       </main>
 
-      <ProfileFooter />
 
       {showAddModal ? <AgregarDireccionModal onClose={() => setShowAddModal(false)} onSave={handleSaveAddress} /> : null}
       {editingAddress ? (
@@ -327,42 +326,6 @@ function EditorialField({
 
 function Divider() {
   return <hr className="mb-20 h-px border-0 bg-[var(--color-outline-variant)] opacity-50" />
-}
-
-function ProfileFooter() {
-  const columns = [
-    { title: 'Company', links: ['The Manifesto', 'Our Story'] },
-    { title: 'Support', links: ['Shipping & Returns', 'Privacy Policy'] },
-    { title: 'Connect', links: ['Contact Us'] },
-  ]
-
-  return (
-    <footer className="border-t border-[color-mix(in_srgb,var(--color-outline-variant)_50%,transparent)] bg-[var(--color-surface-container-low)]">
-      <div className="mx-auto grid max-w-[var(--layout-container-max)] grid-cols-1 gap-[var(--space-gutter)] px-[var(--space-margin-mobile)] py-16 md:grid-cols-4 md:px-[var(--space-margin-desktop)]">
-        <div className="flex flex-col gap-4">
-          <span className="text-headline-md text-[var(--color-primary)]">L'Essence d'Alicante</span>
-          <p className="text-body-md text-[var(--color-on-surface-variant)]">
-            © 2024 L'Essence d'Alicante. Artisanal Heritage.
-          </p>
-        </div>
-        {columns.map((col) => (
-          <div key={col.title} className="flex flex-col gap-3">
-            <span className="text-label-md uppercase tracking-widest text-[var(--color-outline)]">{col.title}</span>
-            {col.links.map((link) => (
-              <a key={link} href="#" className="text-label-md text-[var(--color-on-surface-variant)] underline transition-all hover:text-[var(--color-primary)]">
-                {link}
-              </a>
-            ))}
-            {col.title === 'Connect' && (
-              <div className="mt-2 flex gap-4">
-                <Mail size={20} strokeWidth={1.8} className="text-[var(--color-on-surface-variant)]" />
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </footer>
-  )
 }
 
 function ConfirmationModal({ title, description, confirmLabel, danger = false, onCancel, onConfirm }: { title: string; description: string; confirmLabel: string; danger?: boolean; onCancel: () => void; onConfirm: () => void }) {

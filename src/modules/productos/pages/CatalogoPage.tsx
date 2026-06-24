@@ -195,7 +195,6 @@ export function CatalogoPage() {
         </main>
       </div>
 
-      <CatalogFooter />
     </div>
   )
 }
@@ -428,41 +427,5 @@ function PaginationButton({
     >
       {Icon ? <Icon size={20} strokeWidth={1.8} /> : label}
     </button>
-  )
-}
-
-function CatalogFooter() {
-  return (
-    <footer className="mt-10 border-t border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)]">
-      <div className="mx-auto grid max-w-[var(--layout-container-max)] grid-cols-1 gap-12 px-[var(--space-margin-mobile)] py-16 md:grid-cols-3 md:px-[var(--space-margin-desktop)]">
-        <div className="flex flex-col gap-4">
-          <span className="text-headline-md tracking-tight text-[var(--color-primary)]">ARTESANÍA ALICANTE</span>
-          <p className="text-body-md max-w-xs text-[var(--color-secondary)]">
-            Tradición y sabor desde el corazón de la provincia.
-          </p>
-        </div>
-
-        <nav className="flex flex-col gap-3" aria-label="Enlaces de tienda">
-          {['Historia', 'Productores', 'Envíos'].map((item) => (
-            <a key={item} href="#" className="text-body-md text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-primary)]">
-              {item}
-            </a>
-          ))}
-        </nav>
-
-        <div className="flex flex-col gap-4 md:items-end md:text-right">
-          <nav className="flex flex-col gap-3 md:items-end" aria-label="Enlaces legales">
-            {['Aviso Legal', 'Privacidad'].map((item) => (
-              <a key={item} href="#" className="text-body-md text-[var(--color-on-surface-variant)] transition-colors hover:text-[var(--color-primary)]">
-                {item}
-              </a>
-            ))}
-          </nav>
-          <p className="text-label-sm mt-auto pt-4 text-[var(--color-secondary)]">
-            © 2024 Artesanía de Alicante. Tradición y Sabor.
-          </p>
-        </div>
-      </div>
-    </footer>
   )
 }

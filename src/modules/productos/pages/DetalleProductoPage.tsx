@@ -192,7 +192,6 @@ export function DetalleProductoPage() {
         />
       </main>
 
-      <ProductTemporaryFooter />
     </div>
   )
 }
@@ -387,28 +386,6 @@ function RelatedProductsSection({ relatedProducts, canGoBack, canGoForward, onPr
         ))}
       </div>
     </section>
-  )
-}
-
-function ProductTemporaryFooter() {
-  return (
-    <footer className="mt-20 w-full border-t border-[color-mix(in_srgb,var(--color-outline-variant)_50%,transparent)] bg-[var(--color-surface-container-low)]">
-      <div className="mx-auto flex max-w-[var(--layout-container-max)] flex-col items-center gap-[var(--space-unit)] px-[var(--space-margin-mobile)] py-[var(--space-margin-desktop)] md:px-[var(--space-margin-desktop)]">
-        <h2 className="text-headline-md mb-6 text-[var(--color-primary)]">ALACANT ARTISÀ</h2>
-        <ul className="mb-8 flex flex-wrap justify-center gap-x-8 gap-y-4">
-          {['Provenance', 'Shipping', 'Privacy', 'Terms', 'Contact'].map((item) => (
-            <li key={item}>
-              <a href="#" className="text-label-sm text-[var(--color-secondary)] transition-colors hover:text-[var(--color-primary)]">
-                {item}
-              </a>
-            </li>
-          ))}
-        </ul>
-        <p className="text-body-md text-center text-[var(--color-secondary)]">
-          © 2024 Alacant Artisà. Cultivating excellence in the Mediterranean.
-        </p>
-      </div>
-    </footer>
   )
 }
 

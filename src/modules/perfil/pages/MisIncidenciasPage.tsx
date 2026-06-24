@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Clock3, Filter, Flag, Globe, MessageSquare, Package, Search, Share2, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Clock3, Filter, Flag, MessageSquare, Package, Search, X } from 'lucide-react'
 import { ReportarIncidenciaModal } from '../componentes/IncidenciaModals'
 
 type IncidenciaStatus = 'Abierta' | 'En revisión' | 'Resuelta' | 'Cerrada'
@@ -289,7 +289,6 @@ export function MisIncidenciasPage() {
         <IncidenciasPagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </main>
 
-      <IncidenciasFooter />
 
       {showModal ? <ReportarIncidenciaModal onClose={() => setShowModal(false)} /> : null}
       {selectedIncidencia ? (
@@ -495,43 +494,5 @@ function IncidenciasPagination({ currentPage, totalPages, onPageChange }: { curr
         <ChevronRight size={18} strokeWidth={1.8} />
       </button>
     </nav>
-  )
-}
-
-function IncidenciasFooter() {
-  return (
-    <footer className="w-full border-t border-[color-mix(in_srgb,var(--color-outline-variant)_50%,transparent)] bg-[var(--color-surface-container-low)] py-16">
-      <div className="mx-auto grid max-w-[var(--layout-container-max)] grid-cols-1 gap-[var(--space-gutter)] px-[var(--space-margin-mobile)] md:grid-cols-4 md:px-[var(--space-margin-desktop)]">
-        <div className="col-span-1 space-y-6 md:col-span-2">
-          <span className="text-headline-md block text-[var(--color-primary)]">ALICANTE GOURMET</span>
-          <p className="text-body-md max-w-sm text-[var(--color-on-surface-variant)]">
-            Celebrando la herencia culinaria del Mediterráneo a través de una curaduría excepcional de productos locales y artesanos.
-          </p>
-          <p className="text-label-md text-[var(--color-on-surface-variant)] opacity-70">
-            © 2024 Alicante Gourmet. Handcrafted in the Mediterranean.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4">
-          <h4 className="text-label-md mb-2 uppercase tracking-widest text-[var(--color-primary)]">Compañía</h4>
-          {['Sustainability', 'Producers', 'Shipping', 'Returns'].map((link) => (
-            <a key={link} href="#" className="text-body-md text-[var(--color-on-surface-variant)] transition-all hover:text-[var(--color-primary)]">
-              {link}
-            </a>
-          ))}
-        </div>
-        <div className="flex flex-col gap-4">
-          <h4 className="text-label-md mb-2 uppercase tracking-widest text-[var(--color-primary)]">Legal & Contacto</h4>
-          {['Contact', 'Privacy', 'Terms'].map((link) => (
-            <a key={link} href="#" className="text-body-md text-[var(--color-on-surface-variant)] transition-all hover:text-[var(--color-primary)]">
-              {link}
-            </a>
-          ))}
-          <div className="mt-4 flex gap-4">
-            <Globe size={20} strokeWidth={1.8} className="cursor-pointer text-[var(--color-primary)] opacity-80 transition-opacity hover:opacity-100" />
-            <Share2 size={20} strokeWidth={1.8} className="cursor-pointer text-[var(--color-primary)] opacity-80 transition-opacity hover:opacity-100" />
-          </div>
-        </div>
-      </div>
-    </footer>
   )
 }

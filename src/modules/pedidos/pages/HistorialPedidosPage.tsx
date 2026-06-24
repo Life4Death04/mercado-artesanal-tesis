@@ -452,7 +452,6 @@ export function HistorialPedidosPage() {
         <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </main>
 
-      <OrdersFooter />
 
       {selectedOrder ? (
         <OrderDetailModal
@@ -577,23 +576,5 @@ function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: nu
         <ChevronRight size={18} strokeWidth={1.8} />
       </button>
     </div>
-  )
-}
-
-function OrdersFooter() {
-  return (
-    <footer className="mt-auto w-full border-t border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] bg-[var(--color-surface-container-lowest)] py-16">
-      <div className="mx-auto flex max-w-[var(--layout-container-max)] flex-col items-center justify-between gap-8 px-[var(--space-margin-mobile)] md:flex-row md:px-[var(--space-margin-desktop)]">
-        <div className="text-headline-md text-[var(--color-primary)]">L'Essence d'Alicante</div>
-        <nav className="text-label-sm flex flex-wrap justify-center gap-6 text-[var(--color-secondary)]" aria-label="Footer">
-          {['Privacy Policy', 'Terms of Service', 'Shipping & Returns', 'Contact Us', 'Our Story'].map((item) => (
-            <a key={item} href="#" className="text-[var(--color-on-surface-variant)] transition-all hover:text-[var(--color-primary)] hover:underline">
-              {item}
-            </a>
-          ))}
-        </nav>
-        <p className="text-label-sm text-center text-[var(--color-secondary)] md:text-right">© 2024 L'Essence d'Alicante. Artisanal Excellence from the Mediterranean.</p>
-      </div>
-    </footer>
   )
 }

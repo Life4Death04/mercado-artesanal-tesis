@@ -158,40 +158,7 @@ export function EditarPerfilPublicoPage() {
 
       {/* ── Main ── */}
       <main className="ml-0 min-h-screen flex-1 pb-32 md:ml-64">
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-6 md:px-16">
-          <nav className="text-label-sm flex items-center gap-2 text-[var(--color-secondary)]">
-            <span>Panel de Productor</span>
-            <span>/</span>
-            <span className="font-semibold text-[var(--color-primary)]">Mi perfil / Mi tienda</span>
-          </nav>
-          <div className="flex items-center gap-4 text-[var(--color-on-surface-variant)]">
-            <button
-              type="button"
-              className="transition-colors hover:text-[var(--color-primary)]"
-              aria-label="Notificaciones"
-            >
-              {/* Bell placeholder */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="22"
-                height="22"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
-              </svg>
-            </button>
-          </div>
-        </header>
-
-        <div className="mx-auto max-w-[var(--container-max)] space-y-16 px-6 py-16 md:px-16">
+        <div className="mx-auto max-w-[var(--container-max)] space-y-16 px-6 py-20 md:px-16 md:pt-24">
           {/* ─────────────────────────────────────────────────
               SECCIÓN 1: Vista pública de la tienda
           ───────────────────────────────────────────────── */}
