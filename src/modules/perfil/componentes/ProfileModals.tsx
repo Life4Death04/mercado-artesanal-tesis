@@ -143,7 +143,7 @@ export function AgregarDireccionModal({ onClose, onSave }: AgregarDireccionModal
       aria-modal="true"
       aria-labelledby="add-address-title"
     >
-      <div className="relative w-full max-w-[600px] overflow-hidden bg-[#FAF7F0] shadow-2xl">
+      <div className="relative w-full max-w-[600px] overflow-hidden bg-[var(--color-background)]  shadow-2xl">
         <button
           type="button"
           aria-label="Cerrar modal"
