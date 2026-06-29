@@ -369,7 +369,7 @@ export function HistorialPedidosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF7F0] text-[#1A1A1A]">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
       <main className="mx-auto w-full max-w-[var(--layout-container-max)] px-[var(--space-margin-mobile)] py-16 md:px-[var(--space-margin-desktop)] md:py-24">
         <section className="mb-10">
           <nav aria-label="Breadcrumb" className="text-label-sm mb-6 flex items-center gap-2 text-[var(--color-outline)]">
@@ -377,11 +377,11 @@ export function HistorialPedidosPage() {
               Mi cuenta
             </Link>
             <ChevronRight size={14} strokeWidth={1.8} />
-            <span className="text-[#1A1A1A]">Mis pedidos</span>
+            <span className="text-[var(--color-on-surface)]">Mis pedidos</span>
           </nav>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-display-lg mb-4 text-[#1A1A1A]">Mis pedidos</h1>
+              <h1 className="text-display-lg mb-4 text-[var(--color-on-surface)]">Mis pedidos</h1>
               <p className="text-body-md max-w-2xl text-[var(--color-on-surface-variant)]">
                 Revisa el historial de tus compras y abre cada envío para seguir el avance por productor, valorar productos o reportar incidencias.
               </p>

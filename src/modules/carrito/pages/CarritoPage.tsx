@@ -141,7 +141,7 @@ export function CarritoPage() {
             <ChevronRight size={14} strokeWidth={1.8} />
             <span className="text-[var(--color-on-surface)]">Carrito</span>
           </nav>
-          <h1 className="text-display-lg text-[var(--color-on-surface)]">Tu cesta</h1>
+          <h1 className="text-display-lg text-[var(--color-on-surface)]">Tu carrito</h1>
         </header>
 
         {cartGroups.length > 0 ? (

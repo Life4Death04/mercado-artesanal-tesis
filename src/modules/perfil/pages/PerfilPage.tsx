@@ -38,6 +38,14 @@ const initialProfile: ProfileFormState = {
   phone: '+34 600 000 000',
 }
 
+const consumerProfilePreview = {
+  banner:
+    'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=1600&q=80',
+  avatar:
+    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
+  location: 'Alicante, España',
+}
+
 export function PerfilPage() {
   const navigate = useNavigate()
   const [isEditing, setIsEditing] = useState(false)
@@ -97,7 +105,7 @@ export function PerfilPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF7F0] text-[#1A1A1A]">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
       <main className="mx-auto max-w-[800px] px-[var(--space-margin-mobile)] py-16 md:px-0">
         <section className="mb-16">
           <nav aria-label="Breadcrumb" className="text-label-sm mb-4 flex items-center gap-2 text-[var(--color-on-surface-variant)]/70">
@@ -119,6 +127,45 @@ export function PerfilPage() {
           </div>
 
           <div className="space-y-10">
+            <article className="rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] shadow-[0_18px_50px_-35px_rgba(122,46,58,0.18)]">
+              <div className="relative h-48 md:h-56">
+                <div className="h-full overflow-hidden rounded-t-[var(--radius-xl)]">
+                  <img
+                    src={consumerProfilePreview.banner}
+                    alt="Banner de previsualización del perfil"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+                </div>
+
+                <div className="absolute -bottom-12 left-5 z-10 size-24 overflow-hidden rounded-full border-4 border-white bg-[var(--color-surface-container-low)] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.35)] md:left-8 md:size-28">
+                  <img
+                    src={consumerProfilePreview.avatar}
+                    alt="Foto de perfil de Alejandro Valls"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              </div>
+
+              <div className="px-5 pb-6 pt-16 md:px-8 md:pt-18">
+                <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-label-sm mb-2 uppercase tracking-[0.18em] text-[var(--color-outline)]">
+                      Previsualización del perfil
+                    </p>
+                    <h3 className="text-headline-md text-[var(--color-on-surface)]">{profile.name}</h3>
+                    <p className="text-body-md mt-2 text-[var(--color-on-surface-variant)]">
+                      Así se verá tu cabecera de perfil dentro del área de consumidor.
+                    </p>
+                  </div>
+                  <div className="inline-flex items-center gap-2 text-[var(--color-on-surface-variant)]">
+                    <MapPin size={16} strokeWidth={1.8} className="text-[var(--color-outline)]" />
+                    <span className="text-label-md">{consumerProfilePreview.location}</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
             <div className="grid grid-cols-1 gap-[var(--space-gutter)] md:grid-cols-2">
               <EditorialField id="nombre" label="Nombre" value={profile.name} onChange={(value) => setProfile((current) => ({ ...current, name: value }))} type="text" disabled={!isEditing} />
               <EditorialField id="telefono" label="Teléfono (opcional)" value={profile.phone} onChange={(value) => setProfile((current) => ({ ...current, phone: value }))} placeholder="+34 600 000 000" type="tel" disabled={!isEditing} />

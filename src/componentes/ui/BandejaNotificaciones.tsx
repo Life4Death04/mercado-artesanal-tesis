@@ -104,14 +104,17 @@ function NotificacionIcono({ tipo }: { tipo: NotificacionTipo }): ReactNode {
  */
 export function BandejaNotificaciones({
   notificaciones = notificacionesMock,
+  variant = 'consumer',
 }: {
   notificaciones?: Notificacion[]
+  variant?: 'consumer' | 'producer'
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [items, setItems] = useState(notificaciones)
   const panelRef = useRef<HTMLDivElement>(null)
 
   const unreadCount = items.filter((n) => !n.leida).length
+  const isProducerVariant = variant === 'producer'
 
   // Close on Escape
   useEffect(() => {
@@ -135,11 +138,17 @@ export function BandejaNotificaciones({
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative rounded-full p-2 text-[var(--color-on-surface-variant)] transition-all duration-150 hover:bg-[var(--color-surface-container-low)] active:scale-95"
+        className={`relative rounded-full p-2 transition-all duration-150 active:scale-95 ${
+          isProducerVariant
+            ? 'text-[var(--color-on-primary)] hover:bg-white/12'
+            : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)]'
+        }`}
       >
         <Bell size={22} strokeWidth={1.6} />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-[#7A2E3A] text-[10px] font-bold text-white ring-2 ring-[var(--color-surface)]">
+          <span className={`absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-[#7A2E3A] text-[10px] font-bold text-white ${
+            isProducerVariant ? 'ring-2 ring-[var(--color-primary-container)]' : 'ring-2 ring-[var(--color-surface)]'
+          }`}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
