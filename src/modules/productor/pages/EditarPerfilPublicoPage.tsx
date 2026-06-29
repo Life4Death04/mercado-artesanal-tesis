@@ -215,12 +215,14 @@ export function EditarPerfilPublicoPage() {
           </div>
         </section>
 
-        <section className="mb-8 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)]">
-          <div className="relative h-56 overflow-hidden md:h-72">
-            <img src={TIENDA.banner} alt="Banner de Finca Alicante" className="h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
+        <section className="mb-8 rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)]">
+          <div className="relative h-56 md:h-72">
+            <div className="h-full overflow-hidden rounded-t-[var(--radius-xl)]">
+              <img src={TIENDA.banner} alt="Banner de Finca Alicante" className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
+            </div>
 
-            <div className="absolute left-5 top-5 flex gap-2">
+            {/* <div className="absolute left-5 top-5 flex gap-2">
               <span className="text-label-sm rounded-full bg-white/90 px-3 py-1 text-[var(--color-primary)]">
                 Vista publica
               </span>
@@ -237,9 +239,9 @@ export function EditarPerfilPublicoPage() {
               <FieldHint disabled>
                 Banner y logo no se editan en este bloque
               </FieldHint>
-            </div>
+            </div> */}
 
-            <div className="absolute -bottom-14 left-5 size-28 overflow-hidden rounded-full border-4 border-white bg-[var(--color-surface-container-low)] shadow-md md:left-8 md:size-32">
+            <div className="absolute -bottom-14 left-5 z-10 size-28 overflow-hidden rounded-full border-4 border-white bg-[var(--color-surface-container-low)] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.45)] md:left-8 md:size-32">
               <img src={TIENDA.logo} alt="Logo Finca Alicante" className="h-full w-full object-cover" />
             </div>
           </div>
