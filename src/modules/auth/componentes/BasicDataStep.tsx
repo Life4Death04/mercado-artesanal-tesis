@@ -19,11 +19,20 @@ export function BasicDataStep({ data, onChange }: BasicDataStepProps) {
         </div>
         <form className="flex flex-col gap-8">
           <EditorialTextField
-            id="nombre"
-            name="nombre"
+            id="firstName"
+            name="firstName"
             label="Nombre"
-            value={data.name}
-            onChange={(event) => onChange({ name: event.target.value })}
+            placeholder="Ej. Ana"
+            value={data.firstName}
+            onChange={(event) => onChange({ firstName: event.target.value })}
+          />
+          <EditorialTextField
+            id="lastName"
+            name="lastName"
+            label="Apellido"
+            placeholder="Ej. López"
+            value={data.lastName}
+            onChange={(event) => onChange({ lastName: event.target.value })}
           />
           <EditorialTextField
             id="email"

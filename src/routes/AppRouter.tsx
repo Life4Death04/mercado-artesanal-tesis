@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '../componentes/layout/AppLayout'
 import { ConsumerLayout } from '../componentes/layout/ConsumerLayout'
 import { DashboardLayout } from '../componentes/layout/DashboardLayout'
+import { ProtectedRoutes } from './ProtectedRoutes'
+import { PublicRoutes } from './PublicRoutes'
 import { AdminLayout } from '../modules/admin/componentes/AdminLayout'
 import { LoginPage } from '../modules/auth/pages/LoginPage'
 import { RegistroWizardPage } from '../modules/auth/pages/RegistroWizardPage'
@@ -35,41 +37,49 @@ import { EditarPerfilPublicoPage } from '../modules/productor/pages/EditarPerfil
 export function AppRouter() {
   return (
     <Routes>
-      <Route path="login" element={<LoginPage />} />
+      <Route element={<PublicRoutes />}>
+        <Route path="login" element={<LoginPage />} />
+      </Route>
       <Route path="registro" element={<RegistroWizardPage />} />
       <Route element={<AppLayout />}>
         <Route index element={<LandingPage />} />
-        <Route element={<ConsumerLayout />}>
-          <Route path="productos" element={<CatalogoPage />} />
-          <Route path="productos/:productoId" element={<DetalleProductoPage />} />
-          <Route path="productores/:productorId" element={<PerfilProductorPublicoPage />} />
-          <Route path="carrito" element={<CarritoPage />} />
-          <Route path="checkout" element={<CheckoutPage />} />
-          <Route path="pedidos" element={<HistorialPedidosPage />} />
-          <Route path="perfil" element={<PerfilPage />} />
-          <Route path="incidencias" element={<MisIncidenciasPage />} />
+        <Route element={<ProtectedRoutes allowedRoles={['CONSUMER', 'PRODUCER', 'ADMIN']} />}>
+          <Route element={<ConsumerLayout />}>
+            <Route path="productos" element={<CatalogoPage />} />
+            <Route path="productos/:productoId" element={<DetalleProductoPage />} />
+            <Route path="productores/:productorId" element={<PerfilProductorPublicoPage />} />
+            <Route path="carrito" element={<CarritoPage />} />
+            <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="pedidos" element={<HistorialPedidosPage />} />
+            <Route path="perfil" element={<PerfilPage />} />
+            <Route path="incidencias" element={<MisIncidenciasPage />} />
+          </Route>
         </Route>
-        <Route element={<DashboardLayout />}>
-          <Route path="productor" element={<Navigate to="/productor/pedidos" replace />} />
-          <Route path="productor/productos" element={<ProductosProductorPage />} />
-          <Route path="productor/pedidos" element={<PedidosProductorPage />} />
-          <Route path="productor/inventario" element={<InventarioProductorPage />} />
-          <Route path="productor/estadisticas" element={<EstadisticasProductorPage />} />
-          <Route path="productor/entregas" element={<ModalidadesEntregaPage />} />
-          <Route path="productor/perfil" element={<EditarPerfilPublicoPage />} />
+        <Route element={<ProtectedRoutes allowedRoles={['PRODUCER']} />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="productor" element={<Navigate to="/productor/pedidos" replace />} />
+            <Route path="productor/productos" element={<ProductosProductorPage />} />
+            <Route path="productor/pedidos" element={<PedidosProductorPage />} />
+            <Route path="productor/inventario" element={<InventarioProductorPage />} />
+            <Route path="productor/estadisticas" element={<EstadisticasProductorPage />} />
+            <Route path="productor/entregas" element={<ModalidadesEntregaPage />} />
+            <Route path="productor/perfil" element={<EditarPerfilPublicoPage />} />
+          </Route>
         </Route>
-        <Route element={<AdminLayout />}>
-          <Route path="admin" element={<AdminDashboardPage />} />
-          <Route path="admin/usuarios" element={<UsuariosAdminPage />} />
-          <Route path="admin/moderacion" element={<ModeracionContenidoAdminPage />} />
-          <Route path="admin/moderacion/:publicacionId" element={<ModeracionDetalleAdminPage />} />
-          <Route path="admin/incidencias" element={<IncidenciasAdminPage />} />
-          <Route path="admin/incidencias/:incidenciaId" element={<IncidenciaDetalleAdminPage />} />
-          <Route path="admin/categorias" element={<CategoriasAdminPage />} />
-          <Route path="admin/metricas-globales" element={<MetricasGlobalesPage />} />
-          <Route path="admin/configuracion" element={<ConfiguracionAdminPage />} />
-          <Route path="admin/productos" element={<ProductosAdminPage />} />
-          <Route path="admin/pedidos" element={<PedidosAdminPage />} />
+        <Route element={<ProtectedRoutes allowedRoles={['ADMIN']} />}>
+          <Route element={<AdminLayout />}>
+            <Route path="admin" element={<AdminDashboardPage />} />
+            <Route path="admin/usuarios" element={<UsuariosAdminPage />} />
+            <Route path="admin/moderacion" element={<ModeracionContenidoAdminPage />} />
+            <Route path="admin/moderacion/:publicacionId" element={<ModeracionDetalleAdminPage />} />
+            <Route path="admin/incidencias" element={<IncidenciasAdminPage />} />
+            <Route path="admin/incidencias/:incidenciaId" element={<IncidenciaDetalleAdminPage />} />
+            <Route path="admin/categorias" element={<CategoriasAdminPage />} />
+            <Route path="admin/metricas-globales" element={<MetricasGlobalesPage />} />
+            <Route path="admin/configuracion" element={<ConfiguracionAdminPage />} />
+            <Route path="admin/productos" element={<ProductosAdminPage />} />
+            <Route path="admin/pedidos" element={<PedidosAdminPage />} />
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

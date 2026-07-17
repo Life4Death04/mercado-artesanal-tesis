@@ -6,15 +6,20 @@ type ReviewRegistrationStepProps = {
 }
 
 export function ReviewRegistrationStep({ data }: ReviewRegistrationStepProps) {
+  const fullName = [data.firstName, data.lastName].filter(Boolean).join(' ')
+  const categoryLabels = data.productTypes.map(categoryLabel).join(', ')
   const summaryRows = [
     { label: 'Perfil', value: data.role === 'productor' ? 'Productor' : 'Consumidor' },
-    { label: 'Nombre', value: data.name },
+    { label: 'Nombre', value: fullName },
     { label: 'Correo', value: data.email, verified: true },
     ...(data.role === 'productor'
       ? [
           { label: 'Emprendimiento', value: data.producerName },
+          { label: 'NIF/CIF', value: data.producerNif },
           { label: 'Municipio', value: data.municipality },
-          { label: 'Productos', value: data.productTypes.join(', ') },
+          { label: 'Dirección', value: data.producerAddressLine1 },
+          { label: 'Código postal', value: data.producerPostalCode },
+          { label: 'Productos', value: categoryLabels },
         ]
       : []),
     { label: 'Consentimiento', value: data.consentAccepted ? 'Aceptado' : 'Pendiente' },
@@ -50,4 +55,17 @@ export function ReviewRegistrationStep({ data }: ReviewRegistrationStepProps) {
       </dl>
     </main>
   )
+}
+
+function categoryLabel(slug: string): string {
+  const labels: Record<string, string> = {
+    'aceite-de-oliva': 'Aceites',
+    embutidos: 'Embutidos',
+    'dulces-y-turrones': 'Turrones',
+    vino: 'Vinos',
+    queso: 'Quesos',
+    miel: 'Miel',
+  }
+
+  return labels[slug] ?? slug
 }
