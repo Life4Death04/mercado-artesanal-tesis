@@ -8,15 +8,18 @@ import './lib/i18n'
 import App from './App.tsx'
 import { queryClient } from './lib/queryClient'
 import { store } from './store'
+import { AuthProvider } from './modules/auth/componentes/AuthProvider'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </QueryClientProvider>
-    </Provider>
+    <AuthProvider>
+      <Provider store={store}>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </QueryClientProvider>
+      </Provider>
+    </AuthProvider>
   </StrictMode>,
 )

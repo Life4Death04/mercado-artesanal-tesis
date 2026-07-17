@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { useAuth0 } from '@auth0/auth0-react'
 import { Link } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { APP_NAME } from '../../lib/branding'
+import { signupAuthorizationParams } from '../../modules/auth/authRedirect'
 
 type PublicTopbarProps = {
   navHrefPrefix?: '' | '/'
@@ -11,6 +13,15 @@ const navItems = ['Mercado', 'Productores', 'Cómo funciona', 'Impacto']
 
 export function PublicTopbar({ navHrefPrefix = '/' }: PublicTopbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { loginWithRedirect } = useAuth0()
+
+  function signUp() {
+    setMobileMenuOpen(false)
+    void loginWithRedirect({
+      appState: { returnTo: '/registro' },
+      authorizationParams: signupAuthorizationParams,
+    })
+  }
 
   function navHref(item: string) {
     return `${navHrefPrefix}#${item.toLowerCase().replaceAll(' ', '-')}`
@@ -41,9 +52,9 @@ export function PublicTopbar({ navHrefPrefix = '/' }: PublicTopbarProps) {
           <Link to="/login" className="text-label-md px-4 py-2 text-[var(--color-on-surface)] transition-colors hover:text-[var(--color-primary-container)]">
             Iniciar sesión
           </Link>
-          <Link to="/registro" className="text-label-md bg-[var(--color-primary-container)] px-5 py-3 !text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)]">
+          <button type="button" onClick={signUp} className="text-label-md bg-[var(--color-primary-container)] px-5 py-3 !text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)]">
             Crear cuenta
-          </Link>
+          </button>
         </div>
 
         <button
@@ -75,9 +86,9 @@ export function PublicTopbar({ navHrefPrefix = '/' }: PublicTopbarProps) {
             <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-label-md border border-[var(--color-outline-variant)] px-5 py-3 text-center text-[var(--color-on-surface)] transition-colors hover:border-[var(--color-primary-container)]">
               Iniciar sesión
             </Link>
-            <Link to="/registro" onClick={() => setMobileMenuOpen(false)} className="text-label-md bg-[var(--color-primary-container)] px-5 py-3 text-center !text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)]">
+            <button type="button" onClick={signUp} className="text-label-md bg-[var(--color-primary-container)] px-5 py-3 text-center !text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)]">
               Crear cuenta
-            </Link>
+            </button>
           </div>
         </div>
       ) : null}

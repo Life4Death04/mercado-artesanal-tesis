@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
+import { useAuth0 } from '@auth0/auth0-react'
 import type { LucideIcon } from 'lucide-react'
 import {
   AlertTriangle,
@@ -231,10 +232,18 @@ function LogoutLink({
   onMobileClose?: () => void
   useProducerTheme?: boolean
 }) {
+  const { logout } = useAuth0()
+
+  function handleLogout() {
+    window.localStorage.removeItem('sidebar-owner')
+    onMobileClose?.()
+    void logout({ logoutParams: { returnTo: window.location.origin } })
+  }
+
   return (
-    <NavLink
-      to="/login"
-      onClick={onMobileClose}
+    <button
+      type="button"
+      onClick={handleLogout}
       className={`text-label-md flex items-center gap-4 rounded-[var(--radius-lg)] px-4 py-3 transition-colors ${
         useProducerTheme
           ? 'text-[color-mix(in_srgb,var(--color-on-primary)_82%,transparent)] hover:bg-white/10 hover:text-[var(--color-on-primary)]'
@@ -243,6 +252,6 @@ function LogoutLink({
     >
       <LogOut size={21} strokeWidth={1.8} />
       <span>Cerrar sesión</span>
-    </NavLink>
+    </button>
   )
 }
