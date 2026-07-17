@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 .atl/
+.env
+
+# Session handoff notes (local only)
+SESSION_HANDOFF.md
 
 # Editor directories and files
 .vscode/*
