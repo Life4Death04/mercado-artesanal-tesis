@@ -4,11 +4,17 @@ export type RegistrationStep = 'profile' | 'basic' | 'producer' | 'review' | 'su
 
 export type RegistrationWizardData = {
   role: RegistrationRole
-  name: string
+  firstName: string
+  lastName: string
   email: string
   consentAccepted: boolean
   producerName: string
+  producerNif: string
   municipality: string
+  producerAddressLine1: string
+  producerAddressLine2: string
+  producerPostalCode: string
+  producerProvince: string
   productTypes: string[]
   producerDescription: string
 }

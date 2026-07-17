@@ -6,6 +6,8 @@ type WizardFooterProps = {
   onNext: () => void
   nextLabel?: string
   backLabel?: string
+  nextDisabled?: boolean
+  nextLoading?: boolean
   showSaveAndExit?: boolean
   onSaveAndExit?: () => void
 }
@@ -16,6 +18,8 @@ export function WizardFooter({
   onNext,
   nextLabel = 'Continuar',
   backLabel = 'Atrás',
+  nextDisabled = false,
+  nextLoading = false,
   showSaveAndExit = false,
   onSaveAndExit,
 }: WizardFooterProps) {
@@ -36,10 +40,11 @@ export function WizardFooter({
           <button
             type="button"
             onClick={onNext}
-            className="text-label-md flex items-center gap-2 bg-[var(--color-primary-container)] px-8 py-3 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)] active:scale-95"
+            disabled={nextDisabled || nextLoading}
+            className="text-label-md flex items-center gap-2 bg-[var(--color-primary-container)] px-8 py-3 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {nextLabel}
-            {nextLabel === 'Continuar' && <ArrowRight size={16} />}
+            {nextLoading ? 'Guardando...' : nextLabel}
+            {!nextLoading && nextLabel === 'Continuar' && <ArrowRight size={16} />}
           </button>
         </div>
         {showSaveAndExit && (

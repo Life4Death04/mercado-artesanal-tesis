@@ -8,15 +8,22 @@ type ProducerInfoStepProps = {
 }
 
 const municipalities = ['Alicante', 'Altea', 'Dénia', 'Jijona', 'Elche']
-const productTypes = ['Aceites', 'Embutidos', 'Turrones', 'Vinos', 'Quesos', 'Miel']
+const productTypes = [
+  { slug: 'aceite-de-oliva', label: 'Aceites' },
+  { slug: 'embutidos', label: 'Embutidos' },
+  { slug: 'dulces-y-turrones', label: 'Turrones' },
+  { slug: 'vino', label: 'Vinos' },
+  { slug: 'queso', label: 'Quesos' },
+  { slug: 'miel', label: 'Miel' },
+]
 
 export function ProducerInfoStep({ data, onChange }: ProducerInfoStepProps) {
-  function toggleProductType(productType: string) {
-    const isSelected = data.productTypes.includes(productType)
+  function toggleProductType(productTypeSlug: string) {
+    const isSelected = data.productTypes.includes(productTypeSlug)
     onChange({
       productTypes: isSelected
-        ? data.productTypes.filter((item) => item !== productType)
-        : [...data.productTypes, productType],
+        ? data.productTypes.filter((item) => item !== productTypeSlug)
+        : [...data.productTypes, productTypeSlug],
     })
   }
 
@@ -34,6 +41,15 @@ export function ProducerInfoStep({ data, onChange }: ProducerInfoStepProps) {
             value={data.producerName}
             onChange={(event) => onChange({ producerName: event.target.value })}
           />
+          <EditorialTextField
+            id="producerNif"
+            name="producerNif"
+            label="NIF/CIF"
+            hint="(Requerido)"
+            placeholder="Ej. B12345678"
+            value={data.producerNif}
+            onChange={(event) => onChange({ producerNif: event.target.value.toUpperCase() })}
+          />
           <EditorialSelectField
             id="municipality"
             name="municipality"
@@ -49,19 +65,56 @@ export function ProducerInfoStep({ data, onChange }: ProducerInfoStepProps) {
               </option>
             ))}
           </EditorialSelectField>
+          <EditorialTextField
+            id="producerAddressLine1"
+            name="producerAddressLine1"
+            label="Dirección"
+            hint="(Requerido)"
+            placeholder="Ej. Calle Mayor 12"
+            value={data.producerAddressLine1}
+            onChange={(event) => onChange({ producerAddressLine1: event.target.value })}
+          />
+          <EditorialTextField
+            id="producerAddressLine2"
+            name="producerAddressLine2"
+            label="Dirección adicional"
+            placeholder="Ej. Local 2"
+            value={data.producerAddressLine2}
+            onChange={(event) => onChange({ producerAddressLine2: event.target.value })}
+          />
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+            <EditorialTextField
+              id="producerPostalCode"
+              name="producerPostalCode"
+              label="Código postal"
+              hint="(Requerido)"
+              placeholder="Ej. 03001"
+              value={data.producerPostalCode}
+              onChange={(event) => onChange({ producerPostalCode: event.target.value })}
+            />
+            <EditorialTextField
+              id="producerProvince"
+              name="producerProvince"
+              label="Provincia"
+              hint="(Requerido)"
+              placeholder="Ej. Alicante"
+              value={data.producerProvince}
+              onChange={(event) => onChange({ producerProvince: event.target.value })}
+            />
+          </div>
           <div>
             <p className="text-label-md mb-3 text-[var(--color-on-background)]">
               Tipos de producto <span className="font-normal text-[var(--color-outline)]">(Requerido)</span>
             </p>
             <div className="flex flex-wrap gap-2">
               {productTypes.map((productType) => {
-                const isSelected = data.productTypes.includes(productType)
+                const isSelected = data.productTypes.includes(productType.slug)
 
                 return (
                   <button
-                    key={productType}
+                    key={productType.slug}
                     type="button"
-                    onClick={() => toggleProductType(productType)}
+                    onClick={() => toggleProductType(productType.slug)}
                     className={[
                       'text-label-sm border px-4 py-2 transition-colors',
                       isSelected
@@ -69,7 +122,7 @@ export function ProducerInfoStep({ data, onChange }: ProducerInfoStepProps) {
                         : 'border-[var(--color-outline-variant)] bg-transparent text-[var(--color-on-surface-variant)] hover:border-[var(--color-on-background)]',
                     ].join(' ')}
                   >
-                    {productType}
+                    {productType.label}
                   </button>
                 )
               })}
@@ -79,7 +132,7 @@ export function ProducerInfoStep({ data, onChange }: ProducerInfoStepProps) {
             id="producerDescription"
             name="producerDescription"
             label="Descripción breve"
-            hint="(Opcional)"
+            hint="(Requerido)"
             placeholder="Cuenta la historia de tus productos..."
             rows={3}
             value={data.producerDescription}

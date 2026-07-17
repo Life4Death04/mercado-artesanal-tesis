@@ -1,8 +1,31 @@
+import { useAuth0 } from '@auth0/auth0-react'
 import { LockKeyhole } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import { APP_NAME } from '../../../lib/branding'
+import { loginAuthorizationParams, signupAuthorizationParams } from '../authRedirect'
 import { GoogleIcon } from './GoogleIcon'
 
 export function LoginAccessCard() {
+  const { loginWithRedirect } = useAuth0()
+  const location = useLocation()
+
+  const locationState = location.state as { returnTo?: unknown } | null
+  const returnTo = typeof locationState?.returnTo === 'string' ? locationState.returnTo : '/login'
+
+  function login() {
+    void loginWithRedirect({
+      appState: { returnTo },
+      authorizationParams: loginAuthorizationParams,
+    })
+  }
+
+  function signUp() {
+    void loginWithRedirect({
+      appState: { returnTo: '/registro' },
+      authorizationParams: signupAuthorizationParams,
+    })
+  }
+
   return (
     <section className="flex flex-col justify-center bg-[var(--color-surface)] p-8 md:p-20">
       <div className="mx-auto w-full max-w-md">
@@ -19,6 +42,7 @@ export function LoginAccessCard() {
           <div className="space-y-4">
             <button
               type="button"
+              onClick={login}
               className="text-label-md w-full rounded-[var(--radius-sm)] bg-[var(--color-primary-container)] px-6 py-4 text-[var(--color-on-primary)] shadow-sm transition duration-300 hover:bg-[var(--color-primary)] active:scale-[0.98]"
             >
               Iniciar sesión
@@ -32,6 +56,7 @@ export function LoginAccessCard() {
 
             <button
               type="button"
+              onClick={login}
               className="text-label-md flex w-full items-center justify-center gap-3 rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--color-outline)_20%,transparent)] bg-transparent px-6 py-4 text-[var(--color-on-surface)] transition duration-300 hover:bg-[var(--color-surface-container)] active:scale-[0.98]"
             >
               <GoogleIcon />
@@ -41,12 +66,13 @@ export function LoginAccessCard() {
 
           <p className="text-label-md pt-4 text-center text-[var(--color-on-surface-variant)] md:text-left">
             ¿No tienes cuenta?{' '}
-            <a
-              href="/registro"
+            <button
+              type="button"
+              onClick={signUp}
               className="font-bold text-[var(--color-primary-container)] underline underline-offset-4 transition-colors hover:text-[var(--color-primary)]"
             >
               Regístrate
-            </a>
+            </button>
           </p>
 
           <div className="border-t border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] pt-8">
