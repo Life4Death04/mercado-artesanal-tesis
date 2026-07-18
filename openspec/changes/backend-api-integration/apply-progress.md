@@ -3,6 +3,33 @@
 > Engram topic_key: `sdd/backend-api-integration/apply-progress` (obs #726)
 > Updated: 2026-07-18
 
+---
+
+## Result Contract
+
+```
+status: success
+next_recommended: sdd-verify
+skill_resolution: paths-injected
+```
+
+**executive_summary**:
+PR#0 establishes the money-typing foundation for `backend-api-integration`. All `z.number()` money fields
+(`precio`, `total`) were converted to `z.string()` with decimal-regex validation. A `formatMoney` helper
+using `Intl.NumberFormat` was added and wired into every consumer page that previously performed numeric
+arithmetic on money values. Line totals that require server-computed data now render `'—'` per spec R2.
+The branch `feat/backend-api-integration-pr0-money-typing` contains 4 commits targeting the tracker branch.
+
+**artifacts**:
+- `openspec/changes/backend-api-integration/apply-progress.md` (this file)
+- Engram topic_key: `sdd/backend-api-integration/apply-progress`
+
+**risks**:
+- None material for PR#0. Future PRs must not re-introduce `z.number()` for money fields (`precio`, `total`).
+  The `formatMoney` helper is the single display path — do not add parallel formatting utilities.
+
+---
+
 **Status**: ✅ Phase 1 complete — ready for sdd-verify
 
 ## Completed Tasks
@@ -37,9 +64,11 @@
 
 - Branch: `feat/backend-api-integration-pr0-money-typing`
 - Base: `feat/backend-api-integration` (tracker)
-- Commits:
+- Commits (4 total):
   - `ffc1bbc` feat(money): add formatMoney helper and convert price schemas to string
   - `35a7ab5` feat(money): sweep consumer pages — remove money arithmetic, render via formatMoney
+  - `4afa408` docs(sdd): add PR#0 apply-progress artifact
+  - `1c8dff4` docs(sdd): refine PR#0 apply-progress artifact with Result Contract and updated git state
 - Diff: ~130 net lines (within 180-260 estimate; under 400-line budget)
 - `tsc -b`: ✅ clean
 - `npm run build`: ✅ clean
