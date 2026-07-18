@@ -68,7 +68,7 @@ The branch `feat/backend-api-integration-pr0-money-typing` contains 4 commits ta
   - `ffc1bbc` feat(money): add formatMoney helper and convert price schemas to string
   - `35a7ab5` feat(money): sweep consumer pages — remove money arithmetic, render via formatMoney
   - `4afa408` docs(sdd): add PR#0 apply-progress artifact
-  - `1c8dff4` docs(sdd): refine PR#0 apply-progress artifact with Result Contract and updated git state
+  - `371dd6c` docs(sdd): refine PR#0 apply-progress artifact with Result Contract and updated git state
 - Diff: ~130 net lines (within 180-260 estimate; under 400-line budget)
 - `tsc -b`: ✅ clean
 - `npm run build`: ✅ clean
