@@ -18,7 +18,7 @@ PR#0 establishes the money-typing foundation for `backend-api-integration`. All 
 (`precio`, `total`) were converted to `z.string()` with decimal-regex validation. A `formatMoney` helper
 using `Intl.NumberFormat` was added and wired into every consumer page that previously performed numeric
 arithmetic on money values. Line totals that require server-computed data now render `'—'` per spec R2.
-The branch `feat/backend-api-integration-pr0-money-typing` contains 4 commits targeting the tracker branch.
+The branch `feat/backend-api-integration-pr0-money-typing` contains 5 commits targeting the tracker branch.
 
 **artifacts**:
 - `openspec/changes/backend-api-integration/apply-progress.md` (this file)
@@ -64,11 +64,12 @@ The branch `feat/backend-api-integration-pr0-money-typing` contains 4 commits ta
 
 - Branch: `feat/backend-api-integration-pr0-money-typing`
 - Base: `feat/backend-api-integration` (tracker)
-- Commits (4 total):
+- Commits (5 total; this artifact commit is the 6th and is intentionally not self-referenced to avoid SHA circularity):
   - `ffc1bbc` feat(money): add formatMoney helper and convert price schemas to string
   - `35a7ab5` feat(money): sweep consumer pages — remove money arithmetic, render via formatMoney
   - `4afa408` docs(sdd): add PR#0 apply-progress artifact
   - `371dd6c` docs(sdd): refine PR#0 apply-progress artifact with Result Contract and updated git state
+  - `722b6b6` docs(sdd): fix corrective commit SHA reference in apply-progress
 - Diff: ~130 net lines (within 180-260 estimate; under 400-line budget)
 - `tsc -b`: ✅ clean
 - `npm run build`: ✅ clean
