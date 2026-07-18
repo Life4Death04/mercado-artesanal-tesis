@@ -1,7 +1,7 @@
-# Apply Progress: backend-api-integration (PR#0 + PR#1)
+# Apply Progress: backend-api-integration (PR#0 + PR#1 + corrective run)
 
 > Engram topic_key: `sdd/backend-api-integration/apply-progress`
-> Updated: 2026-07-18 (PR#1 merge)
+> Updated: 2026-07-18 (corrective re-run — R2 fix)
 
 ---
 
@@ -15,12 +15,11 @@ skill_resolution: paths-injected
 
 **executive_summary**:
 PR#1 delivers the Bootstrap + API Client Foundation for `backend-api-integration`.
-A central error resolver (`resolveErrorMessage`) is now the single translation path for all
-backend AppError codes. Producer profile DTOs (read + patch), a strict partial form schema,
-and both TanStack Query hooks are co-located under `src/modules/productor/profile/`. Both
-producer pages (`EditarPerfilPublicoPage`, `PerfilProductorPublicoPage`) are wired to real
-server data: GET prefills, invalid form blocks PATCH, 2xx invalidates `['producer','me']`,
-and 401/5xx fail closed via the error resolver. PR target when opened: `feat/backend-api-integration`.
+A corrective re-run (gate failure R2) refactored both profile hooks to route token
+acquisition through `useAuthenticatedApi()` — eliminating direct `getAccessTokenSilently`
+calls from the hook layer per spec. `profile.api.ts` was updated to accept an `ApiCaller`
+instead of a raw `accessToken` string. `tsc -b` and `npm run build` remain clean.
+PR target when opened: `feat/backend-api-integration`.
 
 **artifacts**:
 - `openspec/changes/backend-api-integration/apply-progress.md`
@@ -108,18 +107,20 @@ and 401/5xx fail closed via the error resolver. PR target when opened: `feat/bac
 2. **Email/phone in producer contact sidebar**: `AuthenticatedProducerProfile` does not contain email or phone (those are on `CurrentUser` root, which is fetched by `useCurrentUser` in auth module). Both fields render `'—'` rather than placeholder strings. Noted as risk above; not a spec violation.
 3. **`SummaryCard` — third card**: Design did not specify what the third summary card should show (the original had "Telefono"). Phone is not in the producer DTO, so the card now shows "NIF registrado" (read-only). Purely cosmetic and improves data accuracy.
 
-### Git State (PR#1)
+### Git State (PR#1 + corrective run)
 
 - Branch: `feat/backend-api-integration-pr1-producer-bootstrap`
 - Base: `feat/backend-api-integration` (tracker at commit `679e674`)
-- Commits (3 feat commits):
+- Commits (original 3 feat + 1 docs + 1 corrective fix):
   - `eb9f48d` feat(errors): add central resolveErrorMessage registry
   - `09129a4` feat(producer): add profile schemas and api client
   - `a4fb511` feat(producer): wire profile hooks into edit and public pages
+  - `c57b967` docs(sdd): update apply-progress for PR#1 — producer bootstrap complete
+  - `f1232ca` refactor(producer): route profile hooks through useAuthenticatedApi per spec R2
 - `tsc -b`: ✅ clean
 - `npm run build`: ✅ clean
-- Estimated diff: ~450 net lines (within PR#1 estimate of 360–520; within 800-line budget)
-- **Git State note**: This docs commit does NOT reference its own SHA (lesson from PR#0's SHA-chase paradox — obs #731/#732). SHA recursion capped here.
+- Estimated diff: ~450 net lines original + ~25 net lines corrective = within 800-line budget
+- **Git State note**: This docs commit does NOT reference its own SHA — SHA-chase recursion capped (lesson from PR#0, obs #731/#732).
 
 ### Workload / PR Boundary (PR#1)
 
@@ -128,6 +129,36 @@ and 401/5xx fail closed via the error resolver. PR target when opened: `feat/bac
 - PR target when opened: `feat/backend-api-integration` (NOT master)
 - Estimated review budget: ~450 lines
 - Rollback: `git revert eb9f48d 09129a4 a4fb511` — fully autonomous, no shared state with PR#0 money types beyond consuming `ApiError`
+
+---
+
+## Corrective Run — R2 Gate Failure Fix
+
+**Gate**: Automatic Mode Gatekeeper rejected PR#1 for spec violation of R2 (Authenticated request template).
+**Failure**: Both profile hooks called `getAccessTokenSilently({ audience })` directly instead of routing through `useAuthenticatedApi()`.
+**Fix commit**: `f1232ca` — `refactor(producer): route profile hooks through useAuthenticatedApi per spec R2`
+
+### Files Changed (corrective)
+
+| File | Action | What Was Done |
+|------|--------|---------------|
+| `src/modules/productor/profile/hooks/useProducerMeQuery.ts` | Modified | Removed direct `getAccessTokenSilently` + `authConfig` import; added `useAuthenticatedApi()`; `queryFn` now calls `getUserMe(apiRequest)` |
+| `src/modules/productor/profile/hooks/useUpdateProducerMeMutation.ts` | Modified | Removed `useAuth0` import entirely; added `useAuthenticatedApi()`; `mutationFn` calls `patchProducerMe(apiRequest, body)` |
+| `src/modules/productor/profile/profile.api.ts` | Modified | Signature of `getUserMe` and `patchProducerMe` changed from `(accessToken: string, ...)` to `(apiCaller: ApiCaller, ...)`; `ApiCaller` type matches return type of `useAuthenticatedApi()`; endpoint paths and DTOs unchanged |
+
+### Verification
+
+- `tsc -b`: ✅ clean
+- `npm run build`: ✅ clean
+- No `getAccessTokenSilently` in production code under `src/modules/productor/profile/` (only in comments)
+- `useAuth0()` in profile hooks: only `useProducerMeQuery.ts` line 20, for `isAuthenticated && !isLoading` enabled guard — allowed, not a token acquisition call
+
+### Passed Artifacts (unchanged)
+
+- `src/lib/errorMessages.ts` — PASS (untouched)
+- `src/modules/productor/profile/profile.schema.ts` — PASS (untouched)
+- Page wiring in `EditarPerfilPublicoPage.tsx` and `PerfilProductorPublicoPage.tsx` — PASS (untouched)
+- Cache key `['producer','me']` and invalidation on 2xx — PASS (preserved)
 
 ---
 
