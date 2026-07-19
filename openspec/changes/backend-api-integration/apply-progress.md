@@ -1,4 +1,4 @@
-# Apply Progress: backend-api-integration (PR#0 + PR#1 + PR#2 + PR#2 corrective)
+# Apply Progress: backend-api-integration (PR#0 + PR#1 + PR#2 + PR#2 corrective + PR#3)
 
 > Engram topic_key: `sdd/backend-api-integration/apply-progress`
 > Updated: 2026-07-19 (PR#2 corrective run — RHF numeric fix + image hook)
@@ -391,14 +391,16 @@ succeeds (uses the returned `productId`). Error from upload surfaces inline belo
   - `6a5751b` feat(producer): add delivery-modes schemas, api client, and hooks
   - `1cccfd2` feat(producer): wire InventarioProductorPage to inventory hooks
   - `d3762a9` feat(producer): wire ModalidadesEntregaPage and modals to delivery hooks
+  - `3afd3c7` docs(sdd): update apply-progress and tasks for PR#3 — inventory + delivery complete
 - `tsc -b`: ✅ clean
 - `npm run build`: ✅ clean
+- Diff stat vs `feat/backend-api-integration`: 13 files changed, 1146 insertions(+), 226 deletions(-)
 
 ### Workload / PR Boundary (PR#3)
 
 - Mode: chained PR slice (feature-branch-chain) — size:exception accepted by maintainer
 - PR target when opened: `feat/backend-api-integration` (NOT master)
-- Rollback: `git revert d3762a9 1cccfd2 6a5751b 6f313d6` — fully autonomous
+- Rollback: `git revert 3afd3c7 d3762a9 1cccfd2 6a5751b 6f313d6` — fully autonomous
 
 ### Manual Verification Checklist (PR#3 — task 4.1)
 
