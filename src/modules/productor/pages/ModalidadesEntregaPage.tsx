@@ -440,19 +440,19 @@ export function ModalidadesEntregaPage() {
                 label="Ambito de cobertura"
                 value={effectiveConfig.entregaPersonal.ambito}
                 onChange={(value) => updateEntregaPersonal('ambito', value)}
-                disabled={!isEditing || !effectiveConfig.entregaPersonal.activa}
+                disabled={!isEditing}
               />
               <CardField
                 label="Coste del servicio"
                 value={effectiveConfig.entregaPersonal.coste}
                 onChange={(value) => updateEntregaPersonal('coste', value)}
-                disabled={!isEditing || !effectiveConfig.entregaPersonal.activa}
+                disabled={!isEditing}
               />
               <TextAreaField
                 label="Notas o condiciones"
                 value={effectiveConfig.entregaPersonal.notas}
                 onChange={(value) => updateEntregaPersonal('notas', value)}
-                disabled={!isEditing || !effectiveConfig.entregaPersonal.activa}
+                disabled={!isEditing}
               />
             </div>
           </DeliveryCard>
@@ -470,20 +470,20 @@ export function ModalidadesEntregaPage() {
                 label="Empresa de transporte"
                 value={effectiveConfig.mensajeria.empresa}
                 onChange={(value) => updateMensajeria('empresa', value)}
-                disabled={!isEditing || !effectiveConfig.mensajeria.activa}
+                disabled={!isEditing}
               />
               <SelectField
                 label="Ambito"
                 value={effectiveConfig.mensajeria.ambito}
                 onChange={(value) => updateMensajeria('ambito', value)}
-                disabled={!isEditing || !effectiveConfig.mensajeria.activa}
+                disabled={!isEditing}
                 options={['Provincial', 'Nacional', 'Internacional']}
               />
               <CardField
                 label="Coste base"
                 value={effectiveConfig.mensajeria.coste}
                 onChange={(value) => updateMensajeria('coste', value)}
-                disabled={!isEditing || !effectiveConfig.mensajeria.activa}
+                disabled={!isEditing}
               />
             </div>
           </DeliveryCard>
