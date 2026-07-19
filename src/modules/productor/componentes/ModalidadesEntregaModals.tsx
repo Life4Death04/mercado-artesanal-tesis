@@ -1,4 +1,8 @@
 import { MapPin, Trash2, X } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { pickupPointFormSchema } from '../entregas/entregas.schema'
+import type { PickupPointFormValues } from '../entregas/entregas.schema'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,7 +19,11 @@ export type PuntoRecogida = {
 }
 
 // ---------------------------------------------------------------------------
-// Añadir punto de recogida modal
+// Añadir punto de recogida modal — wired to RHF + Zod (spec R5, R6)
+//
+// Uses useForm<z.input<...>, unknown, z.output<...>> so RHF field state is
+// typed as strings (raw DOM input) and onSubmit receives the validated output.
+// No resolver casts — see productos.schema.ts for the established pattern.
 // ---------------------------------------------------------------------------
 
 type AgregarPuntoModalProps = {
@@ -24,16 +32,34 @@ type AgregarPuntoModalProps = {
 }
 
 export function AgregarPuntoModal({ onClose, onConfirm }: AgregarPuntoModalProps) {
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const fd = new FormData(e.currentTarget)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<
+    { nombre: string; calle: string; municipio: string; codigoPostal: string; horario: string; indicaciones?: string | null },
+    unknown,
+    PickupPointFormValues
+  >({
+    resolver: zodResolver(pickupPointFormSchema),
+    defaultValues: {
+      nombre: '',
+      calle: '',
+      municipio: '',
+      codigoPostal: '',
+      horario: '',
+      indicaciones: '',
+    },
+  })
+
+  function onSubmit(values: PickupPointFormValues) {
     onConfirm({
-      nombre: fd.get('nombre') as string,
-      calle: fd.get('calle') as string,
-      municipio: fd.get('municipio') as string,
-      codigoPostal: fd.get('codigoPostal') as string,
-      horario: fd.get('horario') as string,
-      indicaciones: fd.get('indicaciones') as string | undefined,
+      nombre: values.nombre,
+      calle: values.calle,
+      municipio: values.municipio,
+      codigoPostal: values.codigoPostal,
+      horario: values.horario,
+      indicaciones: values.indicaciones ?? undefined,
     })
     onClose()
   }
@@ -80,49 +106,49 @@ export function AgregarPuntoModal({ onClose, onConfirm }: AgregarPuntoModalProps
         </div>
 
         {/* Form body */}
-        <form id="form-agregar-punto" onSubmit={handleSubmit}>
+        <form id="form-agregar-punto" onSubmit={handleSubmit(onSubmit)}>
           <div className="max-h-[60vh] overflow-y-auto px-8 py-8">
             <div className="flex flex-col gap-8">
               {/* Nombre */}
-              <InputField
+              <RhfInputField
                 id="nombre"
-                name="nombre"
                 label="Nombre del punto"
                 placeholder="Ej: Tienda Finca Alicante"
-                required
+                registration={register('nombre')}
+                error={errors.nombre?.message}
               />
 
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                <InputField
+                <RhfInputField
                   id="calle"
-                  name="calle"
                   label="Calle y número"
                   placeholder="Av. de la Estación, 5"
-                  required
+                  registration={register('calle')}
+                  error={errors.calle?.message}
                 />
-                <InputField
+                <RhfInputField
                   id="municipio"
-                  name="municipio"
                   label="Municipio"
                   placeholder="Alicante"
-                  required
+                  registration={register('municipio')}
+                  error={errors.municipio?.message}
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                <InputField
+                <RhfInputField
                   id="codigoPostal"
-                  name="codigoPostal"
                   label="Código postal"
                   placeholder="03003"
-                  required
+                  registration={register('codigoPostal')}
+                  error={errors.codigoPostal?.message}
                 />
-                <InputField
+                <RhfInputField
                   id="horario"
-                  name="horario"
                   label="Horario de atención"
                   placeholder="Lunes a Viernes 09:00 – 20:00"
-                  required
+                  registration={register('horario')}
+                  error={errors.horario?.message}
                 />
               </div>
 
@@ -139,10 +165,10 @@ export function AgregarPuntoModal({ onClose, onConfirm }: AgregarPuntoModalProps
                 </label>
                 <textarea
                   id="indicaciones"
-                  name="indicaciones"
                   rows={3}
                   placeholder="Instrucciones para encontrar el local, parking cercano..."
                   className="resize-none border-b border-[var(--color-outline-variant)] bg-transparent pt-2 text-body-md text-[var(--color-on-surface)] placeholder-[var(--color-secondary)] focus:border-[var(--color-primary)] focus:outline-none"
+                  {...register('indicaciones')}
                 />
               </div>
             </div>
@@ -171,7 +197,7 @@ export function AgregarPuntoModal({ onClose, onConfirm }: AgregarPuntoModalProps
 }
 
 // ---------------------------------------------------------------------------
-// Eliminar punto de recogida modal
+// Eliminar punto de recogida modal — unchanged UX, no form submission
 // ---------------------------------------------------------------------------
 
 type EliminarPuntoModalProps = {
@@ -246,19 +272,15 @@ export function EliminarPuntoModal({ nombrePunto, onClose, onConfirm }: Eliminar
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-function InputField({
-  id,
-  name,
-  label,
-  placeholder,
-  required,
-}: {
+type RhfInputFieldProps = {
   id: string
-  name: string
   label: string
   placeholder?: string
-  required?: boolean
-}) {
+  registration: ReturnType<ReturnType<typeof useForm>['register']>
+  error?: string
+}
+
+function RhfInputField({ id, label, placeholder, registration, error }: RhfInputFieldProps) {
   return (
     <div className="flex flex-col gap-1">
       <label
@@ -269,12 +291,14 @@ function InputField({
       </label>
       <input
         id={id}
-        name={name}
         type="text"
         placeholder={placeholder}
-        required={required}
         className="border-b border-[var(--color-outline-variant)] bg-transparent text-body-lg text-[var(--color-on-surface)] placeholder-[var(--color-secondary)] focus:border-[var(--color-primary)] focus:outline-none"
+        {...registration}
       />
+      {error ? (
+        <p className="text-body-sm text-[var(--color-error)]">{error}</p>
+      ) : null}
     </div>
   )
 }
