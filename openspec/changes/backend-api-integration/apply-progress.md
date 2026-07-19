@@ -335,8 +335,95 @@ succeeds (uses the returned `productId`). Error from upload surfaces inline belo
 
 ---
 
+---
+
+## PR#3 — Inventory + Delivery Modes
+
+**Status**: ✅ Complete — 4 feat commits on branch `feat/backend-api-integration-pr3-inventory-delivery`
+
+### Completed Tasks
+
+- [x] 3.2 [PR#3] Wire inventory and delivery modes with namespaced hooks, delivery-mode enum parsing, and mutation invalidation.
+  - AC met:
+    - `useInventarioQuery` (cache key `['producer','inventory']`) and `useUpdateStockMutation` wired to `InventarioProductorPage`.
+    - `useEntregasQuery` (cache key `['producer','delivery-modes']`) and `useUpdateEntregasMutation` wired to `ModalidadesEntregaPage`.
+    - `DeliveryModeTypeSchema` edge-parsed in `entregas.api.ts` — unknown enum values fail closed (spec R6).
+    - `AgregarPuntoModal` wired to RHF + `zodResolver(pickupPointFormSchema)` with input/output generics — no resolver casts (spec R5).
+    - All mutations: failed mutations leave prior cache untouched (onError not touching cache — spec R4 / task AC).
+    - All hooks route through `useAuthenticatedApi()` — zero `getAccessTokenSilently` in new modules (spec R2).
+    - Errors surfaced via `resolveErrorMessage` in both pages — inline `aria-live` success/error regions.
+  - Verified: `tsc -b` clean, `npm run build` clean
+  - Verified: zero `getAccessTokenSilently` in `inventario/` and `entregas/`
+  - Verified: zero `as any` in new modules and modified consumer files
+  - Verified: zero `z.number()` for money-adjacent fields (none exist in inventory/delivery)
+
+### Files Changed (PR#3)
+
+| File | Action | What Was Done |
+|------|--------|---------------|
+| `src/modules/productor/inventario/inventario.schema.ts` | Created | `InventoryItemDTO`, `UpdateStockPayload`, `updateStockFormSchema` with `z.coerce.number()` for stock; input/output type split |
+| `src/modules/productor/inventario/inventario.api.ts` | Created | `listInventario` (maps product list to inventory shape), `updateStock` (PATCH stock field only), `listCategoriasForInventory` (public) |
+| `src/modules/productor/inventario/hooks/useInventarioQuery.ts` | Created | TanStack Query read hook; `queryKey: ['producer','inventory']`; enabled when authenticated |
+| `src/modules/productor/inventario/hooks/useUpdateStockMutation.ts` | Created | PATCH mutation for stock update; `onSuccess` invalidates `['producer','inventory']`; cache untouched on error |
+| `src/modules/productor/entregas/entregas.schema.ts` | Created | `DeliveryModeTypeSchema` (edge-parsed enum), `DeliveryModeDTO`, `UpdateDeliveryModePayload`, `deliveryModeFormSchema`, `pickupPointFormSchema` |
+| `src/modules/productor/entregas/entregas.api.ts` | Created | `listEntregas` (edge-parses DeliveryModeType), `updateEntrega` (PATCH with decimal separator normalisation) |
+| `src/modules/productor/entregas/hooks/useEntregasQuery.ts` | Created | TanStack Query read hook; `queryKey: ['producer','delivery-modes']`; enabled when authenticated |
+| `src/modules/productor/entregas/hooks/useUpdateEntregasMutation.ts` | Created | PATCH mutation for delivery mode update; `onSuccess` invalidates `['producer','delivery-modes']`; cache untouched on error |
+| `src/modules/productor/pages/InventarioProductorPage.tsx` | Modified | Replaced `useState(itemsIniciales)` with `useInventarioQuery` + `useUpdateStockMutation`; loading/error states; inline success feedback via `aria-live`; `resolveErrorMessage` on mutation error |
+| `src/modules/productor/pages/ModalidadesEntregaPage.tsx` | Modified | Replaced local `useState(initialConfig)` with `useEntregasQuery` + `useUpdateEntregasMutation`; draft/save UX preserved; `mapDtosToConfig` maps PICKUP/SHIPPING_FLAT_RATE to display shapes; error/success banners |
+| `src/modules/productor/componentes/ModalidadesEntregaModals.tsx` | Modified | `AgregarPuntoModal` wired to RHF + `zodResolver(pickupPointFormSchema)` with input/output generics and field-level error display; `EliminarPuntoModal` unchanged |
+| `openspec/changes/backend-api-integration/tasks.md` | Modified | Task 3.2 marked `[x]` |
+
+### Deviations from Design (PR#3)
+
+1. **Backend delivery-modes endpoint shape**: The backend spec defines `DeliveryModeType: PICKUP | SHIPPING_FLAT_RATE` but the current page UI has 3 concepts (Entrega personal, Mensajería, Puntos de recogida). The `mapDtosToConfig` helper maps PICKUP to both "Entrega personal" and "Puntos de recogida" (first PICKUP → personal card; all PICKUPs → punto list). If the producer has no delivery modes configured (new producer), the page shows empty defaults rather than crashing.
+
+2. **Pickup point add/remove is local-only (draft)**: Adding or removing a punto via the modals only updates local draft state. The backend's `/delivery-modes` endpoint doesn't expose a "create new delivery mode" endpoint in the current spec slice — so new PICKUP modes entered in the modal are held locally until a future PR adds the POST endpoint. The UX is preserved; persistence of NEW points requires backend route `POST /producers/me/delivery-modes` (not in current spec scope).
+
+3. **Inventory image URL deferred**: `listInventario` maps `imageUrl: null` since the backend product list endpoint doesn't include pre-signed image URLs in the list response (image s3Key requires a separate presign step). The page displays a placeholder div instead of a broken `<img>`. This matches the original PR#2 single-image-at-position-0 approach. Deferred: add backend projection for primary image URL.
+
+### Git State (PR#3)
+
+- Branch: `feat/backend-api-integration-pr3-inventory-delivery`
+- Base: `feat/backend-api-integration` (tracker at `1a5ad2a` — PR#2 merge)
+- Commits:
+  - `6f313d6` feat(producer): add inventory schemas, api client, and hooks
+  - `6a5751b` feat(producer): add delivery-modes schemas, api client, and hooks
+  - `1cccfd2` feat(producer): wire InventarioProductorPage to inventory hooks
+  - `d3762a9` feat(producer): wire ModalidadesEntregaPage and modals to delivery hooks
+- `tsc -b`: ✅ clean
+- `npm run build`: ✅ clean
+
+### Workload / PR Boundary (PR#3)
+
+- Mode: chained PR slice (feature-branch-chain) — size:exception accepted by maintainer
+- PR target when opened: `feat/backend-api-integration` (NOT master)
+- Rollback: `git revert d3762a9 1cccfd2 6a5751b 6f313d6` — fully autonomous
+
+### Manual Verification Checklist (PR#3 — task 4.1)
+
+| Scenario | Page/Endpoint | Expected | Status |
+|----------|--------------|----------|--------|
+| Happy path: list inventory | `InventarioProductorPage` | Items load from `GET /producers/me/products`; summary cards count correctly | ⬜ Pending smoke |
+| Edit stock: increment/decrement/type | `InventarioProductorPage` | Draft updates locally; spinner on Guardar | ⬜ Pending smoke |
+| Save stock: success | `InventarioProductorPage` | `PATCH /producers/me/products/:id` with `{ stock }` → 200; "Stock actualizado" badge appears; list refreshes | ⬜ Pending smoke |
+| Save stock: VALIDATION_FAILED | `InventarioProductorPage` | 422 → inline error via `resolveErrorMessage` | ⬜ Pending smoke |
+| Save stock: 401 session expired | `InventarioProductorPage` | Inline error: «Tu sesión ha expirado. Inicia sesión de nuevo para continuar.» | ⬜ Pending smoke |
+| Save stock: 5xx / offline | `InventarioProductorPage` | Inline error; prior cache untouched (list stays visible) | ⬜ Pending smoke |
+| Load delivery modes | `ModalidadesEntregaPage` | Modes from `GET /producers/me/delivery-modes`; PICKUP/SHIPPING_FLAT_RATE mapped correctly | ⬜ Pending smoke |
+| Edit delivery mode: toggle + save | `ModalidadesEntregaPage` | Draft updates; Guardar triggers `PATCH /producers/me/delivery-modes/:id`; success banner | ⬜ Pending smoke |
+| Save delivery: 401 | `ModalidadesEntregaPage` | Error banner via `resolveErrorMessage`; prior cache kept | ⬜ Pending smoke |
+| Save delivery: 5xx / offline | `ModalidadesEntregaPage` | Error banner; no crash | ⬜ Pending smoke |
+| Add pickup point: valid form | `AgregarPuntoModal` | Zod validates; point added to draft list | ⬜ Pending smoke |
+| Add pickup point: invalid postal code | `AgregarPuntoModal` | Field error "El código postal debe tener 5 dígitos."; form blocked | ⬜ Pending smoke |
+| Filter inventory: stock bajo / agotados | `InventarioProductorPage` | Filter buttons narrow list correctly | ⬜ Pending smoke |
+| Search inventory | `InventarioProductorPage` | Search by name or categoryName narrows list | ⬜ Pending smoke |
+| `tsc -b` | — | ✅ clean | ✅ Done |
+| `npm run build` | — | ✅ clean | ✅ Done |
+
+---
+
 ## Remaining Tasks
 
-- [ ] 3.2 [PR#3] Inventory + delivery modes
 - [ ] 3.3 [PR#4] Orders + stats + dashboard
-- [ ] 4.1 [Each PR] Manual verification checklist (PR#2 checklist above — smoke pending before PR open)
+- [ ] 4.1 [Each PR] Manual verification checklist (smoke pending before PR open)
