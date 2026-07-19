@@ -95,6 +95,16 @@ export type PresignResponseDTO = {
 // [frontend-defined; backend enforces .strict() — unknown keys → VALIDATION_FAILED]
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Create product form schema — input/output split for React Hook Form v7 + Zod v4
+//
+// Numeric fields use z.coerce.number() so that <input type="number" /> (which
+// returns a string from the DOM) is coerced to a number by Zod at parse time.
+// The form is typed with useForm<z.input<...>, unknown, z.output<...>> so RHF
+// sees strings as input values (field state) and numbers as output values (the
+// object passed to onSubmit). No valueAsNumber and no "as any" cast needed.
+// ---------------------------------------------------------------------------
+
 export const createProductoFormSchema = z
   .object({
     categoryId: z.string().min(1, 'Selecciona una categoría.'),
@@ -105,16 +115,24 @@ export const createProductoFormSchema = z
       .string()
       .min(1, 'El precio es obligatorio.')
       .regex(/^\d+(\.\d{1,2})?$/, 'El precio debe ser un número positivo con hasta 2 decimales.'),
-    stock: z.number().int().min(0, 'El stock no puede ser negativo.').optional(),
-    lowStockThreshold: z.number().int().min(0, 'El umbral de stock bajo no puede ser negativo.').optional(),
+    /** Coerced at parse time — DOM sends a string from <input type="number" /> */
+    stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.').optional(),
+    lowStockThreshold: z.coerce
+      .number()
+      .int()
+      .min(0, 'El umbral de stock bajo no puede ser negativo.')
+      .optional(),
     ingredients: z.string().nullable().optional(),
     allergens: z.array(z.string()).optional(),
-    weight: z.number().int().positive().nullable().optional(),
+    weight: z.coerce.number().int().positive().nullable().optional(),
     presentation: z.string().nullable().optional(),
   })
   .strict()
 
-export type CreateProductoFormValues = z.infer<typeof createProductoFormSchema>
+/** Input type — what RHF holds in field state (strings from DOM inputs). */
+export type CreateProductoFormInput = z.input<typeof createProductoFormSchema>
+/** Output type — what Zod returns after coercion (numbers resolved). */
+export type CreateProductoFormValues = z.output<typeof createProductoFormSchema>
 
 // ---------------------------------------------------------------------------
 // Update product form schema — all fields optional (PATCH partial)
@@ -129,18 +147,22 @@ export const updateProductoFormSchema = z
       .string()
       .regex(/^\d+(\.\d{1,2})?$/, 'El precio debe ser un número positivo con hasta 2 decimales.')
       .optional(),
-    stock: z.number().int().min(0, 'El stock no puede ser negativo.').optional(),
-    lowStockThreshold: z.number().int().min(0).optional(),
+    /** Coerced at parse time — DOM sends a string from <input type="number" /> */
+    stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.').optional(),
+    lowStockThreshold: z.coerce.number().int().min(0).optional(),
     isActive: z.boolean().optional(),
     ingredients: z.string().nullable().optional(),
     allergens: z.array(z.string()).optional(),
-    weight: z.number().int().positive().nullable().optional(),
+    weight: z.coerce.number().int().positive().nullable().optional(),
     presentation: z.string().nullable().optional(),
   })
   .strict()
   .partial()
 
-export type UpdateProductoFormValues = z.infer<typeof updateProductoFormSchema>
+/** Input type — what RHF holds in field state (strings from DOM inputs). */
+export type UpdateProductoFormInput = z.input<typeof updateProductoFormSchema>
+/** Output type — what Zod returns after coercion (numbers resolved). */
+export type UpdateProductoFormValues = z.output<typeof updateProductoFormSchema>
 
 // ---------------------------------------------------------------------------
 // Report product form schema

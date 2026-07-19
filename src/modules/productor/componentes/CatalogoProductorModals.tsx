@@ -1,11 +1,18 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ChevronDown, ImagePlus, Loader2, Pencil, Trash2, TriangleAlert, X } from 'lucide-react'
+import { ChevronDown, ImagePlus, Loader2, Pencil, Trash2, TriangleAlert, Upload, X } from 'lucide-react'
 import { resolveErrorMessage } from '../../../lib/errorMessages'
 import { useCategoriesQuery } from '../productos/hooks/useCategoriesQuery'
+import { useUploadProductoImageMutation } from '../productos/hooks/useUploadProductoImageMutation'
 import { createProductoFormSchema, updateProductoFormSchema } from '../productos/productos.schema'
-import type { CreateProductoFormValues, ProductDTO, UpdateProductoFormValues } from '../productos/productos.schema'
+import type {
+  CreateProductoFormInput,
+  CreateProductoFormValues,
+  ProductDTO,
+  UpdateProductoFormInput,
+  UpdateProductoFormValues,
+} from '../productos/productos.schema'
 import type { UseMutationResult } from '@tanstack/react-query'
 
 // ---------------------------------------------------------------------------
@@ -29,8 +36,7 @@ function ModalOverlay({ children, zIndex = 50 }: { children: React.ReactNode; zI
 
 type AgregarProductoModalProps = {
   onClose: () => void
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  createMutation: UseMutationResult<ProductDTO, Error, CreateProductoFormValues, any>
+  createMutation: UseMutationResult<ProductDTO, Error, CreateProductoFormValues, unknown>
 }
 
 const ALERGENOS = [
@@ -49,15 +55,24 @@ export function AgregarProductoModal({ onClose, createMutation }: AgregarProduct
   const [selectedAlergens, setSelectedAlergens] = useState<Set<string>>(new Set())
   const [noAlergens, setNoAlergens] = useState(false)
 
+  // Image upload state — wired after product creation (requires productId)
+  const [createdProductId, setCreatedProductId] = useState<string | null>(null)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const uploadImageMutation = useUploadProductoImageMutation()
+
+  // useForm uses input/output generics so that:
+  //   - TFieldValues (input) = z.input<schema>: RHF stores raw DOM strings in field state
+  //   - TTransformedValues (output) = z.output<schema>: Zod coerces to numbers in onSubmit
+  // zodResolver handles the coercion at validation time — no valueAsNumber, no "as any".
   const {
     register,
     handleSubmit,
     formState: { errors },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } = useForm<CreateProductoFormValues, any, CreateProductoFormValues>({
-    resolver: zodResolver(createProductoFormSchema) as any,
+  } = useForm<CreateProductoFormInput, unknown, CreateProductoFormValues>({
+    resolver: zodResolver(createProductoFormSchema),
     defaultValues: {
-      stock: 0,
+      stock: '0',
       allergens: [],
     },
   })
@@ -81,8 +96,26 @@ export function AgregarProductoModal({ onClose, createMutation }: AgregarProduct
       allergens: noAlergens ? [] : [...selectedAlergens],
     }
     createMutation.mutate(body, {
-      onSuccess: () => onClose(),
+      onSuccess: (product) => {
+        if (selectedImageFile) {
+          // Upload the selected image using the newly created product's id.
+          // Modal stays open during the upload; onClose() is called after
+          // the upload completes (or immediately if no file was selected).
+          setCreatedProductId(product.id)
+          uploadImageMutation.mutate(
+            { productId: product.id, file: selectedImageFile },
+            { onSettled: () => onClose() },
+          )
+        } else {
+          onClose()
+        }
+      },
     })
+  }
+
+  function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null
+    setSelectedImageFile(file)
   }
 
   return (
@@ -119,18 +152,54 @@ export function AgregarProductoModal({ onClose, createMutation }: AgregarProduct
           ) : null}
 
           <form id="agregar-producto-form" className="flex flex-col gap-8" onSubmit={handleSubmit(onSubmit)}>
-            {/* Photo upload — presign flow deferred to post-MVP; placeholder UI retained */}
+            {/* Photo upload — single-file presign/confirm flow.
+                Multi-image, drag-and-drop, and progress bar are deferred. */}
             <div className="flex flex-col gap-2">
               <label className="text-label-md text-[var(--color-on-surface)]">Fotografía del producto</label>
-              <div className="group flex cursor-pointer flex-col items-center justify-center rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] px-4 py-10 text-center transition-colors hover:bg-[var(--color-surface-container-low)]">
-                <ImagePlus size={40} strokeWidth={1.4} className="mb-3 text-[var(--color-outline)] transition-colors group-hover:text-[var(--color-primary)]" />
-                <p className="text-body-md text-[var(--color-on-surface)]">
-                  Fotografía disponible tras crear el producto
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                onChange={handleImageFileChange}
+                aria-label="Seleccionar imagen del producto"
+              />
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={uploadImageMutation.isPending || !!createdProductId}
+                className="group flex cursor-pointer flex-col items-center justify-center rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] px-4 py-10 text-center transition-colors hover:bg-[var(--color-surface-container-low)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {uploadImageMutation.isPending ? (
+                  <>
+                    <Loader2 size={40} strokeWidth={1.4} className="mb-3 animate-spin text-[var(--color-primary)]" />
+                    <p className="text-body-md text-[var(--color-on-surface)]">Subiendo imagen…</p>
+                  </>
+                ) : selectedImageFile ? (
+                  <>
+                    <Upload size={40} strokeWidth={1.4} className="mb-3 text-[var(--color-primary)]" />
+                    <p className="text-body-md text-[var(--color-on-surface)]">{selectedImageFile.name}</p>
+                    <p className="text-label-sm mt-2 text-[var(--color-on-surface-variant)]">
+                      Haz clic para cambiar la imagen
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus size={40} strokeWidth={1.4} className="mb-3 text-[var(--color-outline)] transition-colors group-hover:text-[var(--color-primary)]" />
+                    <p className="text-body-md text-[var(--color-on-surface)]">
+                      Selecciona una fotografía (opcional)
+                    </p>
+                    <p className="text-label-sm mt-2 text-[var(--color-on-surface-variant)]">
+                      JPG, PNG o WebP · máx. 5 MB
+                    </p>
+                  </>
+                )}
+              </button>
+              {uploadImageMutation.isError ? (
+                <p className="text-label-sm text-[var(--color-error)]">
+                  {resolveErrorMessage(uploadImageMutation.error)}
                 </p>
-                <p className="text-label-sm mt-2 text-[var(--color-on-surface-variant)]">
-                  Usa «Editar» para añadir imágenes una vez creado.
-                </p>
-              </div>
+              ) : null}
             </div>
 
             {/* Basic fields */}
@@ -415,31 +484,52 @@ export function AvisoStockModal({ isPending, onClose, onPublish }: AvisoStockMod
 type EditarProductoModalProps = {
   producto: ProductDTO
   onClose: () => void
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  updateMutation: UseMutationResult<ProductDTO, Error, { id: string; body: UpdateProductoFormValues }, any>
+  updateMutation: UseMutationResult<ProductDTO, Error, { id: string; body: UpdateProductoFormValues }, unknown>
 }
 
 export function EditarProductoModal({ producto, onClose, updateMutation }: EditarProductoModalProps) {
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const uploadImageMutation = useUploadProductoImageMutation()
+
+  // Input/output generics: RHF stores raw strings in state; Zod coerces on submit.
+  // No "as any" needed — zodResolver v5 handles the input→output transformation.
   const {
     register,
     handleSubmit,
     formState: { errors },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } = useForm<UpdateProductoFormValues, any, UpdateProductoFormValues>({
-    resolver: zodResolver(updateProductoFormSchema) as any,
+  } = useForm<UpdateProductoFormInput, unknown, UpdateProductoFormValues>({
+    resolver: zodResolver(updateProductoFormSchema),
     defaultValues: {
       name: producto.name,
       description: producto.description,
       price: producto.price,
-      stock: producto.stock,
+      // Coerce defaultValues to string since UpdateProductoFormInput expects DOM-compatible strings
+      stock: String(producto.stock),
       ingredients: producto.ingredients ?? '',
     },
   })
 
+  function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null
+    setSelectedImageFile(file)
+  }
+
   function onSubmit(values: UpdateProductoFormValues) {
     updateMutation.mutate(
       { id: producto.id, body: values },
-      { onSuccess: () => onClose() },
+      {
+        onSuccess: () => {
+          if (selectedImageFile) {
+            uploadImageMutation.mutate(
+              { productId: producto.id, file: selectedImageFile },
+              { onSettled: () => onClose() },
+            )
+          } else {
+            onClose()
+          }
+        },
+      },
     )
   }
 
@@ -471,6 +561,47 @@ export function EditarProductoModal({ producto, onClose, updateMutation }: Edita
               <p className="text-body-md">{resolveErrorMessage(updateMutation.error)}</p>
             </div>
           ) : null}
+
+          {/* Image upload — single-file, triggered before save (optional) */}
+          <div className="mb-6 flex flex-col gap-2">
+            <p className="text-label-md text-[var(--color-on-surface)]">Fotografía del producto</p>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              onChange={handleImageFileChange}
+              aria-label="Seleccionar imagen del producto"
+            />
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={uploadImageMutation.isPending}
+              className="group flex cursor-pointer flex-col items-center justify-center rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] px-4 py-6 text-center transition-colors hover:bg-[var(--color-surface-container-low)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {uploadImageMutation.isPending ? (
+                <>
+                  <Loader2 size={28} strokeWidth={1.4} className="mb-2 animate-spin text-[var(--color-primary)]" />
+                  <p className="text-body-md text-[var(--color-on-surface)]">Subiendo imagen…</p>
+                </>
+              ) : selectedImageFile ? (
+                <>
+                  <Upload size={28} strokeWidth={1.4} className="mb-2 text-[var(--color-primary)]" />
+                  <p className="text-body-md text-[var(--color-on-surface)]">{selectedImageFile.name}</p>
+                  <p className="text-label-sm mt-1 text-[var(--color-on-surface-variant)]">Haz clic para cambiar</p>
+                </>
+              ) : (
+                <>
+                  <ImagePlus size={28} strokeWidth={1.4} className="mb-2 text-[var(--color-outline)] transition-colors group-hover:text-[var(--color-primary)]" />
+                  <p className="text-body-md text-[var(--color-on-surface)]">Añadir o reemplazar imagen (opcional)</p>
+                  <p className="text-label-sm mt-1 text-[var(--color-on-surface-variant)]">JPG, PNG o WebP · máx. 5 MB</p>
+                </>
+              )}
+            </button>
+            {uploadImageMutation.isError ? (
+              <p className="text-label-sm text-[var(--color-error)]">{resolveErrorMessage(uploadImageMutation.error)}</p>
+            ) : null}
+          </div>
 
           <form id="editar-producto-form" className="grid grid-cols-1 gap-6 sm:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
             <FormFieldLine
@@ -525,10 +656,12 @@ export function EditarProductoModal({ producto, onClose, updateMutation }: Edita
           <button
             type="submit"
             form="editar-producto-form"
-            disabled={updateMutation.isPending}
+            disabled={updateMutation.isPending || uploadImageMutation.isPending}
             className="text-label-md inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-[var(--color-primary)] px-6 py-2.5 text-[var(--color-on-primary)] shadow-sm transition-colors hover:bg-[var(--color-surface-tint)] disabled:opacity-60 sm:w-auto"
           >
-            {updateMutation.isPending ? <Loader2 size={16} strokeWidth={2} className="animate-spin" /> : null}
+            {(updateMutation.isPending || uploadImageMutation.isPending) ? (
+              <Loader2 size={16} strokeWidth={2} className="animate-spin" />
+            ) : null}
             Guardar cambios
           </button>
         </div>
