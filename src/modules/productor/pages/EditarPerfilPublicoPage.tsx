@@ -343,13 +343,15 @@ export function EditarPerfilPublicoPage() {
                   />
 
                   <div className="flex flex-wrap gap-4">
-                    <Link
-                      to="/productor/perfil-publico"
-                      className="text-label-md inline-flex items-center gap-2 text-[var(--color-primary)] transition-opacity hover:opacity-70"
-                    >
-                      <ExternalLink size={14} strokeWidth={1.8} />
-                      Ver perfil publico
-                    </Link>
+                    {producer?.id ? (
+                      <Link
+                        to={`/productores/${producer.id}`}
+                        className="text-label-md inline-flex items-center gap-2 text-[var(--color-primary)] transition-opacity hover:opacity-70"
+                      >
+                        <ExternalLink size={14} strokeWidth={1.8} />
+                        Ver perfil publico
+                      </Link>
+                    ) : null}
                     <FieldHint disabled={!editando}>
                       {editando ? 'Recuerda guardar para aplicar cambios.' : 'Pulsa Editar tienda para actualizar la ficha.'}
                     </FieldHint>
