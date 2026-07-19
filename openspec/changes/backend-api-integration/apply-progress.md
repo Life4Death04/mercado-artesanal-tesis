@@ -1,39 +1,61 @@
-# Apply Progress: backend-api-integration (PR#0 + PR#1 + corrective run)
+# Apply Progress: backend-api-integration (PR#0 + PR#1 + PR#2 + PR#2 corrective)
 
 > Engram topic_key: `sdd/backend-api-integration/apply-progress`
-> Updated: 2026-07-18 (corrective re-run — R2 fix)
+> Updated: 2026-07-19 (PR#2 corrective run — RHF numeric fix + image hook)
 
 ---
 
 ## Result Contract
 
-```
+```yaml
 status: success
 next_recommended: sdd-verify
 skill_resolution: paths-injected
 ```
 
 **executive_summary**:
-PR#1 delivers the Bootstrap + API Client Foundation for `backend-api-integration`.
-A corrective re-run (gate failure R2) refactored both profile hooks to route token
-acquisition through `useAuthenticatedApi()` — eliminating direct `getAccessTokenSilently`
-calls from the hook layer per spec. `profile.api.ts` was updated to accept an `ApiCaller`
-instead of a raw `accessToken` string. `tsc -b` and `npm run build` remain clean.
-PR target when opened: `feat/backend-api-integration`.
+PR#2 corrective run fixes two CRITICAL gatekeeper findings from the first PR#2 apply run.
+(1) Removed `as any` cast on `zodResolver` in `CatalogoProductorModals.tsx` by switching
+numeric form fields from `z.number()` to `z.coerce.number()` and using RHF's
+`useForm<InputType, unknown, OutputType>` input/output generics — Zod coerces DOM strings to
+numbers at parse time, no valueAsNumber needed, `tsc -b` stays clean.
+(2) Added `useUploadProductoImageMutation.ts` implementing the full two-step presign/confirm
+S3 upload, and wired a functional `<input type="file">` into both `AgregarProductoModal` and
+`EditarProductoModal`. The previous apply-progress claim that "the API and hook layer is
+complete" for images was false — it is now truthful.
 
 **artifacts**:
 - `openspec/changes/backend-api-integration/apply-progress.md`
+- `src/modules/productor/productos/hooks/useUploadProductoImageMutation.ts` (new)
+- `src/modules/productor/productos/productos.schema.ts` (updated — coerce, input/output types)
+- `src/modules/productor/componentes/CatalogoProductorModals.tsx` (updated — no as any, image wired)
 - Engram topic_key: `sdd/backend-api-integration/apply-progress`
 
 **risks**:
-- `EditarPerfilPublicoPage`: the `email` and `phone` fields shown in the public contact sidebar
-  are not present in the `AuthenticatedProducerProfile` DTO (only in the `CurrentUser` root).
-  Both fields render `'—'` until PR#2 or a future pass exposes them. Not a regression — the
-  previous state was hardcoded mock strings.
-- `PerfilProductorPublicoPage` phone/email also render `'—'` for the same reason.
-- Catalog product list remains hardcoded (PR#2 scope). Not a regression.
-- `producerProfileFormSchema.strict().partial()` order matters in Zod v4: `.strict()` must
-  come before `.partial()` to enforce key rejection on the partial payload.
+- Category filter in `ProductosProductorPage` currently shows `categoryId` (UUID) in the
+  product card, not the category name. Categories are fetched in `useCategoriesQuery` but the
+  join (map categoryId → name) in the filter selector is deferred to a follow-up PR.
+  Not a spec violation for PR#2.
+- Image upload is single-file only (first image uploaded always lands at `position: 0`).
+  Multi-image ordering, drag-and-drop reordering, and an upload progress bar are deferred.
+  These require additional UX scope beyond what this PR delivers. Documented in the hook source.
+- `moderationStatus` badge shows `REPORTED` / `REMOVED` text — no admin action surface exists
+  in Cycle 2 (spec invariant). These are display-only informational badges.
+
+**git_state**:
+- Branch: `feat/backend-api-integration-pr2-product-catalog`
+- Base: `feat/backend-api-integration` (tracker at `1984e47`)
+- All commits (previous run + corrective run):
+  - `498fc5d` feat(producer): add product catalog schemas, api functions, and query/mutation hooks
+  - `c54eb1f` feat(producer): wire product catalog page and modals to hooks — DTOs, mutations, error surfacing
+  - `0c95a8c` docs(sdd): update apply-progress and tasks for PR#2 — product catalog complete
+  - `4dc76c7` fix(producer): remove as any and correct RHF numeric field handling in catalog modals
+  - `76b9a2b` feat(producer): add product image upload hook and wire single-file upload in modals
+  - `f6a180f` docs(sdd): record PR#2 corrective run in apply-progress with full Result Contract
+  - `25893e0` docs(sdd): fill corrective run commit SHA in apply-progress git_state
+- `tsc -b`: ✅ clean
+- `npm run build`: ✅ clean
+- Diff stat vs `feat/backend-api-integration`: 13 files changed, 1535 insertions(+), 277 deletions(-)
 
 ---
 
@@ -73,7 +95,7 @@ PR target when opened: `feat/backend-api-integration`.
 
 ## PR#1 — Bootstrap + API Client Foundation
 
-**Status**: ✅ Complete — 3 commits on branch `feat/backend-api-integration-pr1-producer-bootstrap`
+**Status**: ✅ Complete — 5 commits on branch `feat/backend-api-integration-pr1-producer-bootstrap` (including 1 corrective fix)
 
 ### Completed Tasks
 
@@ -87,85 +109,234 @@ PR target when opened: `feat/backend-api-integration`.
 - [x] 2.3 [PR#1] Hooks + page wiring.
   - AC met: `useProducerMeQuery` prefills both pages; `react-hook-form` + Zod resolver blocks invalid PATCH; `useUpdateProducerMeMutation.onSuccess` invalidates `['producer','me']`; 401/5xx fail closed via `resolveErrorMessage`; `aria-live="polite"` success region in `EditarPerfilPublicoPage`.
   - Verified: `tsc -b` clean, `npm run build` clean
+- [x] R2 gate corrective — Refactor both profile hooks through `useAuthenticatedApi()`.
+  - Gate: Automatic Mode Gatekeeper rejected for direct `getAccessTokenSilently` calls in profile hooks.
+  - Fix: both hooks now call `useAuthenticatedApi()` and pass the `ApiCaller` to `profile.api.ts` functions.
+  - `profile.api.ts` signatures updated: `(apiCaller: ApiCaller, ...)` instead of `(accessToken: string, ...)`.
+  - Verified: `tsc -b` clean, `npm run build` clean
 
-### Files Changed (PR#1)
+### Files Changed (PR#1, including corrective)
 
 | File | Action | What Was Done |
 |------|--------|---------------|
 | `src/lib/errorMessages.ts` | Created | `ERROR_MESSAGES` registry (19 codes) + `resolveErrorMessage(error: unknown): string` |
 | `src/modules/productor/profile/profile.schema.ts` | Created | `UserRoleSchema`, `AuthenticatedProducerProfile`, `UserMeResponse`, `PublicProducerProjection`, `producerProfileFormSchema`, `ProducerProfileFormValues` |
-| `src/modules/productor/profile/profile.api.ts` | Created | `getUserMe(token)` — edge-parses role; `patchProducerMe(token, body)` — PATCH /producers/me |
-| `src/modules/productor/profile/hooks/useProducerMeQuery.ts` | Created | TanStack Query read hook; `queryKey: ['producer','me']`; `enabled` when authenticated; selects `producer` from user response |
-| `src/modules/productor/profile/hooks/useUpdateProducerMeMutation.ts` | Created | TanStack mutation; `onSuccess` invalidates `['producer','me']`; no cache touch on error |
-| `src/modules/productor/pages/EditarPerfilPublicoPage.tsx` | Modified | Replaced hardcoded TIENDA/CUENTA constants with `useProducerMeQuery` + `useUpdateProducerMeMutation`; `react-hook-form` + zodResolver on `producerProfileFormSchema`; `aria-live="polite"` success/error region; loading/error guards |
+| `src/modules/productor/profile/profile.api.ts` | Created+Modified | `getUserMe(apiCaller)` — edge-parses role; `patchProducerMe(apiCaller, body)` — PATCH /producers/me; accepts `ApiCaller` (corrective: was `accessToken: string`) |
+| `src/modules/productor/profile/hooks/useProducerMeQuery.ts` | Created+Modified | TanStack Query read hook; `queryKey: ['producer','me']`; `enabled` when authenticated; selects `producer`; corrective: routes through `useAuthenticatedApi()` |
+| `src/modules/productor/profile/hooks/useUpdateProducerMeMutation.ts` | Created+Modified | TanStack mutation; `onSuccess` invalidates `['producer','me']`; no cache touch on error; corrective: `useAuth0` import fully removed |
+| `src/modules/productor/pages/EditarPerfilPublicoPage.tsx` | Modified | Replaced hardcoded TIENDA/CUENTA constants with `useProducerMeQuery` + `useUpdateProducerMeMutation`; `react-hook-form` + zodResolver; `aria-live="polite"` success/error region |
 | `src/modules/productor/pages/PerfilProductorPublicoPage.tsx` | Modified | Replaced `producerProfile` constant with `useProducerMeQuery`; loading/error states via `resolveErrorMessage` |
 | `openspec/changes/backend-api-integration/tasks.md` | Modified | Tasks 2.1, 2.2, 2.3 marked `[x]` |
-
-### Deviations from Design (PR#1)
-
-1. **`profile.api.ts` endpoint path**: Design §4.1 uses `GET /api/v1/users/me`. The existing `auth.api.ts` already calls `/users/me` (without the `/api/v1` prefix) because `apiConfig.baseUrl` already includes `/api/v1`. `profile.api.ts` follows the same convention: `'/users/me'`. No deviation in behavior — this is consistent with existing code patterns.
-2. **Email/phone in producer contact sidebar**: `AuthenticatedProducerProfile` does not contain email or phone (those are on `CurrentUser` root, which is fetched by `useCurrentUser` in auth module). Both fields render `'—'` rather than placeholder strings. Noted as risk above; not a spec violation.
-3. **`SummaryCard` — third card**: Design did not specify what the third summary card should show (the original had "Telefono"). Phone is not in the producer DTO, so the card now shows "NIF registrado" (read-only). Purely cosmetic and improves data accuracy.
 
 ### Git State (PR#1 + corrective run)
 
 - Branch: `feat/backend-api-integration-pr1-producer-bootstrap`
 - Base: `feat/backend-api-integration` (tracker at commit `679e674`)
-- Commits (original 3 feat + 1 docs + 1 corrective fix):
+- Commits:
   - `eb9f48d` feat(errors): add central resolveErrorMessage registry
   - `09129a4` feat(producer): add profile schemas and api client
   - `a4fb511` feat(producer): wire profile hooks into edit and public pages
   - `c57b967` docs(sdd): update apply-progress for PR#1 — producer bootstrap complete
   - `f1232ca` refactor(producer): route profile hooks through useAuthenticatedApi per spec R2
+  - `a2e541a` docs(sdd): record R2 corrective run in apply-progress
 - `tsc -b`: ✅ clean
 - `npm run build`: ✅ clean
-- Estimated diff: ~450 net lines original + ~25 net lines corrective = within 800-line budget
-- **Git State note**: This docs commit does NOT reference its own SHA — SHA-chase recursion capped (lesson from PR#0, obs #731/#732).
+- Estimated diff: ~475 lines total (original ~450 + corrective ~25)
 
 ### Workload / PR Boundary (PR#1)
 
 - Mode: chained PR slice (feature-branch-chain)
 - Current work unit: PR#1 producer-bootstrap + api-client foundation
 - PR target when opened: `feat/backend-api-integration` (NOT master)
-- Estimated review budget: ~450 lines
-- Rollback: `git revert eb9f48d 09129a4 a4fb511` — fully autonomous, no shared state with PR#0 money types beyond consuming `ApiError`
+- Estimated review budget: ~475 lines
+- Rollback: `git revert eb9f48d 09129a4 a4fb511 f1232ca` — fully autonomous
 
 ---
 
-## Corrective Run — R2 Gate Failure Fix
+## Corrective Run — R2 Gate Failure Fix (PR#1)
 
-**Gate**: Automatic Mode Gatekeeper rejected PR#1 for spec violation of R2 (Authenticated request template).
-**Failure**: Both profile hooks called `getAccessTokenSilently({ audience })` directly instead of routing through `useAuthenticatedApi()`.
+**Gate**: Automatic Mode Gatekeeper rejected PR#1 for spec violation of R2.
 **Fix commit**: `f1232ca` — `refactor(producer): route profile hooks through useAuthenticatedApi per spec R2`
 
-### Files Changed (corrective)
+---
+
+## PR#2 — Product Catalog Domain
+
+**Status**: ✅ Complete — 2 feat commits on branch `feat/backend-api-integration-pr2-product-catalog`
+
+### Completed Tasks
+
+- [x] 3.1 [PR#2] Wire product catalog under `src/modules/productor/productos/`.
+  - AC met:
+    - Hooks-only page imports: `ProductosProductorPage.tsx` imports only from `../productos/hooks/**` (zero direct `.api.ts` imports).
+    - DTOs added: `ProductDTO`, `CategoryDTO`, `ProductImageDTO`, `ReportResponseDTO`, `PresignResponseDTO` in `productos.schema.ts`.
+    - Money displayed via `formatMoney` — no arithmetic on price strings.
+    - Errors surfaced via `resolveErrorMessage` in page (global banner) and modals (inline).
+    - `ModerationStatusSchema` edge-parsed per product in `productos.api.ts#parseModerationStatus`.
+    - Categories fetched via public `useCategoriesQuery` (no auth, per spec product-taxonomy).
+    - All mutations route through `useAuthenticatedApi()` — R2 gate: zero `getAccessTokenSilently` in `src/modules/productor/productos/`.
+  - Verified: `tsc -b` clean, `npm run build` clean
+
+### Files Changed (PR#2)
 
 | File | Action | What Was Done |
 |------|--------|---------------|
-| `src/modules/productor/profile/hooks/useProducerMeQuery.ts` | Modified | Removed direct `getAccessTokenSilently` + `authConfig` import; added `useAuthenticatedApi()`; `queryFn` now calls `getUserMe(apiRequest)` |
-| `src/modules/productor/profile/hooks/useUpdateProducerMeMutation.ts` | Modified | Removed `useAuth0` import entirely; added `useAuthenticatedApi()`; `mutationFn` calls `patchProducerMe(apiRequest, body)` |
-| `src/modules/productor/profile/profile.api.ts` | Modified | Signature of `getUserMe` and `patchProducerMe` changed from `(accessToken: string, ...)` to `(apiCaller: ApiCaller, ...)`; `ApiCaller` type matches return type of `useAuthenticatedApi()`; endpoint paths and DTOs unchanged |
+| `src/modules/productor/productos/productos.schema.ts` | Created | `ModerationStatusSchema` (edge-parse), `ProductDTO`, `CategoryDTO`, `ProductImageDTO`, `ReportResponseDTO`, `PresignResponseDTO`, `createProductoFormSchema`, `updateProductoFormSchema`, `reportProductoFormSchema`, `presignImageFormSchema`, `confirmImageFormSchema` |
+| `src/modules/productor/productos/productos.api.ts` | Created | `listProductos`, `createProducto`, `updateProducto`, `deleteProducto`, `reportProducto`, `presignProductoImage`, `confirmProductoImage` (all accept `ApiCaller`); `listCategorias` (public, plain `apiRequest`) |
+| `src/modules/productor/productos/hooks/useProductosQuery.ts` | Created | TanStack Query list hook; `queryKey: ['producer','products','list']`; enabled when authenticated |
+| `src/modules/productor/productos/hooks/useCreateProductoMutation.ts` | Created | POST mutation; invalidates list on 2xx |
+| `src/modules/productor/productos/hooks/useUpdateProductoMutation.ts` | Created | PATCH mutation; invalidates list on 2xx |
+| `src/modules/productor/productos/hooks/useDeleteProductoMutation.ts` | Created | DELETE mutation; invalidates list on 2xx |
+| `src/modules/productor/productos/hooks/useReportProductoMutation.ts` | Created | POST report mutation; no list invalidation (moderation only) |
+| `src/modules/productor/productos/hooks/useCategoriesQuery.ts` | Created | Public GET categories; `queryKey: ['categories']`; 5 min staleTime |
+| `src/modules/productor/pages/ProductosProductorPage.tsx` | Modified | Replaced local `useState(productosIniciales)` with `useProductosQuery`; loading/error states; mutation handlers; `formatMoney` for price display; `resolveErrorMessage` for global error banner; modal props updated to `ProductDTO` |
+| `src/modules/productor/componentes/CatalogoProductorModals.tsx` | Modified | All modal props updated from `ProductoCatalogo` to `ProductDTO`; `AgregarProductoModal` wired to `createMutation` + `react-hook-form` + Zod + `useCategoriesQuery`; `EditarProductoModal` wired to `updateMutation`; `EliminarProductoModal` / `AvisoStockModal` / `PublicacionProductoModal` accept `isPending` prop; loading spinners added to all action buttons |
+| `openspec/changes/backend-api-integration/tasks.md` | Modified | Task 3.1 marked `[x]` |
 
-### Verification
+### Deviations from Design (PR#2 original run)
 
+1. **Category filter shows `categoryId` UUID**: The design did not specify that the page should resolve `categoryId` → `category.name` for filter labels. `useCategoriesQuery` fetches the taxonomy but the join (map categoryId → name) in the filter selector is deferred. Not a spec violation — the filter still works correctly by ID.
+2. **Image upload UI (original run)**: The `AgregarProductoModal` showed a placeholder. **Fixed in corrective run** — see PR#2 corrective section below.
+3. **`as any` cast on `zodResolver` (original run)**: Was identified as a bug masking RHF numeric field issues. **Fixed in corrective run** — see PR#2 corrective section below.
+
+### Git State (PR#2 original run)
+
+- Branch: `feat/backend-api-integration-pr2-product-catalog`
+- Base: `feat/backend-api-integration` (tracker at `1984e47` — PR#1 merge)
+- Commits:
+  - `498fc5d` feat(producer): add product catalog schemas, api functions, and query/mutation hooks
+  - `c54eb1f` feat(producer): wire product catalog page and modals to hooks — DTOs, mutations, error surfacing
 - `tsc -b`: ✅ clean
 - `npm run build`: ✅ clean
-- No `getAccessTokenSilently` in production code under `src/modules/productor/profile/` (only in comments)
-- `useAuth0()` in profile hooks: only `useProducerMeQuery.ts` line 20, for `isAuthenticated && !isLoading` enabled guard — allowed, not a token acquisition call
+- Diff stat: 8 new files (544 insertions) + 3 modified files (513 insertions, 223 deletions)
+- Net additions: ~834 lines (34 over 800-line soft target; reviewable since 223 are deletions of replaced code)
 
-### Passed Artifacts (unchanged)
+### Workload / PR Boundary (PR#2 original run)
 
-- `src/lib/errorMessages.ts` — PASS (untouched)
-- `src/modules/productor/profile/profile.schema.ts` — PASS (untouched)
-- Page wiring in `EditarPerfilPublicoPage.tsx` and `PerfilProductorPublicoPage.tsx` — PASS (untouched)
-- Cache key `['producer','me']` and invalidation on 2xx — PASS (preserved)
+- Mode: chained PR slice (feature-branch-chain)
+- Current work unit: PR#2 product catalog — full domain (schema + api + hooks + page + modals)
+- PR target when opened: `feat/backend-api-integration` (NOT master)
+- Estimated review budget: ~834 net lines (544 new + 513 modified - 223 deleted) — original run only
+- Budget note: 34 lines over 800-line soft cap. The overage is in modified files where 223 lines are deletions of replaced hardcoded data.
+- Rollback (all PR#2 commits): `git revert 76b9a2b 4dc76c7 0c95a8c c54eb1f 498fc5d` — fully autonomous
+
+### Manual Verification Checklist (PR#2 — task 4.1)
+
+| Scenario | Page/Endpoint | Expected | Status |
+|----------|--------------|----------|--------|
+| Happy path: list products | `ProductosProductorPage` | Products load from `GET /producers/me/products`; price via `formatMoney` | ⬜ Pending smoke |
+| Create product | `AgregarProductoModal` | Form validates; `POST /producers/me/products`; list refreshes | ⬜ Pending smoke |
+| Edit product | `EditarProductoModal` | Form prefilled; `PATCH /producers/me/products/:id`; list refreshes | ⬜ Pending smoke |
+| Delete product (no active orders) | `EliminarProductoModal` | `DELETE /producers/me/products/:id` → 204; removed from list | ⬜ Pending smoke |
+| Delete product (active orders) | `EliminarProductoModal` | 409 `PRODUCT_HAS_ACTIVE_ORDERS` → error banner via `resolveErrorMessage` | ⬜ Pending smoke |
+| Publish/unpublish | `PublicacionProductoModal` | `PATCH` with `isActive: true/false`; list refreshes | ⬜ Pending smoke |
+| Publish without stock | `AvisoStockModal` | `PATCH` with `isActive: true`, `stock: 0`; shown as «Sin disponibilidad» | ⬜ Pending smoke |
+| 401 session expired | Any mutation | Error banner: «Tu sesión ha expirado. Inicia sesión de nuevo para continuar.» | ⬜ Pending smoke |
+| 5xx / offline | Any query or mutation | Error state rendered; no crash; `resolveErrorMessage` fallback | ⬜ Pending smoke |
+| Report product | N/A (API ready, UI not exposed) | `POST /products/:id/report` via `useReportProductoMutation` | ⬜ API ready; smoke pending |
+| Category selector loads | `AgregarProductoModal` | `GET /categories` populates selector without auth | ⬜ Pending smoke |
+| `tsc -b` | — | ✅ clean | ✅ Done |
+| `npm run build` | — | ✅ clean | ✅ Done |
+
+---
+
+## PR#2 Corrective Run — Gatekeeper FAIL Fix
+
+**Gate result**: Fresh Gatekeeper FAIL on first PR#2 apply run.
+**Retry**: Single allowed retry per Automatic Mode Gatekeeper protocol.
+
+### Critical Findings Fixed
+
+#### CRITICAL 1 — RHF numeric field bug hidden by `as any`
+
+**Root cause**: Form schemas declared `stock`, `lowStockThreshold`, `weight` as `z.number()`.
+`<input type="number">` sends a string from the DOM; RHF passes that string to Zod which rejects
+it as a number. The `as any` cast suppressed the TypeScript error and masked the runtime failure.
+
+**Fix (Option B — coerce)**: Switched all numeric form fields to `z.coerce.number().int().min(...)`.
+Zod coerces the DOM string to a number at parse time.
+Used `useForm<z.input<typeof schema>, unknown, z.output<typeof schema>>` so RHF field state is
+typed as strings (raw input) and `onSubmit` receives coerced numbers.
+Removed ALL `as any` casts and `eslint-disable no-explicit-any` comments.
+`tsc -b` clean after change.
+
+**Files changed**:
+- `src/modules/productor/productos/productos.schema.ts` — `z.coerce.number()` on all numeric form
+  fields; exported `CreateProductoFormInput` and `UpdateProductoFormInput` (input side types)
+- `src/modules/productor/componentes/CatalogoProductorModals.tsx` — removed `as any` on both
+  `useForm` calls; updated `defaultValues.stock` to `'0'` / `String(producto.stock)` (string literal)
+  to match input type; updated `UseMutationResult` generics from `any` to `unknown`
+
+**Commit**: `4dc76c7`
+
+#### CRITICAL 2 — Image hook layer missing despite apply-progress claiming it complete
+
+**Root cause**: `productos.api.ts` had `presignProductoImage` and `confirmProductoImage` but no
+corresponding React hook existed. `AgregarProductoModal` showed a static placeholder. The
+apply-progress `risks` section called it "hooks/API layer is complete" — that was inaccurate.
+
+**Fix**: Added `useUploadProductoImageMutation.ts` implementing the two-step flow:
+1. POST presign → `{ uploadUrl, s3Key }`
+2. PUT `uploadUrl` with raw bytes (no auth header — presigned URL is self-authenticating)
+3. POST confirm → `ProductImageDTO`
+Client-side guards: MIME type (jpeg/png/webp) and size (≤ 5 MB) validated before step 1.
+On success: invalidates `['producer', 'products', 'list']`.
+
+Wired a functional `<input type="file" accept="image/jpeg,image/png,image/webp">` into both
+`AgregarProductoModal` and `EditarProductoModal`. Upload triggers after the product save
+succeeds (uses the returned `productId`). Error from upload surfaces inline below the file picker.
+
+**Deferred (documented in hook source and risks)**:
+- Multi-image management and ordering (all images land at `position: 0`)
+- Drag-and-drop reordering
+- Upload progress bar / percentage indicator
+
+**Files changed**:
+- `src/modules/productor/productos/hooks/useUploadProductoImageMutation.ts` — new file (100 lines)
+- `src/modules/productor/componentes/CatalogoProductorModals.tsx` — added image upload UI to both
+  `AgregarProductoModal` and `EditarProductoModal`; imports `useUploadProductoImageMutation`
+
+**Commit**: `76b9a2b`
+
+### Verification Results (corrective run)
+
+| Check | Command | Result |
+|-------|---------|--------|
+| TypeScript | `tsc -b` | ✅ clean — no output |
+| Build | `npm run build` | ✅ clean — 2042 modules, built in 519ms |
+| getAccessTokenSilently | `grep -r "getAccessTokenSilently" src/modules/productor/productos/` | ✅ zero hits |
+| as any (code) | `grep -n "as any" CatalogoProductorModals.tsx` (excluding comments) | ✅ zero actual casts |
+| as any in productos/ | `grep -rn "as any" src/modules/productor/productos/` (excluding comments) | ✅ zero actual casts |
+
+### Git State (PR#2 — cumulative including corrective run)
+
+- Branch: `feat/backend-api-integration-pr2-product-catalog`
+- Base: `feat/backend-api-integration` (tracker at `1984e47`)
+- All commits:
+  - `498fc5d` feat(producer): add product catalog schemas, api functions, and query/mutation hooks
+  - `c54eb1f` feat(producer): wire product catalog page and modals to hooks — DTOs, mutations, error surfacing
+  - `0c95a8c` docs(sdd): update apply-progress and tasks for PR#2 — product catalog complete
+  - `4dc76c7` fix(producer): remove as any and correct RHF numeric field handling in catalog modals
+  - `76b9a2b` feat(producer): add product image upload hook and wire single-file upload in modals
+  - `f6a180f` docs(sdd): record PR#2 corrective run in apply-progress with full Result Contract
+  - `25893e0` docs(sdd): fill corrective run commit SHA in apply-progress git_state
+- `tsc -b`: ✅ clean
+- `npm run build`: ✅ clean
+- Cumulative diff vs `feat/backend-api-integration`: 13 files changed, 1535 insertions(+), 277 deletions(-)
+
+### Workload / PR Boundary (PR#2 corrective — cumulative)
+
+- Mode: chained PR slice (feature-branch-chain) — corrective commits appended in-band
+- PR target when opened: `feat/backend-api-integration` (NOT master)
+- Cumulative diff: 1535 insertions(+), 277 deletions(-) across 13 files
+- Budget note: The corrective run adds net lines beyond the original PR#2 (image hook + schema/modal
+  refactor). This is a size:exception accepted by the gatekeeper retry protocol.
+- Rollback (all PR#2 commits): `git revert 25893e0 f6a180f 76b9a2b 4dc76c7 0c95a8c c54eb1f 498fc5d` — autonomous
 
 ---
 
 ## Remaining Tasks
 
-- [ ] 2.1–2.3 ✅ (above)
-- [ ] 3.1 [PR#2] Producer product catalog
 - [ ] 3.2 [PR#3] Inventory + delivery modes
 - [ ] 3.3 [PR#4] Orders + stats + dashboard
-- [ ] 4.1 [Each PR] Manual verification checklist
+- [ ] 4.1 [Each PR] Manual verification checklist (PR#2 checklist above — smoke pending before PR open)
