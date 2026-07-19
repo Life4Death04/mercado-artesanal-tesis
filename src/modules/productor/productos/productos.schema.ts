@@ -102,7 +102,7 @@ export type PresignResponseDTO = {
 // returns a string from the DOM) is coerced to a number by Zod at parse time.
 // The form is typed with useForm<z.input<...>, unknown, z.output<...>> so RHF
 // sees strings as input values (field state) and numbers as output values (the
-// object passed to onSubmit). No valueAsNumber and no "as any" cast needed.
+// object passed to onSubmit). No valueAsNumber and no resolver casts needed.
 // ---------------------------------------------------------------------------
 
 export const createProductoFormSchema = z

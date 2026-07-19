@@ -52,9 +52,10 @@ complete" for images was false — it is now truthful.
   - `4dc76c7` fix(producer): remove as any and correct RHF numeric field handling in catalog modals
   - `76b9a2b` feat(producer): add product image upload hook and wire single-file upload in modals
   - `f6a180f` docs(sdd): record PR#2 corrective run in apply-progress with full Result Contract
+  - `25893e0` docs(sdd): fill corrective run commit SHA in apply-progress git_state
 - `tsc -b`: ✅ clean
 - `npm run build`: ✅ clean
-- Diff stat vs `feat/backend-api-integration`: 13 files, ~1427 insertions, ~278 deletions
+- Diff stat vs `feat/backend-api-integration`: 13 files changed, 1535 insertions(+), 277 deletions(-)
 
 ---
 
@@ -318,18 +319,19 @@ succeeds (uses the returned `productId`). Error from upload surfaces inline belo
   - `4dc76c7` fix(producer): remove as any and correct RHF numeric field handling in catalog modals
   - `76b9a2b` feat(producer): add product image upload hook and wire single-file upload in modals
   - `f6a180f` docs(sdd): record PR#2 corrective run in apply-progress with full Result Contract
+  - `25893e0` docs(sdd): fill corrective run commit SHA in apply-progress git_state
 - `tsc -b`: ✅ clean
 - `npm run build`: ✅ clean
-- Cumulative diff vs `feat/backend-api-integration`: 13 files, ~1427 insertions, ~278 deletions
+- Cumulative diff vs `feat/backend-api-integration`: 13 files changed, 1535 insertions(+), 277 deletions(-)
 
 ### Workload / PR Boundary (PR#2 corrective — cumulative)
 
 - Mode: chained PR slice (feature-branch-chain) — corrective commits appended in-band
 - PR target when opened: `feat/backend-api-integration` (NOT master)
-- Cumulative diff: ~1427 insertions, ~278 deletions across 13 files
-- Budget note: The corrective run adds ~291 net lines (image hook 100 + schema/modal refactor 191)
-  beyond the original PR#2. This is a size:exception accepted by the gatekeeper retry protocol.
-- Rollback (all PR#2 commits): `git revert 76b9a2b 4dc76c7 0c95a8c c54eb1f 498fc5d` — autonomous
+- Cumulative diff: 1535 insertions(+), 277 deletions(-) across 13 files
+- Budget note: The corrective run adds net lines beyond the original PR#2 (image hook + schema/modal
+  refactor). This is a size:exception accepted by the gatekeeper retry protocol.
+- Rollback (all PR#2 commits): `git revert 25893e0 f6a180f 76b9a2b 4dc76c7 0c95a8c c54eb1f 498fc5d` — autonomous
 
 ---
 

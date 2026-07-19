@@ -64,7 +64,7 @@ export function AgregarProductoModal({ onClose, createMutation }: AgregarProduct
   // useForm uses input/output generics so that:
   //   - TFieldValues (input) = z.input<schema>: RHF stores raw DOM strings in field state
   //   - TTransformedValues (output) = z.output<schema>: Zod coerces to numbers in onSubmit
-  // zodResolver handles the coercion at validation time — no valueAsNumber, no "as any".
+  // zodResolver handles the coercion at validation time — no valueAsNumber, no resolver cast.
   const {
     register,
     handleSubmit,
@@ -493,7 +493,7 @@ export function EditarProductoModal({ producto, onClose, updateMutation }: Edita
   const uploadImageMutation = useUploadProductoImageMutation()
 
   // Input/output generics: RHF stores raw strings in state; Zod coerces on submit.
-  // No "as any" needed — zodResolver v5 handles the input→output transformation.
+  // No resolver cast needed — zodResolver v5 handles the input→output transformation.
   const {
     register,
     handleSubmit,
