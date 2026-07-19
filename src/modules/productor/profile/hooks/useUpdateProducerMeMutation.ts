@@ -7,8 +7,8 @@ import type { ProducerProfileFormValues } from '../profile.schema'
 /**
  * Mutation for PATCH /producers/me.
  *
- * - Token acquisition is delegated to useAuthenticatedApi() — no direct
- *   getAccessTokenSilently calls in this hook (spec R2).
+ * - Token acquisition is delegated to useAuthenticatedApi() — this hook
+ *   never calls the Auth0 token API directly (spec R2).
  * - On HTTP 2xx: invalidates ['producer', 'me'] so all consumers refetch.
  * - On error: cache is NOT touched — last known good data stays visible.
  * - 401 / 4xx / 5xx surface as mutation error; caller resolves via resolveErrorMessage.

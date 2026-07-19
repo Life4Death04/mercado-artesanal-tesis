@@ -10,8 +10,8 @@ export const PRODUCER_ME_QUERY_KEY = ['producer', 'me'] as const
  * Reads the authenticated producer's profile from GET /api/v1/users/me.
  *
  * - Enabled only when the Auth0 session is authenticated and not loading.
- * - Token acquisition is delegated to useAuthenticatedApi() — no direct
- *   getAccessTokenSilently calls in this hook (spec R2).
+ * - Token acquisition is delegated to useAuthenticatedApi() — this hook
+ *   never calls the Auth0 token API directly (spec R2).
  * - Selects the embedded `producer` object from the full user response.
  * - On 401 / 5xx, query enters `isError` state; the page surfaces it via
  *   `resolveErrorMessage(error)`. No silent retry on 401.
