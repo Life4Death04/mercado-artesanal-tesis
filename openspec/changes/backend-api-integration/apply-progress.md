@@ -51,7 +51,7 @@ complete" for images was false — it is now truthful.
   - `0c95a8c` docs(sdd): update apply-progress and tasks for PR#2 — product catalog complete
   - `4dc76c7` fix(producer): remove as any and correct RHF numeric field handling in catalog modals
   - `76b9a2b` feat(producer): add product image upload hook and wire single-file upload in modals
-  - (this docs commit)
+  - `f6a180f` docs(sdd): record PR#2 corrective run in apply-progress with full Result Contract
 - `tsc -b`: ✅ clean
 - `npm run build`: ✅ clean
 - Diff stat vs `feat/backend-api-integration`: 13 files, ~1427 insertions, ~278 deletions
@@ -317,7 +317,7 @@ succeeds (uses the returned `productId`). Error from upload surfaces inline belo
   - `0c95a8c` docs(sdd): update apply-progress and tasks for PR#2 — product catalog complete
   - `4dc76c7` fix(producer): remove as any and correct RHF numeric field handling in catalog modals
   - `76b9a2b` feat(producer): add product image upload hook and wire single-file upload in modals
-  - (this docs commit — SHA to be filled after commit)
+  - `f6a180f` docs(sdd): record PR#2 corrective run in apply-progress with full Result Contract
 - `tsc -b`: ✅ clean
 - `npm run build`: ✅ clean
 - Cumulative diff vs `feat/backend-api-integration`: 13 files, ~1427 insertions, ~278 deletions
