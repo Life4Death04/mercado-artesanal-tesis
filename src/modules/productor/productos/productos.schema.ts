@@ -105,11 +105,11 @@ export const createProductoFormSchema = z
       .string()
       .min(1, 'El precio es obligatorio.')
       .regex(/^\d+(\.\d{1,2})?$/, 'El precio debe ser un número positivo con hasta 2 decimales.'),
-    stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.').optional(),
-    lowStockThreshold: z.coerce.number().int().min(0, 'El umbral de stock bajo no puede ser negativo.').optional(),
+    stock: z.number().int().min(0, 'El stock no puede ser negativo.').optional(),
+    lowStockThreshold: z.number().int().min(0, 'El umbral de stock bajo no puede ser negativo.').optional(),
     ingredients: z.string().nullable().optional(),
     allergens: z.array(z.string()).optional(),
-    weight: z.coerce.number().int().positive().nullable().optional(),
+    weight: z.number().int().positive().nullable().optional(),
     presentation: z.string().nullable().optional(),
   })
   .strict()
@@ -129,12 +129,12 @@ export const updateProductoFormSchema = z
       .string()
       .regex(/^\d+(\.\d{1,2})?$/, 'El precio debe ser un número positivo con hasta 2 decimales.')
       .optional(),
-    stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.').optional(),
-    lowStockThreshold: z.coerce.number().int().min(0).optional(),
+    stock: z.number().int().min(0, 'El stock no puede ser negativo.').optional(),
+    lowStockThreshold: z.number().int().min(0).optional(),
     isActive: z.boolean().optional(),
     ingredients: z.string().nullable().optional(),
     allergens: z.array(z.string()).optional(),
-    weight: z.coerce.number().int().positive().nullable().optional(),
+    weight: z.number().int().positive().nullable().optional(),
     presentation: z.string().nullable().optional(),
   })
   .strict()
