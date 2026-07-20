@@ -1,51 +1,21 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CheckCircle2, ChevronRight, CircleAlert, Minus, Pencil, Plus, Search, TriangleAlert } from 'lucide-react'
+import { CheckCircle2, ChevronRight, CircleAlert, Loader2, Minus, Pencil, Plus, Search, TriangleAlert } from 'lucide-react'
+import { useInventarioQuery } from '../inventario/hooks/useInventarioQuery'
+import { useUpdateStockMutation } from '../inventario/hooks/useUpdateStockMutation'
+import { resolveErrorMessage } from '../../../lib/errorMessages'
 
-type StockStatus = 'En stock' | 'Stock bajo' | 'Agotado'
-
-type InventarioItem = {
-  id: string
-  nombre: string
-  categoria: string
-  stock: number
-  imagen: string
-}
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
 const UMBRAL_STOCK_BAJO = 5
 
-const itemsIniciales: InventarioItem[] = [
-  {
-    id: 'inv-1',
-    nombre: 'Aceite de Oliva Virgen Extra',
-    categoria: 'Aceites y Vinagres',
-    stock: 15,
-    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuClWartENzQpyYqJqC8C4CvjIiFaKAyZP8yX1LEAVF7YfPqWK3nOXErjiWhtizxf-lyP1uoUoMfZUE3arRlSWZ6qI-Xkt4aAAxLjLEsDE10Doa5JaG507RT_rtIbU9KbleQecy5AT5L4iwCL1t8eme21sfM4I60yTk6B0YnZoaprunc9Mk5o0djAiGVqudXiCiYihnUUFD2i667ajuXszCDMyWIAWwqoiIkmvfB8ZdKsBNWs6Mz3Q5oCA-XNfOIObhgzaQ29epkSIc',
-  },
-  {
-    id: 'inv-2',
-    nombre: 'Turron de Jijona',
-    categoria: 'Dulces y Postres',
-    stock: 3,
-    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBa3xANjK2EgB5yaNlw8gcPw-pY3zqpXxN9K59so5M-jXlpVsxulQD69-4SCqagHHU3k9WB4AlzLtXU9d_bWaym7koFMKvn3g4jo8cdXrXRK_bwdPDy5wXx0P7jIjFD1TfbA369Wv8Q_FK3hB0QHkiQ4DAc-2vxft4twZMKErAzLEG5JFf2wgZJbtgF3-Ti9qY49J2zsL1pDPE0F0NSrHyECC9sWFCX-Ex7p6fUKF8Ipan4Bk03Xhr1-dYZ4maLmxgjlOAMzv0nE2o',
-  },
-  {
-    id: 'inv-3',
-    nombre: 'Vino Tinto Monastrell',
-    categoria: 'Vinos y Licores',
-    stock: 0,
-    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC1bOu_zOWwTGLS4PhTTQTYYnJk9xAAGe-3FxShYcVG6zxBDq6yKZq5d7YYzbsd5A83FvIiwU-8BUnq5Nxj15fA6kARpABFqdDcRWcDAygwTz8NeF3bDKHeCBrfgetMLa1UsmR8cmTuBZsFZ_ZPG79eDLXDDNCD6JXwjdIeajtS3OYQAwteEszio_ukRGOgY3qKec8IiNA5aBFwtJZKVTNIpbLcs-D3wFzQ2u2K3NCsRTuhd90z8TfpeJAtG0Vm2wvqrxxVcnWV3qk',
-  },
-  {
-    id: 'inv-4',
-    nombre: 'Sobrasada de la Montana',
-    categoria: 'Embutidos',
-    stock: 42,
-    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBYs77QFQGe7CrEcNnV0iD57RGRXVyM75KeB4DGFhakPUZs2LXS4sy-Hb8oAD8WBFMj3LFFnEukuUThn7pPLkGCWGGSCjxioW9bNyyZbX5JWBOMDouZEKlh23d8ZpQSEIsoCwO9AMiywNMIF9jx-Kzx41dTLzf9Wm_BSwQ1D4NG_2F10G7uFO3Ht9OHQFbRoXV_4LmcGRzZH4olU35glgGUsDgykQzdmzHKk67NEYWR_iie2XBsftEfCtpME',
-  },
-]
+// ---------------------------------------------------------------------------
+// Types (UI-only — derived from InventoryItemDTO for local display)
+// ---------------------------------------------------------------------------
 
-type FiltroActivo = 'Todos' | 'Stock bajo' | 'Agotados'
+type StockStatus = 'En stock' | 'Stock bajo' | 'Agotado'
 
 function getStatus(stock: number): StockStatus {
   if (stock === 0) return 'Agotado'
@@ -53,17 +23,34 @@ function getStatus(stock: number): StockStatus {
   return 'En stock'
 }
 
+type FiltroActivo = 'Todos' | 'Stock bajo' | 'Agotados'
+
+// ---------------------------------------------------------------------------
+// Page component
+// ---------------------------------------------------------------------------
+
 export function InventarioProductorPage() {
-  const [items, setItems] = useState<InventarioItem[]>(itemsIniciales)
+  const { data: items = [], isLoading, isError, error } = useInventarioQuery()
+  const updateStockMutation = useUpdateStockMutation()
+
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draftStock, setDraftStock] = useState<Record<string, number>>({})
   const [filtro, setFiltro] = useState<FiltroActivo>('Todos')
   const [search, setSearch] = useState('')
+  const [successId, setSuccessId] = useState<string | null>(null)
 
   const normalizedSearch = search.trim().toLowerCase()
   const filtered = items.filter((item) => {
-    const matchesSearch = !normalizedSearch || [item.nombre, item.categoria, String(item.stock)].join(' ').toLowerCase().includes(normalizedSearch)
-    const matchesStatus = filtro === 'Todos' || (filtro === 'Stock bajo' ? getStatus(item.stock) === 'Stock bajo' : getStatus(item.stock) === 'Agotado')
+    const matchesSearch =
+      !normalizedSearch ||
+      [item.name, item.categoryName, String(item.stock)]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedSearch)
+    const status = getStatus(item.stock)
+    const matchesStatus =
+      filtro === 'Todos' ||
+      (filtro === 'Stock bajo' ? status === 'Stock bajo' : status === 'Agotado')
     return matchesSearch && matchesStatus
   })
 
@@ -71,14 +58,30 @@ export function InventarioProductorPage() {
   const stockBajo = items.filter((item) => getStatus(item.stock) === 'Stock bajo').length
   const agotados = items.filter((item) => getStatus(item.stock) === 'Agotado').length
 
-  function startEdit(item: InventarioItem) {
-    setEditingId(item.id)
-    setDraftStock((current) => ({ ...current, [item.id]: item.stock }))
+  function startEdit(itemId: string, currentStock: number) {
+    setEditingId(itemId)
+    setSuccessId(null)
+    setDraftStock((current) => ({ ...current, [itemId]: currentStock }))
   }
 
-  function saveEdit(id: string) {
-    setItems((current) => current.map((item) => (item.id === id ? { ...item, stock: draftStock[id] ?? item.stock } : item)))
+  function cancelEdit() {
     setEditingId(null)
+    updateStockMutation.reset()
+  }
+
+  function saveEdit(productId: string) {
+    const newStock = draftStock[productId] ?? 0
+    updateStockMutation.mutate(
+      { productId, body: { stock: newStock } },
+      {
+        onSuccess: () => {
+          setEditingId(null)
+          setSuccessId(productId)
+          // Clear the success message after 3 s
+          setTimeout(() => setSuccessId((current) => (current === productId ? null : current)), 3000)
+        },
+      },
+    )
   }
 
   function changeDraft(id: string, delta: number) {
@@ -120,6 +123,17 @@ export function InventarioProductorPage() {
           </div>
         </section>
 
+        {/* Global error banner — visible when the list query fails */}
+        {isError ? (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="mb-8 border border-[var(--color-error)] bg-[var(--color-error-container)] px-5 py-4 text-[var(--color-error)]"
+          >
+            <p className="text-body-md">{resolveErrorMessage(error)}</p>
+          </div>
+        ) : null}
+
         <section className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <SummaryCard label="En stock" value={enStock} icon={<CheckCircle2 size={24} strokeWidth={1.8} className="text-[#2E7D32]" />} iconBg="#E8F5E9" />
           <SummaryCard label="Stock bajo" value={stockBajo} icon={<TriangleAlert size={24} strokeWidth={1.8} className="text-[#EF6C00]" />} iconBg="#FFF3E0" />
@@ -154,29 +168,56 @@ export function InventarioProductorPage() {
           </div>
         </section>
 
-        <div className="flex flex-col gap-4">
-          {filtered.map((item) => {
-            const status = getStatus(item.stock)
-            const isEditing = editingId === item.id
-            const currentDraft = draftStock[item.id] ?? item.stock
+        {/* Loading state */}
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-3 py-16 text-[var(--color-secondary)]">
+            <Loader2 size={24} strokeWidth={1.8} className="animate-spin" />
+            <span className="text-body-md">Cargando inventario...</span>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {filtered.map((item) => {
+              const status = getStatus(item.stock)
+              const isEditing = editingId === item.id
+              const currentDraft = draftStock[item.id] ?? item.stock
+              const isThisPending = updateStockMutation.isPending && editingId === item.id
+              const mutationError = updateStockMutation.isError && editingId === item.id
+                ? resolveErrorMessage(updateStockMutation.error)
+                : null
 
-            return isEditing ? (
-              <EditingRow
-                key={item.id}
-                item={item}
-                draftStock={currentDraft}
-                onDecrement={() => changeDraft(item.id, -1)}
-                onIncrement={() => changeDraft(item.id, 1)}
-                onChange={(value) => updateDraft(item.id, value)}
-                onSave={() => saveEdit(item.id)}
-              />
-            ) : (
-              <NormalRow key={item.id} item={item} status={status} onEdit={() => startEdit(item)} />
-            )
-          })}
-        </div>
+              return isEditing ? (
+                <EditingRow
+                  key={item.id}
+                  itemName={item.name}
+                  itemCategory={item.categoryName}
+                  itemImageUrl={item.imageUrl}
+                  draftStock={currentDraft}
+                  isPending={isThisPending}
+                  mutationError={mutationError}
+                  onDecrement={() => changeDraft(item.id, -1)}
+                  onIncrement={() => changeDraft(item.id, 1)}
+                  onChange={(value) => updateDraft(item.id, value)}
+                  onSave={() => saveEdit(item.id)}
+                  onCancel={cancelEdit}
+                />
+              ) : (
+                <NormalRow
+                  key={item.id}
+                  itemId={item.id}
+                  itemName={item.name}
+                  itemCategory={item.categoryName}
+                  itemStock={item.stock}
+                  itemImageUrl={item.imageUrl}
+                  status={status}
+                  showSuccess={successId === item.id}
+                  onEdit={() => startEdit(item.id, item.stock)}
+                />
+              )
+            })}
+          </div>
+        )}
 
-        {filtered.length === 0 ? (
+        {!isLoading && filtered.length === 0 ? (
           <div className="mt-10 border border-dashed border-[var(--color-outline-variant)] p-10 text-center">
             <Search className="mx-auto mb-3 text-[var(--color-outline)]" size={28} strokeWidth={1.8} />
             <p className="text-body-md text-[var(--color-on-surface-variant)]">No hay productos que coincidan con la búsqueda o el filtro aplicado.</p>
@@ -186,6 +227,10 @@ export function InventarioProductorPage() {
     </div>
   )
 }
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
 
 function SummaryCard({ label, value, icon, iconBg }: { label: string; value: number; icon: React.ReactNode; iconBg: string }) {
   return (
@@ -201,12 +246,6 @@ function SummaryCard({ label, value, icon, iconBg }: { label: string; value: num
   )
 }
 
-type NormalRowProps = {
-  item: InventarioItem
-  status: StockStatus
-  onEdit: () => void
-}
-
 const STATUS_DOT: Record<StockStatus, string> = {
   'En stock': '#2E7D32',
   'Stock bajo': '#EF6C00',
@@ -219,29 +258,53 @@ const STATUS_LABEL_CLASS: Record<StockStatus, string> = {
   Agotado: 'text-[#C62828]',
 }
 
-function NormalRow({ item, status, onEdit }: NormalRowProps) {
+type NormalRowProps = {
+  itemId: string
+  itemName: string
+  itemCategory: string
+  itemStock: number
+  itemImageUrl: string | null
+  status: StockStatus
+  showSuccess: boolean
+  onEdit: () => void
+}
+
+function NormalRow({ itemName, itemCategory, itemStock, itemImageUrl, status, showSuccess, onEdit }: NormalRowProps) {
   const isAgotado = status === 'Agotado'
 
   return (
     <article className={`rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-4 transition-colors hover:bg-[var(--color-surface-container-low)] md:p-5 ${isAgotado ? 'opacity-80' : ''}`}>
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-4 md:gap-5">
-          <img src={item.imagen} alt={item.nombre} className={`size-16 shrink-0 rounded-[var(--radius-lg)] object-cover md:size-20 ${isAgotado ? 'grayscale' : ''}`} />
+          {itemImageUrl ? (
+            <img src={itemImageUrl} alt={itemName} className={`size-16 shrink-0 rounded-[var(--radius-lg)] object-cover md:size-20 ${isAgotado ? 'grayscale' : ''}`} />
+          ) : (
+            <div className={`size-16 shrink-0 rounded-[var(--radius-lg)] bg-[var(--color-surface-container-high)] md:size-20 ${isAgotado ? 'grayscale' : ''}`} aria-hidden="true" />
+          )}
           <div className="min-w-0">
-            <h2 className="text-headline-md text-[var(--color-on-surface)] md:text-[24px] md:leading-8">{item.nombre}</h2>
-            <p className="text-body-md mt-1 text-[var(--color-secondary)]">{item.categoria}</p>
+            <h2 className="text-headline-md text-[var(--color-on-surface)] md:text-[24px] md:leading-8">{itemName}</h2>
+            <p className="text-body-md mt-1 text-[var(--color-secondary)]">{itemCategory}</p>
           </div>
         </div>
 
         <div className="flex flex-col gap-4 border-t border-[var(--color-outline-variant)] pt-4 sm:flex-row sm:items-center sm:justify-between lg:w-auto lg:border-t-0 lg:pt-0">
-          <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full" style={{ backgroundColor: STATUS_DOT[status] }} />
-            <span className={`text-label-sm uppercase tracking-widest ${STATUS_LABEL_CLASS[status]}`}>{status}</span>
-          </div>
+          {showSuccess ? (
+            <span
+              aria-live="polite"
+              className="text-label-sm rounded-full bg-[rgba(46,125,50,0.12)] px-3 py-1 text-[#2E7D32]"
+            >
+              Stock actualizado
+            </span>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="size-2 rounded-full" style={{ backgroundColor: STATUS_DOT[status] }} />
+              <span className={`text-label-sm uppercase tracking-widest ${STATUS_LABEL_CLASS[status]}`}>{status}</span>
+            </div>
+          )}
           <div className={`text-body-lg sm:min-w-[116px] sm:text-right ${isAgotado ? 'text-[var(--color-secondary)]' : 'text-[var(--color-on-surface)]'}`}>
-            {item.stock} unidades
+            {itemStock} unidades
           </div>
-          <button type="button" aria-label={`Editar stock de ${item.nombre}`} onClick={onEdit} className="inline-flex items-center gap-2 self-start text-[var(--color-secondary)] transition-colors hover:text-[var(--color-primary)] sm:self-auto">
+          <button type="button" aria-label={`Editar stock de ${itemName}`} onClick={onEdit} className="inline-flex items-center gap-2 self-start text-[var(--color-secondary)] transition-colors hover:text-[var(--color-primary)] sm:self-auto">
             <Pencil size={18} strokeWidth={1.8} />
             <span className="text-label-md sm:hidden">Editar stock</span>
           </button>
@@ -252,25 +315,34 @@ function NormalRow({ item, status, onEdit }: NormalRowProps) {
 }
 
 type EditingRowProps = {
-  item: InventarioItem
+  itemName: string
+  itemCategory: string
+  itemImageUrl: string | null
   draftStock: number
+  isPending: boolean
+  mutationError: string | null
   onDecrement: () => void
   onIncrement: () => void
   onChange: (value: number) => void
   onSave: () => void
+  onCancel: () => void
 }
 
-function EditingRow({ item, draftStock, onDecrement, onIncrement, onChange, onSave }: EditingRowProps) {
+function EditingRow({ itemName, itemCategory, itemImageUrl, draftStock, isPending, mutationError, onDecrement, onIncrement, onChange, onSave, onCancel }: EditingRowProps) {
   return (
     <article className="relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-outline)] bg-[var(--color-surface-container-highest)] p-4 shadow-sm md:p-5">
       <div className="absolute bottom-0 left-0 top-0 w-1 bg-[#EF6C00]" />
 
       <div className="flex flex-col gap-5 pl-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-4 md:gap-5">
-          <img src={item.imagen} alt={item.nombre} className="size-16 shrink-0 rounded-[var(--radius-lg)] object-cover md:size-20" />
+          {itemImageUrl ? (
+            <img src={itemImageUrl} alt={itemName} className="size-16 shrink-0 rounded-[var(--radius-lg)] object-cover md:size-20" />
+          ) : (
+            <div className="size-16 shrink-0 rounded-[var(--radius-lg)] bg-[var(--color-surface-container-high)] md:size-20" aria-hidden="true" />
+          )}
           <div className="min-w-0">
-            <h2 className="text-headline-md text-[var(--color-on-surface)] md:text-[24px] md:leading-8">{item.nombre}</h2>
-            <p className="text-body-md mt-1 text-[var(--color-secondary)]">{item.categoria}</p>
+            <h2 className="text-headline-md text-[var(--color-on-surface)] md:text-[24px] md:leading-8">{itemName}</h2>
+            <p className="text-body-md mt-1 text-[var(--color-secondary)]">{itemCategory}</p>
           </div>
         </div>
 
@@ -280,24 +352,58 @@ function EditingRow({ item, draftStock, onDecrement, onIncrement, onChange, onSa
             <span className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">Edición de stock</span>
           </div>
 
+          {mutationError ? (
+            <p role="alert" aria-live="assertive" className="text-body-sm text-[var(--color-error)]">
+              {mutationError}
+            </p>
+          ) : null}
+
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="flex items-center overflow-hidden rounded-[var(--radius-default)] border border-[var(--color-primary)] bg-[var(--color-surface-container-lowest)]">
-              <button type="button" aria-label="Reducir stock" onClick={onDecrement} className="flex size-10 items-center justify-center text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)]">
+              <button
+                type="button"
+                aria-label="Reducir stock"
+                onClick={onDecrement}
+                disabled={isPending}
+                className="flex size-10 items-center justify-center text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)] disabled:cursor-not-allowed disabled:opacity-40"
+              >
                 <Minus size={16} strokeWidth={2} />
               </button>
               <input
                 type="number"
                 value={draftStock}
                 onChange={(event) => onChange(parseInt(event.target.value, 10) || 0)}
-                className="text-body-lg h-10 w-20 border-x border-[var(--color-outline-variant)] bg-transparent text-center text-[var(--color-on-surface)] focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                disabled={isPending}
+                className="text-body-lg h-10 w-20 border-x border-[var(--color-outline-variant)] bg-transparent text-center text-[var(--color-on-surface)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
-              <button type="button" aria-label="Aumentar stock" onClick={onIncrement} className="flex size-10 items-center justify-center text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)]">
+              <button
+                type="button"
+                aria-label="Aumentar stock"
+                onClick={onIncrement}
+                disabled={isPending}
+                className="flex size-10 items-center justify-center text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)] disabled:cursor-not-allowed disabled:opacity-40"
+              >
                 <Plus size={16} strokeWidth={2} />
               </button>
             </div>
 
-            <button type="button" onClick={onSave} className="text-label-md h-10 rounded-[var(--radius-default)] bg-[var(--color-primary-container)] px-6 py-2 text-[var(--color-on-primary-container)] transition-colors hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)]">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={isPending}
+              className="text-label-md inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-default)] bg-[var(--color-primary-container)] px-6 py-2 text-[var(--color-on-primary-container)] transition-colors hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isPending ? <Loader2 size={16} strokeWidth={2} className="animate-spin" /> : null}
               Guardar
+            </button>
+
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isPending}
+              className="text-label-md h-10 rounded-[var(--radius-default)] border border-[var(--color-outline-variant)] px-4 py-2 text-[var(--color-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Cancelar
             </button>
           </div>
         </div>
