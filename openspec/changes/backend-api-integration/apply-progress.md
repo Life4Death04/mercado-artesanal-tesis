@@ -1,7 +1,7 @@
-# Apply Progress: backend-api-integration (PR#0 + PR#1 + PR#2 + PR#2 corrective + PR#3)
+# Apply Progress: backend-api-integration (PR#0 + PR#1 + PR#2 + PR#2 corrective + PR#3 + PR#4)
 
 > Engram topic_key: `sdd/backend-api-integration/apply-progress`
-> Updated: 2026-07-19 (PR#2 corrective run — RHF numeric fix + image hook)
+> Updated: 2026-07-20 (PR#4 — orders, stats, and dashboard complete)
 
 ---
 
@@ -425,7 +425,101 @@ succeeds (uses the returned `productId`). Error from upload surfaces inline belo
 
 ---
 
+## PR#4 — Orders, Stats, and Dashboard
+
+**Status**: ✅ Complete — 2 feat commits on branch `feat/backend-api-integration-pr4-orders-reporting-stats`
+
+### Completed Tasks
+
+- [x] 3.3 [PR#4] Wire order fulfillment, reporting fallout, and sales stats/dashboard consumers using backend-computed money totals only.
+  - AC met:
+    - `SubOrderStatusSchema` edge-parsed in `pedidos.api.ts` — unknown status values throw ApiError (spec R6).
+    - `PedidosProductorPage` imports hooks only (no direct `.api.ts` imports — spec R5).
+    - Cancellation and status advances call `resolveErrorMessage` on error; `aria-live` region surfaces messages.
+    - `EstadisticasProductorPage` stops using `KPI_POR_PERIODO` hardcoded constants; KPIs come from `useRevenueStatsQuery` + `useOrderCountStatsQuery`.
+    - `ProductorDashboardPage` fully implemented: revenue / order-count / low-stock KPIs + pending orders list.
+    - All money fields (`totalRevenue`, `shippingCostSnapshot`, `unitPriceSnapshot`) displayed via `formatMoney`. ZERO client-side arithmetic.
+    - Ticket medio and top-products show `'—'` / deferred placeholder (money-typing R2; sales-stats non-goal for Cycle 2).
+    - All hooks route through `useAuthenticatedApi()` — zero `getAccessTokenSilently` in new modules (spec R2).
+    - Failed mutations leave cache intact (spec R4 / task AC).
+  - Verified: `tsc -b` clean, `npm run build` clean
+
+### Files Changed (PR#4)
+
+| File | Action | What Was Done |
+|------|--------|---------------|
+| `src/modules/productor/pedidos/pedidos.schema.ts` | Created | `SubOrderStatusSchema` (edge-parsed enum), `OrderLineDTO`, `SubOrderDTO`, `SubOrderListItemDTO`, `updateSubOrderStatusSchema`, `SubOrderStatusFilter` |
+| `src/modules/productor/pedidos/pedidos.api.ts` | Created | `listPedidos`, `getPedido`, `updatePedidoStatus` (all accept `ApiCaller`); `parseSubOrderStatus` edge-parses enum; maps raw backend response |
+| `src/modules/productor/pedidos/hooks/usePedidosQuery.ts` | Created | TanStack Query read hook; `queryKey: ['producer','sub-orders']`; enabled when authenticated; optional status filter |
+| `src/modules/productor/pedidos/hooks/useUpdateSubOrderStatusMutation.ts` | Created | PATCH mutation for status advance; `onSuccess` invalidates `['producer','sub-orders']`; cache untouched on error |
+| `src/modules/productor/pedidos/hooks/useCancelSubOrderMutation.ts` | Created | PATCH mutation always sending `{ status: 'cancelled' }`; semantically distinct from advance; same cache/error rules |
+| `src/modules/productor/estadisticas/estadisticas.schema.ts` | Created | `StatsWindowSchema`, `RevenueStatsDTO`, `OrderCountStatsDTO`, `LowStockAlertItem`, `LowStockStatsDTO` |
+| `src/modules/productor/estadisticas/estadisticas.api.ts` | Created | `getRevenueStats`, `getOrderCountStats`, `getLowStockStats` (all accept `ApiCaller`) |
+| `src/modules/productor/estadisticas/hooks/useRevenueStatsQuery.ts` | Created | TanStack Query read hook; `queryKey: ['producer','stats','revenue',window]`; 5 min staleTime |
+| `src/modules/productor/estadisticas/hooks/useOrderCountStatsQuery.ts` | Created | TanStack Query read hook; `queryKey: ['producer','stats','order-count',window]` |
+| `src/modules/productor/estadisticas/hooks/useLowStockStatsQuery.ts` | Created | TanStack Query read hook; `queryKey: ['producer','stats','low-stock']`; 2 min staleTime |
+| `src/modules/productor/pages/PedidosProductorPage.tsx` | Modified | Replaced `useState(pedidosIniciales)` with `usePedidosQuery`; `SubOrderStatus` enum for filters and badge display; `useUpdateSubOrderStatusMutation` + `useCancelSubOrderMutation`; `resolveErrorMessage` on mutation errors; `aria-live` error region; `formatMoney` on shipping cost |
+| `src/modules/productor/componentes/PedidosProductorModals.tsx` | Modified | All types updated from local `PedidoProductor` to `SubOrderListItemDTO`; stepper and CTA label driven by `SubOrderStatus` enum; `formatMoney` on `unitPriceSnapshot` + `shippingCostSnapshot`; total shows `'—'` (no client arithmetic); `isPending` prop with spinner; tracking number deferred (Cycle 2 spec invariant) |
+| `src/modules/productor/pages/EstadisticasProductorPage.tsx` | Modified | Removed `KPI_POR_PERIODO` hardcoded data; wired to `useRevenueStatsQuery` + `useOrderCountStatsQuery`; `formatMoney` on `totalRevenue`; ticket medio `'—'` (no division — money-typing R2); top-products deferred placeholder (Cycle 2 non-goal per spec) |
+| `src/modules/productor/pages/ProductorDashboardPage.tsx` | Modified | Full implementation replacing `PendingDesignPage`; stats KPIs (revenue/orders/low-stock) + pending orders list + low-stock alerts; all money via `formatMoney` |
+| `openspec/changes/backend-api-integration/tasks.md` | Modified | Task 3.3 marked `[x]` |
+
+### Deviations from Design (PR#4)
+
+1. **SubOrder total not computed**: The backend does not return a pre-computed `total` per SubOrder in the Cycle 2 list endpoint (only `shippingCostSnapshot` and `OrderLine.unitPriceSnapshot` are available). Per money-typing R2, the frontend MUST NOT compute `total = Σ(unitPriceSnapshot × quantity) + shippingCostSnapshot`. The total in the detail modal shows `'—'` until the backend adds a projected `totalAmount` field. Not a spec violation — the spec says to use backend-computed money; no total field exists in Cycle 2.
+
+2. **Ticket medio shows '—'**: The backend stats endpoints return `totalRevenue` (string) and `count` (integer) separately. Computing `ticketMedio = totalRevenue / count` would require arithmetic on a Decimal string, violating money-typing R2. The field shows `'—'` with a note until the backend exposes `averageTicket` as a Decimal string. Documented in page code.
+
+3. **Top-products ranking deferred**: Per `sales-stats/spec.md` — non-goal for Cycle 2. The `EstadisticasProductorPage` shows a deferred placeholder. Any PR adding a ranking endpoint must be rejected until a follow-up SDD cycle amends the spec.
+
+4. **Recent orders in stats page deferred**: The cross-reference between the stats page and the sub-orders hook was not specified in the design. Rather than loading `usePedidosQuery` into `EstadisticasProductorPage` (increasing its scope), a placeholder directs users to the dedicated Mis Pedidos page.
+
+5. **Dashboard page was a `PendingDesignPage`**: The previous implementation was a placeholder with no design. PR#4 provides a functional dashboard with KPIs + pending orders + low-stock alerts per the backend API surface. The design doc does not cover the dashboard layout — implementation is best-effort matching the existing design system patterns.
+
+### Git State (PR#4)
+
+- Branch: `feat/backend-api-integration-pr4-orders-reporting-stats`
+- Base: `feat/backend-api-integration` (tracker at `dd951e0` — PR#3 merge)
+- Commits:
+  - `8cefb79` feat(producer): add orders and stats schemas, api clients, and query/mutation hooks
+  - `cca4817` feat(producer): wire PedidosProductorPage, EstadisticasProductorPage, and dashboard to hooks
+- `tsc -b`: ✅ clean
+- `npm run build`: ✅ clean
+
+### Workload / PR Boundary (PR#4)
+
+- Mode: chained PR slice (feature-branch-chain) — within 800-line budget
+- Current work unit: PR#4 orders + stats + dashboard — full domain (schema + api + hooks + pages + modals)
+- PR target when opened: `feat/backend-api-integration` (NOT master)
+- Rollback: `git revert cca4817 8cefb79` — fully autonomous
+
+### Manual Verification Checklist (PR#4 — task 4.1)
+
+| Scenario | Page/Endpoint | Expected | Status |
+|----------|--------------|----------|--------|
+| Happy path: list sub-orders | `PedidosProductorPage` | Sub-orders load from `GET /producers/me/sub-orders`; status badges show correct display labels | ⬜ Pending smoke |
+| Filter by status: Pendiente | `PedidosProductorPage` | Filter narrows list to `status=pending` sub-orders | ⬜ Pending smoke |
+| Advance status: pending → preparing | `DetallePedidoModal` | `PATCH /producers/me/sub-orders/:id { status: 'preparing' }`→ 200; list refreshes; modal closes | ⬜ Pending smoke |
+| Advance status: preparing → sent | `DetallePedidoModal` | `PATCH` with `sent`; list refreshes | ⬜ Pending smoke |
+| Advance status: sent → delivered | `DetallePedidoModal` | `PATCH` with `delivered`; no further CTA shown | ⬜ Pending smoke |
+| Cancel order | `CancelarPedidoModal` | `PATCH { status: 'cancelled' }` → 200; list refreshes; modal closes | ⬜ Pending smoke |
+| Invalid transition (e.g. delivered → pending) | N/A (blocked by state machine) | 409 `INVALID_ORDER_TRANSITION` → error banner via `resolveErrorMessage` | ⬜ Pending smoke |
+| 401 session expired (advance mutation) | `DetallePedidoModal` | Error banner: «Tu sesión ha expirado. Inicia sesión de nuevo para continuar.» | ⬜ Pending smoke |
+| 5xx / offline (advance mutation) | `DetallePedidoModal` | Error banner; prior cache stays visible (list unchanged) | ⬜ Pending smoke |
+| Stats: revenue 30d | `EstadisticasProductorPage` | `GET /producers/me/stats/revenue?window=30d`; `totalRevenue` displayed via `formatMoney` | ⬜ Pending smoke |
+| Stats: order count 30d | `EstadisticasProductorPage` | `GET /producers/me/stats/order-count?window=30d`; count shown as integer | ⬜ Pending smoke |
+| Stats: 401 on revenue | `EstadisticasProductorPage` | Error text from `resolveErrorMessage`; other KPIs unaffected | ⬜ Pending smoke |
+| Stats: 5xx / offline | `EstadisticasProductorPage` | Error text; no crash; spinner shown while loading | ⬜ Pending smoke |
+| Dashboard: KPI strip loads | `ProductorDashboardPage` | Revenue + order count + low-stock from backend; all money via `formatMoney` | ⬜ Pending smoke |
+| Dashboard: no pending orders | `ProductorDashboardPage` | Empty state shown; no crash | ⬜ Pending smoke |
+| Dashboard: low-stock alerts | `ProductorDashboardPage` | Items at/below threshold shown in alerts list | ⬜ Pending smoke |
+| Money invariant: no NaN/undefined | All pages | No page renders `NaN`, `undefined`, or `null` in money slots | ⬜ Pending smoke |
+| `tsc -b` | — | ✅ clean | ✅ Done |
+| `npm run build` | — | ✅ clean | ✅ Done |
+
+---
+
 ## Remaining Tasks
 
-- [ ] 3.3 [PR#4] Orders + stats + dashboard
-- [ ] 4.1 [Each PR] Manual verification checklist (smoke pending before PR open)
+- [x] 3.3 [PR#4] Orders + stats + dashboard ✅ Complete
+- [ ] 4.1 [Each PR] Manual verification checklist (smoke pending before PR open — all prior PRs + PR#4)

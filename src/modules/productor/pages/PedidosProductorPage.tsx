@@ -1,239 +1,202 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Filter, Search, SlidersHorizontal, Truck, Warehouse } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Filter, Loader2, Search, SlidersHorizontal, Truck, Warehouse } from 'lucide-react'
 import { CancelarPedidoModal, DetallePedidoModal } from '../componentes/PedidosProductorModals'
+import { usePedidosQuery } from '../pedidos/hooks/usePedidosQuery'
+import { useUpdateSubOrderStatusMutation } from '../pedidos/hooks/useUpdateSubOrderStatusMutation'
+import { useCancelSubOrderMutation } from '../pedidos/hooks/useCancelSubOrderMutation'
+import { resolveErrorMessage } from '../../../lib/errorMessages'
+import { formatMoney } from '../../../lib/formatMoney'
+import type { SubOrderListItemDTO, SubOrderStatus } from '../pedidos/pedidos.schema'
 
-export type PedidoStatus = 'Pendiente' | 'En preparación' | 'Enviado' | 'Entregado' | 'Cancelado'
+// ---------------------------------------------------------------------------
+// Status display helpers
+// ---------------------------------------------------------------------------
 
-export type ProductoPedido = {
-  nombre: string
-  cantidad: number
-  precioUnitario: string
-  subtotal: string
-  imagen: string
+type DisplayStatus = 'Pendiente' | 'En preparación' | 'Enviado' | 'Entregado' | 'Cancelado'
+
+const STATUS_DISPLAY_MAP: Record<SubOrderStatus, DisplayStatus> = {
+  pending: 'Pendiente',
+  preparing: 'En preparación',
+  sent: 'Enviado',
+  delivered: 'Entregado',
+  cancelled: 'Cancelado',
 }
 
-export type PedidoProductor = {
-  id: string
-  cliente: {
-    nombre: string
-    email: string
-    telefono: string
-    iniciales: string
-  }
-  fecha: string
-  status: PedidoStatus
-  entrega: {
-    tipo: string
-    direccion?: string
-  }
-  productos: ProductoPedido[]
-  productosSummary: string
-  subtotal: string
-  gastoEnvio: string
-  total: string
-}
+// ---------------------------------------------------------------------------
+// Pagination
+// ---------------------------------------------------------------------------
 
-const pedidosIniciales: PedidoProductor[] = [
-  {
-    id: '#10423',
-    cliente: { nombre: 'Marta Garcia', email: 'marta.garcia@email.com', telefono: '+34 600 000 000', iniciales: 'MG' },
-    fecha: '24 May 2024',
-    status: 'Pendiente',
-    entrega: { tipo: 'Mensajeria', direccion: 'Calle de las Castanuelas, 42, 3o B\n03001, Alicante, Espana' },
-    productosSummary: 'Aceite de Oliva Virgen Extra (2), Miel de Azahar (1)',
-    subtotal: '80,50EUR',
-    gastoEnvio: '5,00EUR',
-    total: '85,50EUR',
-    productos: [
-      {
-        nombre: 'Aceite de Oliva Virgen Extra (500ml)',
-        cantidad: 2,
-        precioUnitario: '24,50EUR',
-        subtotal: '49,00EUR',
-        imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCWZJa-wOtsS_IoWzb2lJlhltHxvo_7Sw1ZqebL2b0rpe315vLPTZ76fjKmeeOnUeaDkPZ6AjXafi1-vT_dVylEIbSTZbU1Dkqcdg8KOnT6gP0DcQSL1QEH489c2td7KX3I7IQtYgInzAJ6N8qsTN60kGZaYbpOKI-7CDlXFy2iHozO2CKuE_9AmOit-l5KbX-Dz7xvJ4wtEqt72fs6Ti9cznI84iEHr6zZfi9695QXyrjHm0Oc2wPyUZk2D5kpLLfp6RAzTFxuRN4',
-      },
-      {
-        nombre: 'Miel de Azahar de la Marina',
-        cantidad: 3,
-        precioUnitario: '10,50EUR',
-        subtotal: '31,50EUR',
-        imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAyCFasx4n34OVzjzGM_b3dKCRefQWmXltevCh9ww2KmLsDJoCZ04fGeUPh4ujtb0RaW98VY17nBKoHQ3MfQGREGXJ24LfFqMMiih5WAnvxCRFMld_oiWm8li5nQ_Vpag2Uyo7H2TTayT_y1k4bDF0wEZE7To9RmKdVHwWl-iwokuc4HUXyfv9IKFzvA2BJ6tA24ZHLJatY9OegGMKjpb9YMyusuu__qFZz7BUrmMNTg4gRUpRAifeisGpucD_poFMfSqTGQ0EIZ0M',
-      },
-    ],
-  },
-  {
-    id: '#10422',
-    cliente: { nombre: 'Juan Perez', email: 'juan.perez@email.com', telefono: '+34 611 222 333', iniciales: 'JP' },
-    fecha: '23 May 2024',
-    status: 'En preparación',
-    entrega: { tipo: 'Punto de recogida', direccion: 'Mercado Central, Puesto 18 - Denia' },
-    productosSummary: 'Turron de Jijona (3)',
-    subtotal: '38,50EUR',
-    gastoEnvio: '3,50EUR',
-    total: '42,00EUR',
-    productos: [
-      {
-        nombre: 'Turron de Jijona Artesano',
-        cantidad: 3,
-        precioUnitario: '12,83EUR',
-        subtotal: '38,50EUR',
-        imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCztl1jLSI_oU4y3dHVhYVIrCAYSJged3hkgiEjDWviaz81U7U3BC_CqBaIw4qAqacQBNty84zaiY9bdB8yUXgFNkKuV_92ymuU99IrII2IjVhkw4aYCVXSStn6VOv9PgBZS5IyQyT0ZQo5yBANyjNsQSsEgGCub7AKDZYcgNAqvyHyrXMimBJnkp4enVL5FkjT0CxElvUzLZ5pXAhXshdtPJE9EEe1LgA4Uj0dWAVwsY7lL4hpmo6IQ83Rk8ckAUmHD__7_rYQqiw',
-      },
-    ],
-  },
-  {
-    id: '#10420',
-    cliente: { nombre: 'Carlos Lopez', email: 'c.lopez@email.com', telefono: '+34 699 888 777', iniciales: 'CL' },
-    fecha: '20 May 2024',
-    status: 'Enviado',
-    entrega: { tipo: 'Mensajeria', direccion: 'Avda. de la Constitucion, 8, 2o A\n03003, Alicante, Espana' },
-    productosSummary: 'Aceite de Oliva Virgen Extra (2), Turron de Jijona (1)',
-    subtotal: '61,00EUR',
-    gastoEnvio: '7,00EUR',
-    total: '68,00EUR',
-    productos: [
-      {
-        nombre: 'Aceite de Oliva Virgen Extra (500ml)',
-        cantidad: 2,
-        precioUnitario: '24,50EUR',
-        subtotal: '49,00EUR',
-        imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCWZJa-wOtsS_IoWzb2lJlhltHxvo_7Sw1ZqebL2b0rpe315vLPTZ76fjKmeeOnUeaDkPZ6AjXafi1-vT_dVylEIbSTZbU1Dkqcdg8KOnT6gP0DcQSL1QEH489c2td7KX3I7IQtYgInzAJ6N8qsTN60kGZaYbpOKI-7CDlXFy2iHozO2CKuE_9AmOit-l5KbX-Dz7xvJ4wtEqt72fs6Ti9cznI84iEHr6zZfi9695QXyrjHm0Oc2wPyUZk2D5kpLLfp6RAzTFxuRN4',
-      },
-      {
-        nombre: 'Turron de Jijona Artesano',
-        cantidad: 1,
-        precioUnitario: '12,83EUR',
-        subtotal: '12,83EUR',
-        imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCztl1jLSI_oU4y3dHVhYVIrCAYSJged3hkgiEjDWviaz81U7U3BC_CqBaIw4qAqacQBNty84zaiY9bdB8yUXgFNkKuV_92ymuU99IrII2IjVhkw4aYCVXSStn6VOv9PgBZS5IyQyT0ZQo5yBANyjNsQSsEgGCub7AKDZYcgNAqvyHyrXMimBJnkp4enVL5FkjT0CxElvUzLZ5pXAhXshdtPJE9EEe1LgA4Uj0dWAVwsY7lL4hpmo6IQ83Rk8ckAUmHD__7_rYQqiw',
-      },
-    ],
-  },
-  {
-    id: '#10419',
-    cliente: { nombre: 'Noelia Torres', email: 'noelia.torres@email.com', telefono: '+34 655 777 123', iniciales: 'NT' },
-    fecha: '18 May 2024',
-    status: 'Entregado',
-    entrega: { tipo: 'Mensajeria', direccion: 'Calle del Mar, 14\n03501, Benidorm, Espana' },
-    productosSummary: 'Conserva de bonito (4), Mermelada de higo (2)',
-    subtotal: '54,00EUR',
-    gastoEnvio: '4,50EUR',
-    total: '58,50EUR',
-    productos: [
-      {
-        nombre: 'Conserva de bonito artesana',
-        cantidad: 4,
-        precioUnitario: '9,50EUR',
-        subtotal: '38,00EUR',
-        imagen: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=80',
-      },
-      {
-        nombre: 'Mermelada de higo',
-        cantidad: 2,
-        precioUnitario: '8,00EUR',
-        subtotal: '16,00EUR',
-        imagen: 'https://images.unsplash.com/photo-1514996937319-344454492b37?auto=format&fit=crop&w=600&q=80',
-      },
-    ],
-  },
-  {
-    id: '#10421',
-    cliente: { nombre: 'Elena Sanz', email: 'e.sanz@email.com', telefono: '+34 622 333 444', iniciales: 'ES' },
-    fecha: '22 May 2024',
-    status: 'Cancelado',
-    entrega: { tipo: 'Mensajeria', direccion: 'Calle Mayor 3, 1o C\n03300, Orihuela, Espana' },
-    productosSummary: 'Vino Tinto Alicante (1)',
-    subtotal: '22,00EUR',
-    gastoEnvio: '3,00EUR',
-    total: '25,00EUR',
-    productos: [
-      {
-        nombre: 'Vino Tinto Alicante D.O.',
-        cantidad: 1,
-        precioUnitario: '22,00EUR',
-        subtotal: '22,00EUR',
-        imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDCzc7FxIB6146OgThQLqG_S8TF4n3EmfBxBj9kkHTI5gvbR8i4-ubUEnKLUfrhYWCCtUzdrTOTsj8sH3PV9CUu3JbCqPv-titRJAAa7oLWfREenQO02q857nvca9gWAqe1xIrqNDVf1AkOLzYCrncQnzVfd-z9jpWBMHIFQndjRIykt433NlEipYEUzuzZ1DfJEjQJke4O3RS6_u9E4DjpCVzUVLVhr4nUZJFTWiV47Da0XesK27Msd9AphLA0mnZgA4yvX2Dk2vk',
-      },
-    ],
-  },
-]
+const PAGE_SIZE = 4
 
-const statusFilters: Array<PedidoStatus | 'Todos'> = ['Todos', 'Pendiente', 'En preparación', 'Enviado', 'Entregado', 'Cancelado']
-const pageSize = 4
+// ---------------------------------------------------------------------------
+// Next-status logic (mirrors spec state machine)
+// ---------------------------------------------------------------------------
 
-function getNextStatus(status: PedidoStatus): PedidoStatus | null {
-  if (status === 'Pendiente') return 'En preparación'
-  if (status === 'En preparación') return 'Enviado'
-  if (status === 'Enviado') return 'Entregado'
+function getNextStatus(status: SubOrderStatus): SubOrderStatus | null {
+  if (status === 'pending') return 'preparing'
+  if (status === 'preparing') return 'sent'
+  if (status === 'sent') return 'delivered'
   return null
 }
 
+// ---------------------------------------------------------------------------
+// PedidosProductorPage
+// ---------------------------------------------------------------------------
+
 export function PedidosProductorPage() {
-  const [pedidos, setPedidos] = useState<PedidoProductor[]>(pedidosIniciales)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<PedidoStatus | 'Todos'>('Todos')
+  const [statusFilter, setStatusFilter] = useState<SubOrderStatus | 'all'>('all')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedPedidoId, setSelectedPedidoId] = useState<string | null>(null)
   const [cancelingPedidoId, setCancelingPedidoId] = useState<string | null>(null)
+  const [mutationError, setMutationError] = useState<string | null>(null)
+
+  // Data layer — hooks only (no direct .api.ts imports in pages: spec R5)
+  const { data: pedidos = [], isLoading, isError, error } = usePedidosQuery()
+  const advanceMutation = useUpdateSubOrderStatusMutation()
+  const cancelMutation = useCancelSubOrderMutation()
+
+  // ---------------------------------------------------------------------------
+  // Filtering (client-side for snappiness; backend filtering available via hook
+  // but client filter avoids an extra request on each status tab click)
+  // ---------------------------------------------------------------------------
 
   const normalizedSearch = search.trim().toLowerCase()
-  const searchFilteredOrders = pedidos.filter((pedido) => {
+
+  const searchFiltered = pedidos.filter((pedido) => {
     if (!normalizedSearch) return true
+
+    const productSummary = pedido.orderLines
+      .map((line) => line.productName ?? '')
+      .filter(Boolean)
+      .join(', ')
 
     return [
       pedido.id,
-      pedido.cliente.nombre,
-      pedido.cliente.email,
-      pedido.status,
-      pedido.entrega.tipo,
-      pedido.productosSummary,
-      ...pedido.productos.map((producto) => producto.nombre),
+      pedido.consumerName ?? '',
+      pedido.consumerEmail ?? '',
+      STATUS_DISPLAY_MAP[pedido.status],
+      pedido.deliveryType ?? '',
+      productSummary,
     ]
       .join(' ')
       .toLowerCase()
       .includes(normalizedSearch)
   })
 
-  const filteredOrders = searchFilteredOrders.filter((pedido) => {
-    return statusFilter === 'Todos' || pedido.status === statusFilter
+  const filtered = searchFiltered.filter((pedido) => {
+    return statusFilter === 'all' || pedido.status === statusFilter
   })
 
-  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize))
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(currentPage, totalPages)
-  const visibleOrders = filteredOrders.slice((safePage - 1) * pageSize, safePage * pageSize)
-  const selectedPedido = selectedPedidoId ? pedidos.find((pedido) => pedido.id === selectedPedidoId) ?? null : null
-  const cancelingPedido = cancelingPedidoId ? pedidos.find((pedido) => pedido.id === cancelingPedidoId) ?? null : null
+  const visible = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  const selectedPedido = selectedPedidoId
+    ? pedidos.find((p) => p.id === selectedPedidoId) ?? null
+    : null
+  const cancelingPedido = cancelingPedidoId
+    ? pedidos.find((p) => p.id === cancelingPedidoId) ?? null
+    : null
+
+  // ---------------------------------------------------------------------------
+  // Event handlers
+  // ---------------------------------------------------------------------------
 
   function updateSearch(value: string) {
     setSearch(value)
     setCurrentPage(1)
   }
 
-  function updateStatus(filter: PedidoStatus | 'Todos') {
+  function updateStatus(filter: SubOrderStatus | 'all') {
     setStatusFilter(filter)
     setCurrentPage(1)
   }
 
-  function advanceOrderStatus(pedidoId: string) {
-    setPedidos((current) =>
-      current.map((pedido) => {
-        if (pedido.id !== pedidoId) return pedido
+  function handleAdvanceStatus(subOrderId: string) {
+    const pedido = pedidos.find((p) => p.id === subOrderId)
+    if (!pedido) return
 
-        const nextStatus = getNextStatus(pedido.status)
-        return nextStatus ? { ...pedido, status: nextStatus } : pedido
-      }),
+    const nextStatus = getNextStatus(pedido.status)
+    if (!nextStatus) return
+
+    setMutationError(null)
+    advanceMutation.mutate(
+      { subOrderId, targetStatus: nextStatus },
+      {
+        onError: (err) => {
+          setMutationError(resolveErrorMessage(err))
+        },
+        onSuccess: () => {
+          // Close modal on success so the updated list is visible
+          setSelectedPedidoId(null)
+        },
+      },
     )
   }
 
-  function confirmCancel() {
+  function handleConfirmCancel() {
     if (!cancelingPedidoId) return
 
-    setPedidos((current) =>
-      current.map((pedido) => (pedido.id === cancelingPedidoId ? { ...pedido, status: 'Cancelado' } : pedido)),
+    setMutationError(null)
+    cancelMutation.mutate(
+      { subOrderId: cancelingPedidoId },
+      {
+        onError: (err) => {
+          setMutationError(resolveErrorMessage(err))
+          setCancelingPedidoId(null)
+        },
+        onSuccess: () => {
+          setCancelingPedidoId(null)
+          setSelectedPedidoId(null)
+        },
+      },
     )
-    setCancelingPedidoId(null)
   }
+
+  // ---------------------------------------------------------------------------
+  // Render: loading / error states
+  // ---------------------------------------------------------------------------
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)]">
+        <Loader2 size={36} strokeWidth={1.5} className="animate-spin text-[var(--color-primary)]" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)] px-6">
+        <div className="max-w-md text-center">
+          <p className="text-headline-md mb-4 text-[var(--color-primary)]">No se pudieron cargar los pedidos</p>
+          <p className="text-body-md text-[var(--color-on-surface-variant)]">
+            {resolveErrorMessage(error)}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // ---------------------------------------------------------------------------
+  // Status filter tabs (all + each SubOrderStatus)
+  // ---------------------------------------------------------------------------
+
+  const statusTabs: Array<{ key: SubOrderStatus | 'all'; label: string }> = [
+    { key: 'all', label: 'Todos' },
+    { key: 'pending', label: 'Pendiente' },
+    { key: 'preparing', label: 'En preparación' },
+    { key: 'sent', label: 'Enviado' },
+    { key: 'delivered', label: 'Entregado' },
+    { key: 'cancelled', label: 'Cancelado' },
+  ]
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
@@ -259,12 +222,25 @@ export function PedidosProductorPage() {
               <span className="text-label-sm block uppercase tracking-[0.18em] text-[var(--color-outline)]">
                 Pedidos filtrados
               </span>
-              <strong className="text-headline-md text-[28px] text-[var(--color-primary)]">{filteredOrders.length}</strong>
+              <strong className="text-headline-md text-[28px] text-[var(--color-primary)]">{filtered.length}</strong>
             </div>
           </div>
         </section>
 
-        <section className="mb-8 border border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-surface-container-lowest)] p-4 shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)] md:p-6" aria-label="Filtros de pedidos del productor">
+        {mutationError ? (
+          <div
+            role="alert"
+            aria-live="polite"
+            className="mb-6 border border-[var(--color-error)] bg-[var(--color-error-container)] px-5 py-4 text-sm text-[var(--color-on-error-container)]"
+          >
+            {mutationError}
+          </div>
+        ) : null}
+
+        <section
+          className="mb-8 border border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-surface-container-lowest)] p-4 shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)] md:p-6"
+          aria-label="Filtros de pedidos del productor"
+        >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
             <label className="relative flex-1">
               <Search size={18} strokeWidth={1.8} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-outline)]" />
@@ -288,26 +264,29 @@ export function PedidosProductorPage() {
             </button>
           </div>
 
-          <div className={`${filtersOpen ? 'mt-5 flex' : 'hidden'} min-w-0 flex-col gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] pt-5 lg:mt-5 lg:flex lg:border-t lg:pt-5`}>
+          <div
+            className={`${filtersOpen ? 'mt-5 flex' : 'hidden'} min-w-0 flex-col gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] pt-5 lg:mt-5 lg:flex lg:border-t lg:pt-5`}
+          >
             <div className="flex items-center gap-2 text-[var(--color-secondary)]">
               <Filter size={16} strokeWidth={1.8} />
               <span className="text-label-sm uppercase tracking-[0.18em]">Estado del pedido</span>
             </div>
 
             <div className="flex flex-wrap gap-3 pb-1">
-              {statusFilters.map((filter) => {
-                const count = filter === 'Todos'
-                  ? searchFilteredOrders.length
-                  : searchFilteredOrders.filter((pedido) => pedido.status === filter).length
+              {statusTabs.map(({ key, label }) => {
+                const count =
+                  key === 'all'
+                    ? searchFiltered.length
+                    : searchFiltered.filter((p) => p.status === key).length
 
                 return (
                   <button
-                    key={filter}
+                    key={key}
                     type="button"
-                    onClick={() => updateStatus(filter)}
-                    className={`text-label-md max-w-full whitespace-normal rounded-full border px-4 py-2 text-left transition-all sm:whitespace-nowrap ${statusFilter === filter ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white' : 'border-[var(--color-outline-variant)] bg-transparent text-[var(--color-on-surface-variant)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'}`}
+                    onClick={() => updateStatus(key)}
+                    className={`text-label-md max-w-full whitespace-normal rounded-full border px-4 py-2 text-left transition-all sm:whitespace-nowrap ${statusFilter === key ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white' : 'border-[var(--color-outline-variant)] bg-transparent text-[var(--color-on-surface-variant)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'}`}
                   >
-                    {filter} ({count})
+                    {label} ({count})
                   </button>
                 )
               })}
@@ -316,21 +295,27 @@ export function PedidosProductorPage() {
         </section>
 
         <div className="flex flex-col gap-4">
-          {visibleOrders.map((pedido) => (
-            <OrderCard key={pedido.id} pedido={pedido} onView={() => setSelectedPedidoId(pedido.id)} />
+          {visible.map((pedido) => (
+            <OrderCard
+              key={pedido.id}
+              pedido={pedido}
+              onView={() => setSelectedPedidoId(pedido.id)}
+            />
           ))}
         </div>
 
-        {visibleOrders.length === 0 ? (
+        {visible.length === 0 ? (
           <div className="mt-10 border border-dashed border-[var(--color-outline-variant)] p-10 text-center">
             <Filter className="mx-auto mb-3 text-[var(--color-outline)]" size={28} strokeWidth={1.8} />
-            <p className="text-body-md text-[var(--color-on-surface-variant)]">No hay pedidos que coincidan con los filtros aplicados.</p>
+            <p className="text-body-md text-[var(--color-on-surface-variant)]">
+              No hay pedidos que coincidan con los filtros aplicados.
+            </p>
           </div>
         ) : null}
 
         <section className="mt-12 flex flex-col gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] pt-8 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-label-sm italic text-[var(--color-outline)]">
-            Mostrando {visibleOrders.length} de {filteredOrders.length} pedidos filtrados
+            Mostrando {visible.length} de {filtered.length} pedidos filtrados
           </p>
 
           <div className="flex items-center gap-2 self-end sm:self-auto">
@@ -369,30 +354,49 @@ export function PedidosProductorPage() {
       {selectedPedido && !cancelingPedido ? (
         <DetallePedidoModal
           pedido={selectedPedido}
+          isPending={advanceMutation.isPending || cancelMutation.isPending}
           onClose={() => setSelectedPedidoId(null)}
           onCancel={() => setCancelingPedidoId(selectedPedido.id)}
-          onAdvanceStatus={() => advanceOrderStatus(selectedPedido.id)}
+          onAdvanceStatus={() => handleAdvanceStatus(selectedPedido.id)}
         />
       ) : null}
 
       {cancelingPedido ? (
         <CancelarPedidoModal
           pedido={cancelingPedido}
+          isPending={cancelMutation.isPending}
           onClose={() => setCancelingPedidoId(null)}
-          onConfirm={confirmCancel}
+          onConfirm={handleConfirmCancel}
         />
       ) : null}
     </div>
   )
 }
 
+// ---------------------------------------------------------------------------
+// OrderCard sub-component
+// ---------------------------------------------------------------------------
+
 type OrderCardProps = {
-  pedido: PedidoProductor
+  pedido: SubOrderListItemDTO
   onView: () => void
 }
 
 function OrderCard({ pedido, onView }: OrderCardProps) {
-  const isCancelled = pedido.status === 'Cancelado'
+  const isCancelled = pedido.status === 'cancelled'
+
+  const productSummary = pedido.orderLines
+    .map((line) => {
+      const name = line.productName ?? `Producto ${line.productId.slice(0, 6)}`
+      return `${name} (${line.quantity})`
+    })
+    .join(', ')
+
+  // money-typing R2-R4: total not computed client-side. The backend does not return
+  // a pre-computed total per SubOrder in the list endpoint; show shippingCostSnapshot
+  // as the only backend-provided money value. A backend-computed subtotal + total would
+  // require a detail fetch or a backend projection change (deferred).
+  const displayTotal = formatMoney(pedido.shippingCostSnapshot)
 
   return (
     <article
@@ -411,39 +415,60 @@ function OrderCard({ pedido, onView }: OrderCardProps) {
         <div className="min-w-0 flex-1 space-y-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex items-center gap-3">
-              <span className="text-headline-md text-[var(--color-primary)]">{pedido.id}</span>
+              <span className="text-headline-md text-[var(--color-primary)]">#{pedido.id.slice(0, 8)}</span>
               <OrderStatusBadge status={pedido.status} />
             </div>
-            <span className="text-label-sm text-[var(--color-secondary)]">{pedido.fecha}</span>
+            <span className="text-label-sm text-[var(--color-secondary)]">
+              {new Date(pedido.createdAt).toLocaleDateString('es-ES', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </span>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <OrderMeta label="Cliente" value={pedido.cliente.nombre} />
+            {pedido.consumerName ? (
+              <OrderMeta label="Cliente" value={pedido.consumerName} />
+            ) : null}
 
-            <div>
-              <p className="text-label-sm mb-1 uppercase tracking-wider text-[var(--color-outline)]">Entrega</p>
-              <div className="flex items-center gap-2 text-[var(--color-on-surface)]">
-                {pedido.entrega.tipo.toLowerCase().includes('mensajer') ? (
-                  <Truck size={16} strokeWidth={1.8} className="text-[var(--color-secondary)]" />
-                ) : (
-                  <Warehouse size={16} strokeWidth={1.8} className="text-[var(--color-secondary)]" />
-                )}
-                <span className="text-body-md">{pedido.entrega.tipo}</span>
+            {pedido.deliveryType ? (
+              <div>
+                <p className="text-label-sm mb-1 uppercase tracking-wider text-[var(--color-outline)]">Entrega</p>
+                <div className="flex items-center gap-2 text-[var(--color-on-surface)]">
+                  {pedido.deliveryType === 'SHIPPING_FLAT_RATE' ? (
+                    <Truck size={16} strokeWidth={1.8} className="text-[var(--color-secondary)]" />
+                  ) : (
+                    <Warehouse size={16} strokeWidth={1.8} className="text-[var(--color-secondary)]" />
+                  )}
+                  <span className="text-body-md">
+                    {pedido.deliveryType === 'SHIPPING_FLAT_RATE' ? 'Mensajería' : 'Punto de recogida'}
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : null}
 
-            <div className="sm:col-span-2 xl:col-span-1">
-              <p className="text-label-sm mb-1 uppercase tracking-wider text-[var(--color-outline)]">Productos</p>
-              <p className="text-body-md text-[var(--color-on-surface)]">{pedido.productosSummary}</p>
-            </div>
+            {productSummary ? (
+              <div className="sm:col-span-2 xl:col-span-1">
+                <p className="text-label-sm mb-1 uppercase tracking-wider text-[var(--color-outline)]">Productos</p>
+                <p className="text-body-md text-[var(--color-on-surface)]">{productSummary}</p>
+              </div>
+            ) : null}
           </div>
         </div>
 
         <div className="flex flex-row items-end justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] pt-5 lg:min-w-[152px] lg:flex-col lg:items-end lg:border-t-0 lg:pt-0">
-          <p className={`text-headline-md ${isCancelled ? 'text-[var(--color-secondary)] line-through' : 'text-[var(--color-primary)]'}`}>
-            {pedido.total}
-          </p>
-          <span className={`text-label-md border-b pb-0 transition-all ${isCancelled ? 'border-[var(--color-secondary)] text-[var(--color-secondary)]' : 'border-[var(--color-primary)] text-[var(--color-primary)]'}`}>
+          <div className="text-right">
+            <p className={`text-headline-md ${isCancelled ? 'text-[var(--color-secondary)] line-through' : 'text-[var(--color-primary)]'}`}>
+              {displayTotal !== '—' ? `Envío: ${displayTotal}` : '—'}
+            </p>
+            <p className="text-label-sm mt-1 text-[var(--color-outline)]">
+              {pedido.orderLines.length} línea{pedido.orderLines.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <span
+            className={`text-label-md border-b pb-0 transition-all ${isCancelled ? 'border-[var(--color-secondary)] text-[var(--color-secondary)]' : 'border-[var(--color-primary)] text-[var(--color-primary)]'}`}
+          >
             Ver detalle
           </span>
         </div>
@@ -461,18 +486,18 @@ function OrderMeta({ label, value }: { label: string; value: string }) {
   )
 }
 
-function OrderStatusBadge({ status }: { status: PedidoStatus }) {
-  const map: Record<PedidoStatus, string> = {
-    Pendiente: 'bg-[var(--color-secondary-container)] text-[var(--color-on-secondary-container)]',
-    'En preparación': 'bg-[var(--color-surface-container-highest)] text-[var(--color-secondary)]',
-    Enviado: 'bg-[var(--color-primary-fixed)] text-[var(--color-on-primary-fixed)]',
-    Entregado: 'bg-[#006a4e]/10 text-[#006a4e]',
-    Cancelado: 'bg-[var(--color-error-container)] text-[var(--color-on-error-container)]',
+function OrderStatusBadge({ status }: { status: SubOrderStatus }) {
+  const classMap: Record<SubOrderStatus, string> = {
+    pending: 'bg-[var(--color-secondary-container)] text-[var(--color-on-secondary-container)]',
+    preparing: 'bg-[var(--color-surface-container-highest)] text-[var(--color-secondary)]',
+    sent: 'bg-[var(--color-primary-fixed)] text-[var(--color-on-primary-fixed)]',
+    delivered: 'bg-[#006a4e]/10 text-[#006a4e]',
+    cancelled: 'bg-[var(--color-error-container)] text-[var(--color-on-error-container)]',
   }
 
   return (
-    <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${map[status]}`}>
-      {status}
+    <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${classMap[status]}`}>
+      {STATUS_DISPLAY_MAP[status]}
     </span>
   )
 }
