@@ -9,7 +9,7 @@
 
 ```yaml
 status: success
-next_recommended: sdd-verify
+next_recommended: gatekeeper-review
 skill_resolution: paths-injected
 ```
 
@@ -578,8 +578,8 @@ succeeds (uses the returned `productId`). Error from upload surfaces inline belo
   Task `4.1` in `tasks.md` remains UNCHECKED with a sub-note that 4.1 is only complete after
   evidence is captured.
 - **Files**: `manual-smoke-pr4.md` (new), `tasks.md` (sub-note added), `apply-progress.md`
-  (this section), `verify-report.md` (committed in this PR as untracked docs)
-- **Commit**: docs commit (Item 3)
+  (this section), `verify-report.md` (previously untracked; now tracked at HEAD via this docs commit)
+- **Commit**: `71114ff` docs(sdd): add PR#4 manual smoke checklist and travel verify-report
 
 ### Verification Results
 
@@ -587,7 +587,7 @@ succeeds (uses the returned `productId`). Error from upload surfaces inline belo
 |-------|---------|--------|
 | TypeScript (after Item 1) | `tsc -b` | ✅ clean |
 | TypeScript (after Item 2) | `tsc -b` | ✅ clean |
-| Build (final) | `npm run build` | pending (run before gatekeeper) |
+| Build (final) | `npm run build` | ✅ clean (2057 modules, built in ~512ms; pre-existing chunk-size warning unchanged) |
 
 ### Git State
 
@@ -596,6 +596,6 @@ succeeds (uses the returned `productId`). Error from upload surfaces inline belo
 - Commits:
   - `a6f2555` fix(producer): fail-closed on dashboard pending-orders query
   - `e56e170` feat(producer): consume backend product thumbnails from images[0].url
-  - _(docs commit — see final git log)_
+  - `71114ff` docs(sdd): add PR#4 manual smoke checklist and travel verify-report
 - Delivery: chained PR slice (feature-branch-chain); PR targets `feat/backend-api-integration-pr4-orders-reporting-stats`
 - Review budget: ≤ 800 lines (3 code items, estimated ~120 net lines of code + ~200 docs)
