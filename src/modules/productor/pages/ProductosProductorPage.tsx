@@ -381,20 +381,27 @@ function ProductCard({ producto, onEdit, onTogglePublication, onDelete }: Produc
   const isOutOfStock = producto.stock === 0 || status === 'Sin disponibilidad'
   const publicationLabel = isInactive ? 'Publicar producto' : 'Despublicar producto'
 
-  // Use first image if available; fall back to a placeholder
-  const imageUrl = producto.id
-    ? `https://placehold.co/112x112/F5EFE7/7A2E3A?text=${encodeURIComponent(producto.name.slice(0, 2).toUpperCase())}`
-    : ''
+  // Primary thumbnail from the backend image projection (images ordered by position ASC).
+  // Falls back to an accessible SVG placeholder when no image has been uploaded yet.
+  const thumbnailUrl = producto.images?.[0]?.url ?? null
 
   return (
     <article className={`rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-outline-variant)_50%,transparent)] bg-[var(--color-surface-container-lowest)] p-5 shadow-[0_10px_30px_-20px_rgba(122,46,58,0.25)] transition-all md:p-6 ${isInactive ? 'border-dashed' : ''}`}>
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex min-w-0 gap-4 md:gap-5">
-          <img
-            src={imageUrl}
-            alt={producto.name}
-            className={`size-24 shrink-0 rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] object-cover md:size-28 ${isInactive ? 'grayscale-[0.55]' : ''}`}
-          />
+          {thumbnailUrl ? (
+            <img
+              src={thumbnailUrl}
+              alt={producto.name}
+              className={`size-24 shrink-0 rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] object-cover md:size-28 ${isInactive ? 'grayscale-[0.55]' : ''}`}
+            />
+          ) : (
+            // Accessible placeholder when the product has no uploaded image yet
+            <div
+              aria-label={`Sin imagen: ${producto.name}`}
+              className={`size-24 shrink-0 rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-high)] md:size-28 ${isInactive ? 'grayscale-[0.55]' : ''}`}
+            />
+          )}
 
           <div className="min-w-0 flex-1">
             <div className="mb-3 flex flex-wrap items-start gap-3">

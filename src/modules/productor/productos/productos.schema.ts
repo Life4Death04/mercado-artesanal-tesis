@@ -25,10 +25,16 @@ export type CategoryDTO = {
 }
 
 // ---------------------------------------------------------------------------
-// ProductImage DTO — embedded in product responses
+// ProductImage DTOs — embedded in product responses
 // [source: mercado-artesanal-backend/openspec/specs/product-images/spec.md]
+//
+// ProductImageDTO: full detail shape (used in upload confirm response, etc.)
+// ProductImageListDTO: list-projection shape from GET /producers/me/products
+//   — backend branch feature/expose-product-images-in-producer-list exposes
+//     ordered images without s3Key (ready-to-use URL, no re-sign needed).
 // ---------------------------------------------------------------------------
 
+/** Full image DTO — includes s3Key (detail/confirm responses). */
 export type ProductImageDTO = {
   id: string
   productId: string
@@ -36,6 +42,18 @@ export type ProductImageDTO = {
   mimeType: string
   position: number
   createdAt: string
+}
+
+/**
+ * Lightweight image projection embedded in the producer product LIST response.
+ * Backend orders by position ASC, createdAt ASC at the DB level.
+ * s3Key is NOT exposed here — url is a ready-to-use signed URL.
+ * Primary thumbnail accessor: images?.[0]?.url
+ */
+export type ProductImageListDTO = {
+  id: string
+  position: number
+  url: string
 }
 
 // ---------------------------------------------------------------------------
@@ -66,6 +84,14 @@ export type ProductDTO = {
   deletedAt: string | null
   createdAt: string
   updatedAt: string
+  /**
+   * Ordered image projections from the backend list endpoint.
+   * Backend branch feature/expose-product-images-in-producer-list adds this.
+   * Ordered by position ASC, createdAt ASC (DB-level, deterministic).
+   * Primary thumbnail: images?.[0]?.url — may be undefined/empty for products
+   * that have no uploaded images yet.
+   */
+  images?: ProductImageListDTO[]
 }
 
 // ---------------------------------------------------------------------------
