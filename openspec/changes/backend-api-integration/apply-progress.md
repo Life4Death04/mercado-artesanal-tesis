@@ -9,7 +9,7 @@
 
 ```yaml
 status: success
-next_recommended: sdd-verify
+next_recommended: gatekeeper-review
 skill_resolution: paths-injected
 ```
 
@@ -522,4 +522,80 @@ succeeds (uses the returned `productId`). Error from upload surfaces inline belo
 ## Remaining Tasks
 
 - [x] 3.3 [PR#4] Orders + stats + dashboard ✅ Complete
-- [ ] 4.1 [Each PR] Manual verification checklist (smoke pending before PR open — all prior PRs + PR#4)
+- [ ] 4.1 [Each PR] Manual verification checklist (smoke pending — template created, evidence collection required)
+
+---
+
+## PR#4 Remediation — Fail-Closed + Thumbnails + Smoke Checklist
+
+**Branch**: `feat/backend-api-integration-pr4-remediation`
+**Base**: `feat/backend-api-integration-pr4-orders-reporting-stats` (tip `8ffa9f6`)
+**Status**: ✅ Code complete — pending gatekeeper review
+
+> This slice addresses the three items from the `sdd-verify` FAIL verdict on PR#4.
+> It targets the PR#4 branch (feature-branch-chain) — NOT main.
+
+### Items Addressed
+
+**CRITICAL 1 — Dashboard pending-orders query fails open (sdd-verify Issue #1)**
+
+- **Root cause**: `usePedidosQuery('pending')` was destructured with `data: pedidosPending = []`.
+  On 401/5xx/offline, TanStack Query sets `data` to `undefined` and the default `[]` makes the
+  query look like a successful empty response, presenting the false "No hay pedidos pendientes
+  en este momento." copy.
+- **Fix**: Removed the `= []` default from the destructure. Added `isError` + `error` reads.
+  Inserted an explicit error block (`role="alert"`, `aria-live="polite"`) between the loading
+  spinner and the empty-success branch. Empty-success copy now only renders when `isError` is
+  false AND `pedidosPending` is `undefined` or empty (data truly came back as empty from the API).
+- **File**: `src/modules/productor/pages/ProductorDashboardPage.tsx`
+- **Commit**: `a6f2555`
+
+**WARNING → UNBLOCKED — Thumbnails in Mi catálogo + Inventario (sdd-verify Warning #1)**
+
+- **Root cause**: Backend `findAll(producerId)` previously omitted images from the response;
+  frontend catalog used `placehold.co` and inventory hardcoded `imageUrl: null`.
+- **Backend unblocked**: Branch `feature/expose-product-images-in-producer-list` exposes
+  `images: [{ id, position, url }]` ordered by `position ASC, createdAt ASC`. `s3Key` is NOT
+  exposed — `url` is a ready-to-use signed URL.
+- **Frontend fix**:
+  - Added `ProductImageListDTO` type to `productos.schema.ts` (list-projection shape, no s3Key).
+  - Extended `ProductDTO` with `images?: ProductImageListDTO[]`.
+  - Updated `inventario.api.ts` `RawProductForInventory` to match new contract and changed mapper
+    from `imageUrl: null` to `imageUrl: product.images?.[0]?.url ?? null`.
+  - Replaced `placehold.co` in `ProductCard` (`ProductosProductorPage.tsx`) with:
+    `const thumbnailUrl = producto.images?.[0]?.url ?? null`; conditional render `<img>` when
+    truthy, accessible `<div>` placeholder when null.
+  - `InventarioProductorPage.tsx` already had the conditional `{itemImageUrl ? <img/> : <div/>}`
+    pattern from PR#3 — no page change needed; mapper fix is sufficient.
+- **Files**: `productos.schema.ts`, `inventario.api.ts`, `ProductosProductorPage.tsx`
+- **Commit**: `e56e170`
+
+**CRITICAL 2 — Task 4.1 manual smoke evidence missing (sdd-verify Issue #2)**
+
+- **Fix**: Created `openspec/changes/backend-api-integration/manual-smoke-pr4.md` — a complete
+  per-page checklist template covering every required scenario. Evidence slots are intentionally
+  left empty; the producer must fill them in during a live authenticated walkthrough.
+  Task `4.1` in `tasks.md` remains UNCHECKED with a sub-note that 4.1 is only complete after
+  evidence is captured.
+- **Files**: `manual-smoke-pr4.md` (new), `tasks.md` (sub-note added), `apply-progress.md`
+  (this section), `verify-report.md` (previously untracked; now tracked at HEAD via this docs commit)
+- **Commit**: `71114ff` docs(sdd): add PR#4 manual smoke checklist and travel verify-report
+
+### Verification Results
+
+| Check | Command | Result |
+|-------|---------|--------|
+| TypeScript (after Item 1) | `tsc -b` | ✅ clean |
+| TypeScript (after Item 2) | `tsc -b` | ✅ clean |
+| Build (final) | `npm run build` | ✅ clean (2057 modules, built in ~512ms; pre-existing chunk-size warning unchanged) |
+
+### Git State
+
+- Branch: `feat/backend-api-integration-pr4-remediation`
+- Base: `feat/backend-api-integration-pr4-orders-reporting-stats` (tip `8ffa9f6`)
+- Commits:
+  - `a6f2555` fix(producer): fail-closed on dashboard pending-orders query
+  - `e56e170` feat(producer): consume backend product thumbnails from images[0].url
+  - `71114ff` docs(sdd): add PR#4 manual smoke checklist and travel verify-report
+- Delivery: chained PR slice (feature-branch-chain); PR targets `feat/backend-api-integration-pr4-orders-reporting-stats`
+- Review budget: ≤ 800 lines (3 code items, estimated ~120 net lines of code + ~200 docs)

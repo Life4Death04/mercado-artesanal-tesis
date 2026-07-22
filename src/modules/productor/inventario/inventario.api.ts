@@ -32,6 +32,10 @@ type ApiCaller = <TResponse>(path: string, options?: { method?: string; body?: u
 // ---------------------------------------------------------------------------
 // Raw product from backend (minimal fields needed for inventory view)
 // The full product catalog response includes more fields; we project here.
+//
+// images shape: backend branch feature/expose-product-images-in-producer-list
+// exposes images ordered by position ASC, createdAt ASC at DB level.
+// s3Key is NOT included in the list projection — url is ready-to-use.
 // ---------------------------------------------------------------------------
 
 type RawProductForInventory = {
@@ -42,7 +46,8 @@ type RawProductForInventory = {
   stock: number
   lowStockThreshold: number
   isActive: boolean
-  images?: Array<{ s3Key: string; position: number }>
+  /** Ordered image projections from the backend list endpoint; may be absent on old backend. */
+  images?: Array<{ id: string; position: number; url: string }>
   createdAt: string
   updatedAt: string
 }
@@ -74,7 +79,9 @@ export async function listInventario(apiCaller: ApiCaller): Promise<InventoryIte
     stock: product.stock,
     lowStockThreshold: product.lowStockThreshold,
     isActive: product.isActive,
-    imageUrl: null, // Image URL not included in base list; future: add to backend projection
+    // Primary thumbnail from the ordered image list projection.
+    // Falls back to null when no images have been uploaded yet.
+    imageUrl: product.images?.[0]?.url ?? null,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
   }))
