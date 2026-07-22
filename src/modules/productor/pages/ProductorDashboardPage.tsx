@@ -18,8 +18,15 @@ export function ProductorDashboardPage() {
   const { data: revenue, isLoading: revLoading, isError: revError, error: revErr } = useRevenueStatsQuery('30d')
   const { data: orderCount, isLoading: countLoading } = useOrderCountStatsQuery('30d')
   const { data: lowStock, isLoading: stockLoading } = useLowStockStatsQuery()
-  // Fetch pending orders for the dashboard "attention required" section
-  const { data: pedidosPending = [], isLoading: pedidosLoading } = usePedidosQuery('pending')
+  // Fetch pending orders for the dashboard "attention required" section.
+  // Read isError/error to fail CLOSED: on 401/5xx/offline, data may be undefined
+  // even with the default, so we gate the empty-state on query success only.
+  const {
+    data: pedidosPending,
+    isLoading: pedidosLoading,
+    isError: pedidosError,
+    error: pedidosErr,
+  } = usePedidosQuery('pending')
 
   const isLoading = revLoading || countLoading || stockLoading || pedidosLoading
 
@@ -117,7 +124,24 @@ export function ProductorDashboardPage() {
             <div className="flex items-center justify-center py-10">
               <Loader2 size={28} strokeWidth={1.5} className="animate-spin text-[var(--color-primary)]" />
             </div>
-          ) : pedidosPending.length === 0 ? (
+          ) : pedidosError ? (
+            // Fail CLOSED: never show the empty-success copy when the query actually failed.
+            // A 401, 5xx, or offline error must surface an explicit blocked state here.
+            <div
+              role="alert"
+              aria-live="polite"
+              className="flex flex-col items-center justify-center gap-3 border border-[var(--color-error)] bg-[var(--color-error-container)] py-12 text-center"
+            >
+              <AlertTriangle size={32} strokeWidth={1.5} className="text-[var(--color-error)]" />
+              <p className="text-body-md text-[var(--color-on-error-container)]">
+                No se pudieron cargar los pedidos pendientes.
+              </p>
+              <p className="text-label-sm text-[var(--color-on-error-container)] opacity-75">
+                {resolveErrorMessage(pedidosErr)}
+              </p>
+            </div>
+          ) : pedidosPending === undefined || pedidosPending.length === 0 ? (
+            // Empty-success state: only shown after a successful query that returned [].
             <div className="flex flex-col items-center justify-center gap-3 border border-dashed border-[var(--color-outline-variant)] py-12 text-center">
               <Package size={32} strokeWidth={1.5} className="text-[var(--color-outline)]" />
               <p className="text-body-md text-[var(--color-on-surface-variant)]">
