@@ -1,12 +1,13 @@
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import {
   ChevronRight,
   ExternalLink,
   Mail,
   MapPin,
   Pencil,
-  Phone,
   Save,
   Store,
   User,
@@ -16,25 +17,12 @@ import {
   CambiarCorreoModal,
   DescartarCambiosModal,
 } from '../componentes/PerfilPublicoModals'
+import { useProducerMeQuery } from '../profile/hooks/useProducerMeQuery'
+import { useUpdateProducerMeMutation } from '../profile/hooks/useUpdateProducerMeMutation'
+import { producerProfileFormSchema, type ProducerProfileFormValues } from '../profile/profile.schema'
+import { resolveErrorMessage } from '../../../lib/errorMessages'
 
-const TIENDA = {
-  nombre: 'Finca Alicante',
-  municipio: 'Denia, Alicante',
-  correoPublico: 'info@fincaalicante.es',
-  telefono: '+34 965 123 456',
-  bio: 'Nuestra herencia se cultiva en las laderas de Denia, donde el aire del Mediterraneo y los suelos calcareos dan vida a productos de una pureza excepcional. Seguimos procesos ancestrales de recoleccion manual para garantizar que cada botella de aceite y cada racimo de uva capture la esencia misma de nuestra tierra.',
-  banner:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDsKItCbKarmNtU4QmSr1L4gl0bW3gbUoZeZFU6XwTn9RU736jGyfxDjqcWzJJgTuP0zJYjBZOqpszZfgywxBaCXnkv9cRKtrGxMZ_baT_R9u6YfQAkVC1eNKS2YhR1yvVcOvdbJoyNSwSnuTBdi7lsCpDF785KUmOKFnNvMQJLUPp2hnlVkhEpL8ypyvd6dCxI1tKthoiYu44rnDLMM0OcXjdgGUKN2Dh9T4WQhyWWCW4Gyva60nuQCVuvyG7PZNXW3vi9_qjqRO8',
-  logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAWWrkIzeok3Tp4CIELd0KwSmSIjsiZ-Vaf7G9rJgzOBWSgX6TEkHMBs7VFobCVMs0z4s5X5-zMMCAitHC19RImSILjyC5AcMirwfYNa3a4w8yna2N54_rUQBLuCzDPEVINFcBgGDvAL8XsWG59fVZ29xHDC5xd_bVX28IgpVJ5dnPSDEqdQuP6JLTpR6MAj37e8BpBjp4F5YquuRf3BQR3xlox05YTRHF1ZGHyEmTEve_0vDuprdaBv6Klum7wbdTxA6FnnXEVUQ8',
-}
-
-const CUENTA = {
-  nombre: 'Marta García',
-  correo: 'marta.garcia@email.com',
-  registro: 'Miembro desde 2022',
-  tipo: 'Productor Verificado',
-}
-
+// Static product preview — placeholder until PR#2 wires the catalog
 const PRODUCTOS_PREVIEW = [
   {
     id: 'p1',
@@ -74,35 +62,57 @@ const PRODUCTOS_PREVIEW = [
   },
 ]
 
-type StoreProfile = {
-  nombre: string
-  bio: string
-  municipio: string
-  telefono: string
-}
-
-const initialStoreProfile: StoreProfile = {
-  nombre: TIENDA.nombre,
-  bio: TIENDA.bio,
-  municipio: TIENDA.municipio,
-  telefono: TIENDA.telefono,
+// Static banner/logo — not editable in this screen (will come from image endpoints in PR#2)
+const STATIC_MEDIA = {
+  banner:
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuDsKItCbKarmNtU4QmSr1L4gl0bW3gbUoZeZFU6XwTn9RU736jGyfxDjqcWzJJgTuP0zJYjBZOqpszZfgywxBaCXnkv9cRKtrGxMZ_baT_R9u6YfQAkVC1eNKS2YhR1yvVcOvdbJoyNSwSnuTBdi7lsCpDF785KUmOKFnNvMQJLUPp2hnlVkhEpL8ypyvd6dCxI1tKthoiYu44rnDLMM0OcXjdgGUKN2Dh9T4WQhyWWCW4Gyva60nuQCVuvyG7PZNXW3vi9_qjqRO8',
+  logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAWWrkIzeok3Tp4CIELd0KwSmSIjsiZ-Vaf7G9rJgzOBWSgX6TEkHMBs7VFobCVMs0z4s5X5-zMMCAitHC19RImSILjyC5AcMirwfYNa3a4w8yna2N54_rUQBLuCzDPEVINFcBgGDvAL8XsWG59fVZ29xHDC5xd_bVX28IgpVJ5dnPSDEqdQuP6JLTpR6MAj37e8BpBjp4F5YquuRf3BQR3xlox05YTRHF1ZGHyEmTEve_0vDuprdaBv6Klum7wbdTxA6FnnXEVUQ8',
 }
 
 export function EditarPerfilPublicoPage() {
   const [modalCorreo, setModalCorreo] = useState(false)
   const [modalDescartar, setModalDescartar] = useState(false)
   const [editando, setEditando] = useState(false)
-  const [savedProfile, setSavedProfile] = useState<StoreProfile>(initialStoreProfile)
-  const [draft, setDraft] = useState<StoreProfile>(initialStoreProfile)
+
+  const { data: producer, isLoading, isError, error } = useProducerMeQuery()
+  const updateMutation = useUpdateProducerMeMutation()
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors: formErrors },
+  } = useForm<ProducerProfileFormValues>({
+    resolver: zodResolver(producerProfileFormSchema),
+  })
+
+  // Prefill form whenever server data arrives or the edit session opens
+  useEffect(() => {
+    if (producer) {
+      reset({
+        businessName: producer.businessName,
+        description: producer.description,
+        address: {
+          line1: producer.address.line1,
+          line2: producer.address.line2,
+          city: producer.address.city,
+          postalCode: producer.address.postalCode,
+          province: producer.address.province,
+          country: producer.address.country,
+        },
+        categorySlugs: producer.categorySlugs,
+      })
+    }
+  }, [producer, reset])
+
+  // Watched values for live summary cards (read the draft while editing)
+  const watchedCity = watch('address.city') ?? producer?.address.city ?? '—'
+  const watchedProvince = watch('address.province') ?? producer?.address.province ?? ''
+  const locationDisplay = watchedProvince ? `${watchedCity}, ${watchedProvince}` : watchedCity
 
   function handleEditar() {
-    setDraft(savedProfile)
     setEditando(true)
-  }
-
-  function handleGuardar() {
-    setSavedProfile(draft)
-    setEditando(false)
   }
 
   function handleCancelarEdicion() {
@@ -110,9 +120,54 @@ export function EditarPerfilPublicoPage() {
   }
 
   function handleDescartar() {
-    setDraft(savedProfile)
+    if (producer) {
+      reset({
+        businessName: producer.businessName,
+        description: producer.description,
+        address: {
+          line1: producer.address.line1,
+          line2: producer.address.line2,
+          city: producer.address.city,
+          postalCode: producer.address.postalCode,
+          province: producer.address.province,
+          country: producer.address.country,
+        },
+        categorySlugs: producer.categorySlugs,
+      })
+    }
     setEditando(false)
+    updateMutation.reset()
   }
+
+  function onSubmit(values: ProducerProfileFormValues) {
+    updateMutation.mutate(values, {
+      onSuccess: () => {
+        setEditando(false)
+      },
+    })
+  }
+
+  // --- Loading / error guards ---
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)]">
+        <p className="text-body-md text-[var(--color-secondary)]">Cargando perfil…</p>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)]">
+        <p role="alert" className="text-body-md text-[var(--color-error)]">
+          {resolveErrorMessage(error)}
+        </p>
+      </div>
+    )
+  }
+
+  const displayName = producer?.businessName ?? '—'
+  const displayEmail = '—' // email comes from /users/me root; not in producer object
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
@@ -149,12 +204,13 @@ export function EditarPerfilPublicoPage() {
                   Cancelar
                 </button>
                 <button
-                  type="button"
-                  onClick={handleGuardar}
-                  className="text-label-md inline-flex items-center justify-center gap-2 bg-[var(--color-primary)] px-5 py-3 text-white transition-colors hover:bg-[var(--color-primary-container)]"
+                  type="submit"
+                  form="producer-profile-form"
+                  disabled={updateMutation.isPending}
+                  className="text-label-md inline-flex items-center justify-center gap-2 bg-[var(--color-primary)] px-5 py-3 text-white transition-colors hover:bg-[var(--color-primary-container)] disabled:opacity-60"
                 >
                   <Save size={16} strokeWidth={1.8} />
-                  Guardar cambios
+                  {updateMutation.isPending ? 'Guardando…' : 'Guardar cambios'}
                 </button>
               </div>
             ) : (
@@ -168,6 +224,20 @@ export function EditarPerfilPublicoPage() {
               </button>
             )}
           </div>
+
+          {/* Inline status region — success / mutation error */}
+          <div aria-live="polite" aria-atomic="true" className="mt-4 min-h-[1.5rem]">
+            {updateMutation.isSuccess && !editando ? (
+              <p className="text-body-sm text-[var(--color-primary)]">
+                ✓ Los cambios se guardaron correctamente.
+              </p>
+            ) : null}
+            {updateMutation.isError ? (
+              <p role="alert" className="text-body-sm text-[var(--color-error)]">
+                {resolveErrorMessage(updateMutation.error)}
+              </p>
+            ) : null}
+          </div>
         </section>
 
         <section className="mb-10 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -180,16 +250,16 @@ export function EditarPerfilPublicoPage() {
           />
           <SummaryCard
             label="Localidad publica"
-            value={draft.municipio}
+            value={locationDisplay}
             helpText="Visible para clientes en la ficha de productor"
             icon={<MapPin size={22} strokeWidth={1.8} className="text-[#1565C0]" />}
             iconBg="#E3F2FD"
           />
           <SummaryCard
-            label="Telefono publico"
-            value={draft.telefono}
-            helpText="Contacto directo mostrado en la tienda"
-            icon={<Phone size={22} strokeWidth={1.8} className="text-[#2E7D32]" />}
+            label="NIF registrado"
+            value={producer?.nif ?? '—'}
+            helpText="Dato de cuenta, no editable aquí"
+            icon={<User size={22} strokeWidth={1.8} className="text-[#2E7D32]" />}
             iconBg="#E8F5E9"
           />
         </section>
@@ -215,121 +285,105 @@ export function EditarPerfilPublicoPage() {
           </div>
         </section>
 
-        <section className="mb-8 rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)]">
-          <div className="relative h-56 md:h-72">
-            <div className="h-full overflow-hidden rounded-t-[var(--radius-xl)]">
-              <img src={TIENDA.banner} alt="Banner de Finca Alicante" className="h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
-            </div>
-
-            {/* <div className="absolute left-5 top-5 flex gap-2">
-              <span className="text-label-sm rounded-full bg-white/90 px-3 py-1 text-[var(--color-primary)]">
-                Vista publica
-              </span>
-              <span
-                className={`text-label-sm rounded-full px-3 py-1 ${
-                  editando ? 'bg-[#FFF3E0] text-[#EF6C00]' : 'bg-white/90 text-[var(--color-secondary)]'
-                }`}
-              >
-                {editando ? 'Borrador' : 'Publicado'}
-              </span>
-            </div>
-
-            <div className="absolute bottom-5 right-5">
-              <FieldHint disabled>
-                Banner y logo no se editan en este bloque
-              </FieldHint>
-            </div> */}
-
-            <div className="absolute -bottom-14 left-5 z-10 size-28 overflow-hidden rounded-full border-4 border-white bg-[var(--color-surface-container-low)] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.45)] md:left-8 md:size-32">
-              <img src={TIENDA.logo} alt="Logo Finca Alicante" className="h-full w-full object-cover" />
-            </div>
-          </div>
-
-          <div className="px-5 pb-8 pt-20 md:px-8 md:pt-24">
-            <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  <EditableField
-                    label="Nombre de la tienda"
-                    value={draft.nombre}
-                    onChange={(value) => setDraft((current) => ({ ...current, nombre: value }))}
-                    disabled={!editando}
-                  />
-                  <EditableField
-                    label="Localidad"
-                    value={draft.municipio}
-                    onChange={(value) => setDraft((current) => ({ ...current, municipio: value }))}
-                    disabled={!editando}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  <EditableField
-                    label="Telefono publico"
-                    value={draft.telefono}
-                    onChange={(value) => setDraft((current) => ({ ...current, telefono: value }))}
-                    disabled={!editando}
-                  />
-                  <StaticField
-                    label="Correo publico"
-                    value={TIENDA.correoPublico}
-                    helper="Se modifica desde Cambiar correo."
-                  />
-                </div>
-
-                <EditableTextArea
-                  label="Historia / bio editorial"
-                  value={draft.bio}
-                  onChange={(value) => setDraft((current) => ({ ...current, bio: value }))}
-                  disabled={!editando}
-                />
-
-                <div className="flex flex-wrap gap-4">
-                  <Link
-                    to="/productores/finca-alicante"
-                    className="text-label-md inline-flex items-center gap-2 text-[var(--color-primary)] transition-opacity hover:opacity-70"
-                  >
-                    <ExternalLink size={14} strokeWidth={1.8} />
-                    Ver perfil publico
-                  </Link>
-                  <FieldHint disabled={!editando}>
-                    {editando ? 'Recuerda guardar para aplicar cambios.' : 'Pulsa Editar tienda para actualizar la ficha.'}
-                  </FieldHint>
-                </div>
+        <form
+          id="producer-profile-form"
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
+        >
+          <section className="mb-8 rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)]">
+            <div className="relative h-56 md:h-72">
+              <div className="h-full overflow-hidden rounded-t-[var(--radius-xl)]">
+                <img src={STATIC_MEDIA.banner} alt={`Banner de ${displayName}`} className="h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
               </div>
 
-              <aside className="space-y-4 border-t border-[var(--color-outline-variant)] pt-6 xl:border-l xl:border-t-0 xl:pl-8 xl:pt-0">
-                <InfoCard
-                  icon={<MapPin size={18} strokeWidth={1.8} className="text-[var(--color-secondary)]" />}
-                  label="Localidad visible"
-                  value={draft.municipio}
-                  editable={editando}
-                />
-                <InfoCard
-                  icon={<Phone size={18} strokeWidth={1.8} className="text-[var(--color-secondary)]" />}
-                  label="Telefono de contacto"
-                  value={draft.telefono}
-                  editable={editando}
-                />
-                <InfoCard
-                  icon={<Mail size={18} strokeWidth={1.8} className="text-[var(--color-secondary)]" />}
-                  label="Correo de acceso"
-                  value={CUENTA.correo}
-                  editable={false}
-                  helper="Gestionado desde seguridad de cuenta"
-                />
-                <InfoCard
-                  icon={<User size={18} strokeWidth={1.8} className="text-[var(--color-secondary)]" />}
-                  label="Titular"
-                  value={CUENTA.nombre}
-                  editable={false}
-                  helper={CUENTA.tipo}
-                />
-              </aside>
+              <div className="absolute -bottom-14 left-5 z-10 size-28 overflow-hidden rounded-full border-4 border-white bg-[var(--color-surface-container-low)] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.45)] md:left-8 md:size-32">
+                <img src={STATIC_MEDIA.logo} alt={`Logo ${displayName}`} className="h-full w-full object-cover" />
+              </div>
             </div>
-          </div>
-        </section>
+
+            <div className="px-5 pb-8 pt-20 md:px-8 md:pt-24">
+              <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <EditableField
+                      label="Nombre de la tienda"
+                      disabled={!editando}
+                      error={formErrors.businessName?.message}
+                      {...register('businessName')}
+                    />
+                    <EditableField
+                      label="Ciudad"
+                      disabled={!editando}
+                      error={formErrors.address?.city?.message}
+                      {...register('address.city')}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <EditableField
+                      label="Provincia"
+                      disabled={!editando}
+                      error={formErrors.address?.province?.message}
+                      {...register('address.province')}
+                    />
+                    <EditableField
+                      label="Código postal"
+                      disabled={!editando}
+                      error={formErrors.address?.postalCode?.message}
+                      {...register('address.postalCode')}
+                    />
+                  </div>
+
+                  <EditableTextArea
+                    label="Historia / bio editorial"
+                    disabled={!editando}
+                    error={formErrors.description?.message}
+                    {...register('description')}
+                  />
+
+                  <div className="flex flex-wrap gap-4">
+                    {producer?.id ? (
+                      <Link
+                        to={`/productores/${producer.id}`}
+                        className="text-label-md inline-flex items-center gap-2 text-[var(--color-primary)] transition-opacity hover:opacity-70"
+                      >
+                        <ExternalLink size={14} strokeWidth={1.8} />
+                        Ver perfil publico
+                      </Link>
+                    ) : null}
+                    <FieldHint disabled={!editando}>
+                      {editando ? 'Recuerda guardar para aplicar cambios.' : 'Pulsa Editar tienda para actualizar la ficha.'}
+                    </FieldHint>
+                  </div>
+                </div>
+
+                <aside className="space-y-4 border-t border-[var(--color-outline-variant)] pt-6 xl:border-l xl:border-t-0 xl:pl-8 xl:pt-0">
+                  <InfoCard
+                    icon={<MapPin size={18} strokeWidth={1.8} className="text-[var(--color-secondary)]" />}
+                    label="Localidad visible"
+                    value={locationDisplay}
+                    editable={editando}
+                  />
+                  <InfoCard
+                    icon={<Mail size={18} strokeWidth={1.8} className="text-[var(--color-secondary)]" />}
+                    label="Correo de acceso"
+                    value={displayEmail}
+                    editable={false}
+                    helper="Gestionado desde seguridad de cuenta"
+                  />
+                  <InfoCard
+                    icon={<User size={18} strokeWidth={1.8} className="text-[var(--color-secondary)]" />}
+                    label="NIF"
+                    value={producer?.nif ?? '—'}
+                    editable={false}
+                    helper="Dato protegido — no se puede editar"
+                  />
+                </aside>
+              </div>
+            </div>
+          </section>
+        </form>
 
         <section className="mb-10 rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-5 shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)] md:p-6">
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -367,11 +421,10 @@ export function EditarPerfilPublicoPage() {
             <FieldHint disabled>Campos protegidos</FieldHint>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-            <StaticField label="Nombre completo" value={CUENTA.nombre} />
-            <StaticField label="Correo electronico" value={CUENTA.correo} />
-            <StaticField label="Fecha de registro" value={CUENTA.registro} />
-            <StaticField label="Tipo de cuenta" value={CUENTA.tipo} />
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <StaticField label="Nombre de tienda" value={producer?.businessName ?? '—'} />
+            <StaticField label="NIF" value={producer?.nif ?? '—'} />
+            <StaticField label="País" value={producer?.address.country ?? '—'} />
           </div>
 
           <div className="mt-8 flex flex-wrap gap-4">
@@ -396,7 +449,7 @@ export function EditarPerfilPublicoPage() {
       </main>
 
       {modalCorreo ? (
-        <CambiarCorreoModal correoActual={CUENTA.correo} onClose={() => setModalCorreo(false)} />
+        <CambiarCorreoModal correoActual={displayEmail} onClose={() => setModalCorreo(false)} />
       ) : null}
 
       {modalDescartar ? (
@@ -408,6 +461,10 @@ export function EditarPerfilPublicoPage() {
     </div>
   )
 }
+
+// ---------------------------------------------------------------------------
+// Local sub-components (unchanged visual contract from PR#0)
+// ---------------------------------------------------------------------------
 
 function SummaryCard({
   label,
@@ -438,17 +495,12 @@ function SummaryCard({
   )
 }
 
-function EditableField({
-  label,
-  value,
-  onChange,
-  disabled,
-}: {
+type EditableFieldProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label: string
-  value: string
-  onChange: (value: string) => void
-  disabled?: boolean
-}) {
+  error?: string
+}
+
+function EditableField({ label, error, disabled, ...rest }: EditableFieldProps) {
   return (
     <label className="flex flex-col gap-2">
       <span className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">
@@ -456,30 +508,25 @@ function EditableField({
       </span>
       <input
         type="text"
-        value={value}
         disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
         className={`text-body-md border px-4 py-3 text-[var(--color-on-surface)] focus:outline-none ${
           disabled
             ? 'cursor-not-allowed border-[var(--color-outline-variant)] bg-[var(--color-surface-container)] text-[var(--color-secondary)]'
             : 'border-[var(--color-primary)] bg-[rgba(122,46,58,0.08)] shadow-[inset_0_0_0_1px_rgba(122,46,58,0.18)] focus:border-[var(--color-primary)] focus:bg-[rgba(122,46,58,0.12)]'
         }`}
+        {...rest}
       />
+      {error ? <p className="text-body-sm text-[var(--color-error)]">{error}</p> : null}
     </label>
   )
 }
 
-function EditableTextArea({
-  label,
-  value,
-  onChange,
-  disabled,
-}: {
+type EditableTextAreaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label: string
-  value: string
-  onChange: (value: string) => void
-  disabled?: boolean
-}) {
+  error?: string
+}
+
+function EditableTextArea({ label, error, disabled, ...rest }: EditableTextAreaProps) {
   return (
     <label className="flex flex-col gap-2">
       <span className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">
@@ -487,15 +534,15 @@ function EditableTextArea({
       </span>
       <textarea
         rows={6}
-        value={value}
         disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
         className={`text-body-md resize-none border px-4 py-3 text-[var(--color-on-surface)] focus:outline-none ${
           disabled
             ? 'cursor-not-allowed border-[var(--color-outline-variant)] bg-[var(--color-surface-container)] text-[var(--color-secondary)]'
             : 'border-[var(--color-primary)] bg-[rgba(122,46,58,0.08)] shadow-[inset_0_0_0_1px_rgba(122,46,58,0.18)] focus:border-[var(--color-primary)] focus:bg-[rgba(122,46,58,0.12)]'
         }`}
+        {...rest}
       />
+      {error ? <p className="text-body-sm text-[var(--color-error)]">{error}</p> : null}
     </label>
   )
 }

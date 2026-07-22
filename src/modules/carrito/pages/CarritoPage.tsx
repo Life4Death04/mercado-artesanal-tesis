@@ -1,13 +1,19 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, ChevronRight, Heart, Minus, Plus, ShoppingBag, Sparkles, Sprout, TriangleAlert, X } from 'lucide-react'
+import { formatMoney } from '../../../lib/formatMoney'
 
 type CartItem = {
   id: string
   productPath: string
   name: string
+  /** Display label shown next to the item (e.g. "18.50€ / ud"). */
   unitPrice: string
-  unitPriceValue: number
+  /**
+   * Raw Decimal string from the backend (e.g. "18.50").
+   * Used only for display via formatMoney — never for arithmetic.
+   */
+  unitPriceDecimal: string
   quantity: number
   image: string
   warning?: string
@@ -33,8 +39,8 @@ const initialCartGroups: ProducerGroup[] = [
         id: 'aceite-oliva-virgen-extra',
         productPath: '/productos/aceite-oliva-virgen-extra',
         name: 'Aceite de Oliva Virgen Extra',
-        unitPrice: '18.50€ / ud',
-        unitPriceValue: 18.5,
+        unitPrice: '18.50 € / ud',
+        unitPriceDecimal: '18.50',
         quantity: 1,
         image:
           'https://lh3.googleusercontent.com/aida-public/AB6AXuDFEQm_z3dev2jYciMF1OVkN7afLFF9JrFWmZFGNNgUs3C_g8xkbcAv1IwnimQ5FM5M5NXtE0pt8j5faLUAqR89Q-qe0z915pXuYeRisMgkK_N-npdKrl1w1Vindl_2NJoez7HC08LAZ_2oucJuo_FxxkCnEDhLjS3ACibYGlau2lY77lK9dgoyp4-PgLYt4suBajIZEh4NtvtNyQPIlxWPGscSUBHDh3stWuFoJUeP5ditGRAwrHwF-hGwTcxE1EGdNPyRio5oPu0',
@@ -43,8 +49,8 @@ const initialCartGroups: ProducerGroup[] = [
         id: 'miel-azahar',
         productPath: '/productos/miel-de-azahar',
         name: 'Miel de Azahar',
-        unitPrice: '9.50€ / ud',
-        unitPriceValue: 9.5,
+        unitPrice: '9.50 € / ud',
+        unitPriceDecimal: '9.50',
         quantity: 2,
         image:
           'https://lh3.googleusercontent.com/aida-public/AB6AXuDo6-DPtDJ2-94vFmaJCElQ_8yyIOG57vXUHTFoDeFgx-1cuPgTxf3l9XZciGW6Scq_Kb6S1YtOUGbbYg2kug-4q4ie8N_EZ2zb2BZ8zi1DhrJgSWFnsorfGsg1PN98j1e2n5dU9qS_9lY8eEkQ8f99Ah5TL6PXLr5KLMy9yh4PQTIQuP1bsfMqrFtz6Bruq9aRl8yUVuZ6gXfDW2JF9YyJa8Y7TfB3PYyXc0Ux-Rs7VF1v5CEzLtRYy_Gwmayk_OTDj_axxgyrFJc',
@@ -60,8 +66,8 @@ const initialCartGroups: ProducerGroup[] = [
         id: 'sobrasada-artesana',
         productPath: '/productos/sobrasada-artesana',
         name: 'Sobrasada Artesana',
-        unitPrice: '7.00€ / ud',
-        unitPriceValue: 7,
+        unitPrice: '7.00 € / ud',
+        unitPriceDecimal: '7.00',
         quantity: 2,
         warning: 'Últimas 2 unidades disponibles',
         disableIncrease: true,
@@ -72,17 +78,8 @@ const initialCartGroups: ProducerGroup[] = [
   },
 ]
 
-function formatPrice(value: number) {
-  return `${value.toFixed(2)}€`
-}
-
 export function CarritoPage() {
   const [cartGroups, setCartGroups] = useState(initialCartGroups)
-
-  const productSubtotal = cartGroups.reduce(
-    (total, group) => total + group.items.reduce((groupTotal, item) => groupTotal + item.unitPriceValue * item.quantity, 0),
-    0,
-  )
 
   function updateItemQuantity(groupId: string, itemId: string, delta: number) {
     setCartGroups((currentGroups) =>
@@ -160,7 +157,7 @@ export function CarritoPage() {
               <CartActions className="hidden lg:flex" onClearCart={clearCart} />
             </div>
 
-            <OrderSummary productSubtotal={productSubtotal} onClearCart={clearCart} />
+            <OrderSummary onClearCart={clearCart} />
           </div>
         ) : (
           <EmptyCartState />
@@ -173,8 +170,6 @@ export function CarritoPage() {
 }
 
 function ProducerCartGroup({ group, onDecrease, onIncrease, onRemove }: { group: ProducerGroup; onDecrease: (itemId: string) => void; onIncrease: (itemId: string) => void; onRemove: (itemId: string) => void }) {
-  const groupSubtotal = group.items.reduce((total, item) => total + item.unitPriceValue * item.quantity, 0)
-
   return (
     <section className="flex flex-col gap-6">
       <header className="flex items-end justify-between border-b border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] pb-2">
@@ -200,16 +195,18 @@ function ProducerCartGroup({ group, onDecrease, onIncrease, onRemove }: { group:
         />
       ))}
 
+      {/* Group subtotal is backend-computed once a real checkout endpoint exists. */}
       <div className="mt-2 flex items-center justify-between border-t border-[color-mix(in_srgb,var(--color-surface-variant)_85%,transparent)] pt-4">
         <span className="text-body-md text-[var(--color-on-surface-variant)]">Subtotal {group.name}</span>
-        <span className="text-label-md text-[var(--color-on-surface)]">{formatPrice(groupSubtotal)}</span>
+        <span className="text-label-md text-[var(--color-on-surface)]">—</span>
       </div>
     </section>
   )
 }
 
 function CartItemRow({ item, onDecrease, onIncrease, onRemove }: { item: CartItem; onDecrease: () => void; onIncrease: () => void; onRemove: () => void }) {
-  const itemTotal = formatPrice(item.unitPriceValue * item.quantity)
+  // Line total is backend-computed. Display the unit price for reference only.
+  const itemUnitFormatted = formatMoney(item.unitPriceDecimal)
 
   return (
     <article className="group relative flex flex-col items-start gap-6 sm:flex-row sm:items-center">
@@ -238,7 +235,7 @@ function CartItemRow({ item, onDecrease, onIncrease, onRemove }: { item: CartIte
 
         <div className="mt-4 flex items-end justify-between">
           <QuantitySelector quantity={item.quantity} disableIncrease={item.disableIncrease} onDecrease={onDecrease} onIncrease={onIncrease} />
-          <span className="text-label-md text-[var(--color-on-surface)]">{itemTotal}</span>
+          <span className="text-label-md text-[var(--color-on-surface)]">{itemUnitFormatted}</span>
         </div>
       </div>
     </article>
@@ -265,16 +262,17 @@ function QuantitySelector({ quantity, disableIncrease = false, onDecrease, onInc
   )
 }
 
-function OrderSummary({ productSubtotal, onClearCart }: { productSubtotal: number; onClearCart: () => void }) {
+function OrderSummary({ onClearCart }: { onClearCart: () => void }) {
   return (
     <aside className="mt-12 w-full lg:mt-0 lg:w-1/3">
       <div className="sticky top-32 flex flex-col gap-6 rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-surface-container-lowest)] p-6 shadow-[0_4px_20px_rgba(26,26,26,0.02)] lg:p-8">
         <h2 className="text-headline-md border-b border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] pb-4 text-[24px] leading-8 text-[var(--color-on-surface)]">Resumen del pedido</h2>
 
         <div className="text-body-md flex flex-col gap-4">
+          {/* Subtotal and total are backend-computed — shown as deferred until checkout endpoint. */}
           <div className="flex items-center justify-between text-[var(--color-on-surface)]">
             <span>Subtotal productos</span>
-            <span>{formatPrice(productSubtotal)}</span>
+            <span>—</span>
           </div>
           <div className="flex items-center justify-between text-[var(--color-on-surface-variant)]">
             <span>
@@ -286,7 +284,7 @@ function OrderSummary({ productSubtotal, onClearCart }: { productSubtotal: numbe
 
         <div className="mt-2 flex items-end justify-between border-t border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] pt-6">
           <span className="text-body-lg text-[var(--color-on-surface)]">Total productos</span>
-          <span className="text-headline-md text-[24px] leading-8 text-[var(--color-on-surface)]">{formatPrice(productSubtotal)}</span>
+          <span className="text-headline-md text-[24px] leading-8 text-[var(--color-on-surface)]">—</span>
         </div>
 
         <p className="mt-2 text-center text-xs text-[var(--color-on-surface-variant)] italic">

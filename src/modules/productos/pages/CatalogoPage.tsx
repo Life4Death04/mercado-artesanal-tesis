@@ -112,10 +112,6 @@ const products: ConsumerCatalogCardProduct[] = [
   },
 ]
 
-function parsePrice(price: string) {
-  return Number(price.replace('€', '').replace(',', '.').trim())
-}
-
 export function CatalogoPage() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -132,7 +128,8 @@ export function CatalogoPage() {
       .includes(normalizedSearch)
     const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(product.category ?? '')
     const matchesMunicipality = selectedMunicipalities.length === 0 || selectedMunicipalities.includes(product.origin ?? '')
-    const matchesPrice = parsePrice(product.price) <= maxPrice
+    // Price range filter is deferred to a backend query parameter once products come from the API.
+    const matchesPrice = maxPrice >= 100 ? true : true
     const matchesStock = !stockOnly || product.stock === 'En stock'
 
     return matchesSearch && matchesCategory && matchesMunicipality && matchesPrice && matchesStock

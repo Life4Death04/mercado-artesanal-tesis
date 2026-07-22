@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff, Filter, Pencil, Plus, Search, SlidersHorizontal, Trash2, TriangleAlert } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff, Filter, Loader2, Pencil, Plus, Search, SlidersHorizontal, Trash2, TriangleAlert } from 'lucide-react'
+import { formatMoney } from '../../../lib/formatMoney'
+import { resolveErrorMessage } from '../../../lib/errorMessages'
+import { useProductosQuery } from '../productos/hooks/useProductosQuery'
+import { useCreateProductoMutation } from '../productos/hooks/useCreateProductoMutation'
+import { useUpdateProductoMutation } from '../productos/hooks/useUpdateProductoMutation'
+import { useDeleteProductoMutation } from '../productos/hooks/useDeleteProductoMutation'
 import {
   AgregarProductoModal,
   AvisoStockModal,
@@ -8,89 +14,38 @@ import {
   EliminarProductoModal,
   PublicacionProductoModal,
 } from '../componentes/CatalogoProductorModals'
+import type { ProductDTO } from '../productos/productos.schema'
 
-export type ProductoStatus = 'Publicado' | 'Despublicado' | 'Sin disponibilidad'
+// ---------------------------------------------------------------------------
+// Status filter helpers
+// ---------------------------------------------------------------------------
 
-export type ProductoCatalogo = {
-  id: string
-  nombre: string
-  categoria: string
-  denominacion?: string
-  precio: string
-  stock: number
-  status: ProductoStatus
-  imagen: string
+type DisplayStatus = 'Publicado' | 'Despublicado' | 'Sin disponibilidad'
+type StatusFilter = 'Todos' | DisplayStatus
+
+const STATUS_FILTERS: StatusFilter[] = ['Todos', 'Publicado', 'Despublicado', 'Sin disponibilidad']
+
+function resolveProductStatus(producto: ProductDTO): DisplayStatus {
+  if (!producto.isActive) return 'Despublicado'
+  if (producto.stock === 0) return 'Sin disponibilidad'
+  return 'Publicado'
 }
 
-const productosIniciales: ProductoCatalogo[] = [
-  {
-    id: 'prod-1',
-    nombre: 'Aceite de Oliva Virgen Extra Coupage',
-    categoria: 'Aceites',
-    denominacion: 'D.O. Alicante',
-    precio: '18,50EUR',
-    stock: 15,
-    status: 'Publicado',
-    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmn-HTPgkmzjU1O02KsCIOcA21nIIlWPRCx2yI2dnd31yatEf8Dqbbj_pdqDy9DlzqllOxTPgvfPOYmc5wi6u-8z6tH9bGbHbFP_mGo1ewuC99f5oI91WEmESl-UBfs00gHE6N_c6J-R4TYRY_evXPcFb4qBoLe-mjamQiVbi9gNu2SD1_MnP6xZxtcEWVybmp2mJ6Ily0t2e0P3Kt2abWSS1IgutzgkpJHMMktLVtXYWAnjM_sdM38c6xXuWR3vfl4fUVFMkAtC4',
-  },
-  {
-    id: 'prod-2',
-    nombre: 'Turron de Jijona Artesanal 300g',
-    categoria: 'Dulces',
-    denominacion: 'I.G.P. Jijona',
-    precio: '12,90EUR',
-    stock: 3,
-    status: 'Publicado',
-    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAwpcRUxi2UfppBSrCMAcTt51NRZZlO15MAeuTzzQXfz9A7N1RdQimEZVJYMwdV8AbGK0UGKqUDWrlv_qqZ2zB7GmIyZZR09nsOYyyfpp59JLdcg3kiid6xsixF6F0j67VmKJ3CP2ErDYn8bE0kHfm8s1_r7MBdDyYtVioKOMTml2BgJS7g-6GKob2dYMxUePh6M4tkiO4uP1cJ0iqbb3fFDhOjd8ryRfzy70FFlcLzrZ5Rkj-WQY5c0FwXkxlScPiCkZ9OlOqWjZQ',
-  },
-  {
-    id: 'prod-3',
-    nombre: "Vino Tinto Monastrell 'Herencia'",
-    categoria: 'Vinos',
-    denominacion: 'D.O. Alicante',
-    precio: '24,00EUR',
-    stock: 0,
-    status: 'Despublicado',
-    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAL7mQ1mh2Id6cvQAygTJ0NC34fJRJiUwV_jt5FnvB-ukAzx5YcjlCh9uMkvk5QCjMOwBn7FbNBVJxEfVEL23nS5T82p58T3Q3R5uCqHYv65EraLsuyupp23ImjKTHs1qI8t5PikDUHLr-a7vNRQb8PVBIdRrw05kkeOgRpNGbWeKpFsS9jj-YGuMoxLwR5kJj9ZyAwqOpVsi9rSz2fOah-hYkJDyIrppQBLfIfh2_7lYz-yJ0vAR5uyw6p50JiT9T22LgNxJCCk-k',
-  },
-  {
-    id: 'prod-4',
-    nombre: 'Sobrasada de la Montana (Tradicional)',
-    categoria: 'Embutidos',
-    precio: '9,20EUR',
-    stock: 42,
-    status: 'Sin disponibilidad',
-    imagen: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAEY3Fecj6qqT00nrb2x88DkYDCeu4A2G--2C0cKzQljqXJJYvzO9iqF8dLpRv-YXw5bGLwkLC50hP__V_vVmJS_14UHt23dBGz0CRV5AwD-fUz7YKVDAZzLyLX5nPaY_gnEyB7YuZ9Uv3s6aNoyn_T2RT3te2TqEWuU4RsEMZkl4swCG4WEGWWij9e9zhcUg5AH-F68a-wL9chzcqp6olO1HJ2YQ2MEextBE3ZHlk9c7WV-FetmqUm2nuWbYcdDjv-s6BTuaeiF-I',
-  },
-  {
-    id: 'prod-5',
-    nombre: 'Miel cruda de azahar',
-    categoria: 'Dulces',
-    precio: '10,40EUR',
-    stock: 11,
-    status: 'Publicado',
-    imagen: 'https://images.unsplash.com/photo-1587049633312-d628ae50a8ae?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    id: 'prod-6',
-    nombre: 'Conserva de bonito artesana',
-    categoria: 'Conservas',
-    precio: '8,90EUR',
-    stock: 0,
-    status: 'Sin disponibilidad',
-    imagen: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=80',
-  },
-]
-
-const statusFilters = ['Todos', 'Publicado', 'Despublicado', 'Sin disponibilidad'] as const
-const categoryFilters = ['Todas las categorías', 'Aceites', 'Dulces', 'Vinos', 'Embutidos', 'Conservas'] as const
 const pageSize = 4
 
+// ---------------------------------------------------------------------------
+// Page component
+// ---------------------------------------------------------------------------
+
 export function ProductosProductorPage() {
-  const [productos, setProductos] = useState(productosIniciales)
+  const { data: productos = [], isLoading, isError, error } = useProductosQuery()
+  const createMutation = useCreateProductoMutation()
+  const updateMutation = useUpdateProductoMutation()
+  const deleteMutation = useDeleteProductoMutation()
+
   const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<(typeof categoryFilters)[number]>('Todas las categorías')
-  const [selectedStatus, setSelectedStatus] = useState<(typeof statusFilters)[number]>('Todos')
+  const [selectedCategory, setSelectedCategory] = useState('Todas las categorías')
+  const [selectedStatus, setSelectedStatus] = useState<StatusFilter>('Todos')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [showAgregarModal, setShowAgregarModal] = useState(false)
@@ -98,68 +53,116 @@ export function ProductosProductorPage() {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [publicationTargetId, setPublicationTargetId] = useState<string | null>(null)
   const [showStockWarningForId, setShowStockWarningForId] = useState<string | null>(null)
+  const [mutationError, setMutationError] = useState<string | null>(null)
+
+  // Derive unique category names from live data for the filter selector
+  const categoryNames = Array.from(
+    new Set(productos.map((p) => p.categoryId)),
+  )
+  const categoryFilters = ['Todas las categorías', ...categoryNames]
 
   const normalizedSearch = search.trim().toLowerCase()
   const filteredProducts = productos.filter((producto) => {
-    const matchesSearch = !normalizedSearch || [producto.nombre, producto.categoria, producto.denominacion ?? '', producto.precio].join(' ').toLowerCase().includes(normalizedSearch)
-    const matchesCategory = selectedCategory === 'Todas las categorías' || producto.categoria === selectedCategory
-    const matchesStatus = selectedStatus === 'Todos' || producto.status === selectedStatus
+    const status = resolveProductStatus(producto)
+    const matchesSearch =
+      !normalizedSearch ||
+      [producto.name, producto.categoryId, formatMoney(producto.price)]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedSearch)
+    const matchesCategory =
+      selectedCategory === 'Todas las categorías' || producto.categoryId === selectedCategory
+    const matchesStatus = selectedStatus === 'Todos' || status === selectedStatus
     return matchesSearch && matchesCategory && matchesStatus
   })
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize))
   const safePage = Math.min(currentPage, totalPages)
   const visibleProducts = filteredProducts.slice((safePage - 1) * pageSize, safePage * pageSize)
-  const editingTarget = editingTargetId ? productos.find((producto) => producto.id === editingTargetId) ?? null : null
-  const deleteTarget = deleteTargetId ? productos.find((producto) => producto.id === deleteTargetId) ?? null : null
-  const publicationTarget = publicationTargetId ? productos.find((producto) => producto.id === publicationTargetId) ?? null : null
-  const stockWarningTarget = showStockWarningForId ? productos.find((producto) => producto.id === showStockWarningForId) ?? null : null
+
+  const editingTarget = editingTargetId
+    ? productos.find((p) => p.id === editingTargetId) ?? null
+    : null
+  const deleteTarget = deleteTargetId
+    ? productos.find((p) => p.id === deleteTargetId) ?? null
+    : null
+  const publicationTarget = publicationTargetId
+    ? productos.find((p) => p.id === publicationTargetId) ?? null
+    : null
+  const stockWarningTarget = showStockWarningForId
+    ? productos.find((p) => p.id === showStockWarningForId) ?? null
+    : null
 
   function updateSearch(value: string) {
     setSearch(value)
     setCurrentPage(1)
   }
 
-  function updateCategory(value: (typeof categoryFilters)[number]) {
+  function updateCategory(value: string) {
     setSelectedCategory(value)
     setCurrentPage(1)
   }
 
-  function updateStatus(value: (typeof statusFilters)[number]) {
+  function updateStatus(value: StatusFilter) {
     setSelectedStatus(value)
     setCurrentPage(1)
   }
 
-  function saveProductEdition(updatedProduct: ProductoCatalogo) {
-    setProductos((current) => current.map((producto) => (producto.id === updatedProduct.id ? updatedProduct : producto)))
-    setEditingTargetId(null)
-  }
-
-  function removeProduct(productId: string) {
-    setProductos((current) => current.filter((producto) => producto.id !== productId))
-    setDeleteTargetId(null)
-  }
-
-  function togglePublication(producto: ProductoCatalogo) {
-    if (producto.status === 'Despublicado' && producto.stock === 0) {
+  function handleTogglePublication(producto: ProductDTO) {
+    if (!producto.isActive && producto.stock === 0) {
       setPublicationTargetId(null)
       setShowStockWarningForId(producto.id)
       return
     }
 
-    setProductos((current) => current.map((item) => {
-      if (item.id !== producto.id) return item
-      if (item.status === 'Despublicado') {
-        return { ...item, status: item.stock > 0 ? 'Publicado' : 'Sin disponibilidad' }
-      }
-      return { ...item, status: 'Despublicado' }
-    }))
-    setPublicationTargetId(null)
+    setMutationError(null)
+    updateMutation.mutate(
+      { id: producto.id, body: { isActive: !producto.isActive } },
+      {
+        onError: (err) => setMutationError(resolveErrorMessage(err)),
+        onSuccess: () => setPublicationTargetId(null),
+      },
+    )
   }
 
-  function publishWithoutStock(productId: string) {
-    setProductos((current) => current.map((item) => (item.id === productId ? { ...item, status: 'Sin disponibilidad' } : item)))
-    setShowStockWarningForId(null)
+  function handlePublishWithoutStock(productId: string) {
+    setMutationError(null)
+    updateMutation.mutate(
+      { id: productId, body: { isActive: true } },
+      {
+        onError: (err) => setMutationError(resolveErrorMessage(err)),
+        onSuccess: () => setShowStockWarningForId(null),
+      },
+    )
+  }
+
+  function handleDeleteConfirm(productId: string) {
+    setMutationError(null)
+    deleteMutation.mutate(productId, {
+      onError: (err) => setMutationError(resolveErrorMessage(err)),
+      onSuccess: () => setDeleteTargetId(null),
+    })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)]">
+        <Loader2 size={32} strokeWidth={1.8} className="animate-spin text-[var(--color-primary)]" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)]">
+        <div className="max-w-md text-center">
+          <TriangleAlert size={36} strokeWidth={1.6} className="mx-auto mb-4 text-[var(--color-error)]" />
+          <p className="text-body-md text-[var(--color-on-surface-variant)]">
+            {resolveErrorMessage(error)}
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -196,6 +199,18 @@ export function ProductosProductorPage() {
           </div>
         </section>
 
+        {/* Global mutation error banner */}
+        {mutationError ? (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="mb-6 flex items-start gap-3 rounded-[var(--radius-lg)] border border-red-200 bg-red-50 px-5 py-4 text-[var(--color-error)]"
+          >
+            <TriangleAlert size={18} strokeWidth={1.8} className="mt-0.5 shrink-0" />
+            <p className="text-body-md">{mutationError}</p>
+          </div>
+        ) : null}
+
         <section className="mb-8 border border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-surface-container-lowest)] p-4 shadow-[0_18px_50px_-35px_rgba(122,46,58,0.35)] md:p-6" aria-label="Filtros del catálogo de productor">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
             <label className="relative flex-1">
@@ -204,7 +219,7 @@ export function ProductosProductorPage() {
                 type="search"
                 value={search}
                 onChange={(event) => updateSearch(event.target.value)}
-                placeholder="Buscar por nombre, categoría o denominación..."
+                placeholder="Buscar por nombre, categoría o precio..."
                 className="text-body-md w-full border border-[var(--color-outline-variant)] bg-[#FAF7F0] py-3 pl-11 pr-4 text-[#1A1A1A] placeholder:text-[var(--color-outline)] focus:border-[var(--color-primary)] focus:outline-none"
               />
             </label>
@@ -229,7 +244,7 @@ export function ProductosProductorPage() {
               <div className="relative min-w-0">
                 <select
                   value={selectedCategory}
-                  onChange={(event) => updateCategory(event.target.value as (typeof categoryFilters)[number])}
+                  onChange={(event) => updateCategory(event.target.value)}
                   className="text-body-md w-full min-w-0 appearance-none border border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-4 py-3 pr-10 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none"
                 >
                   {categoryFilters.map((category) => (
@@ -246,10 +261,11 @@ export function ProductosProductorPage() {
                 Estado de publicación
               </span>
               <div className="flex flex-wrap gap-3 pb-1">
-                {statusFilters.map((status) => {
-                  const count = status === 'Todos'
-                    ? productos.filter((producto) => selectedCategory === 'Todas las categorías' || producto.categoria === selectedCategory).filter((producto) => !normalizedSearch || [producto.nombre, producto.categoria, producto.denominacion ?? '', producto.precio].join(' ').toLowerCase().includes(normalizedSearch)).length
-                    : productos.filter((producto) => producto.status === status).filter((producto) => selectedCategory === 'Todas las categorías' || producto.categoria === selectedCategory).filter((producto) => !normalizedSearch || [producto.nombre, producto.categoria, producto.denominacion ?? '', producto.precio].join(' ').toLowerCase().includes(normalizedSearch)).length
+                {STATUS_FILTERS.map((status) => {
+                  const count =
+                    status === 'Todos'
+                      ? filteredProducts.length
+                      : productos.filter((p) => resolveProductStatus(p) === status).length
 
                   return (
                     <button
@@ -304,82 +320,114 @@ export function ProductosProductorPage() {
         </section>
       </main>
 
-      {showAgregarModal ? <AgregarProductoModal onClose={() => setShowAgregarModal(false)} /> : null}
+      {showAgregarModal ? (
+        <AgregarProductoModal
+          onClose={() => setShowAgregarModal(false)}
+          createMutation={createMutation}
+        />
+      ) : null}
 
       {editingTarget ? (
         <EditarProductoModal
           producto={editingTarget}
           onClose={() => setEditingTargetId(null)}
-          onSave={saveProductEdition}
+          updateMutation={updateMutation}
         />
       ) : null}
 
       {deleteTarget ? (
         <EliminarProductoModal
           producto={deleteTarget}
+          isPending={deleteMutation.isPending}
           onClose={() => setDeleteTargetId(null)}
-          onConfirm={() => removeProduct(deleteTarget.id)}
+          onConfirm={() => handleDeleteConfirm(deleteTarget.id)}
         />
       ) : null}
 
       {publicationTarget ? (
         <PublicacionProductoModal
           producto={publicationTarget}
+          isPending={updateMutation.isPending}
           onClose={() => setPublicationTargetId(null)}
-          onConfirm={() => togglePublication(publicationTarget)}
+          onConfirm={() => handleTogglePublication(publicationTarget)}
         />
       ) : null}
 
       {stockWarningTarget ? (
         <AvisoStockModal
+          isPending={updateMutation.isPending}
           onClose={() => setShowStockWarningForId(null)}
-          onPublish={() => publishWithoutStock(stockWarningTarget.id)}
+          onPublish={() => handlePublishWithoutStock(stockWarningTarget.id)}
         />
       ) : null}
     </div>
   )
 }
 
+// ---------------------------------------------------------------------------
+// ProductCard
+// ---------------------------------------------------------------------------
+
 type ProductCardProps = {
-  producto: ProductoCatalogo
+  producto: ProductDTO
   onEdit: () => void
   onTogglePublication: () => void
   onDelete: () => void
 }
 
 function ProductCard({ producto, onEdit, onTogglePublication, onDelete }: ProductCardProps) {
-  const isInactive = producto.status === 'Despublicado'
-  const isOutOfStock = producto.stock === 0 || producto.status === 'Sin disponibilidad'
+  const status = resolveProductStatus(producto)
+  const isInactive = status === 'Despublicado'
+  const isOutOfStock = producto.stock === 0 || status === 'Sin disponibilidad'
   const publicationLabel = isInactive ? 'Publicar producto' : 'Despublicar producto'
+
+  // Primary thumbnail from the backend image projection (images ordered by position ASC).
+  // Falls back to an accessible SVG placeholder when no image has been uploaded yet.
+  const thumbnailUrl = producto.images?.[0]?.url ?? null
 
   return (
     <article className={`rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-outline-variant)_50%,transparent)] bg-[var(--color-surface-container-lowest)] p-5 shadow-[0_10px_30px_-20px_rgba(122,46,58,0.25)] transition-all md:p-6 ${isInactive ? 'border-dashed' : ''}`}>
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex min-w-0 gap-4 md:gap-5">
-          <img src={producto.imagen} alt={producto.nombre} className={`size-24 shrink-0 rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] object-cover md:size-28 ${isInactive ? 'grayscale-[0.55]' : ''}`} />
+          {thumbnailUrl ? (
+            <img
+              src={thumbnailUrl}
+              alt={producto.name}
+              className={`size-24 shrink-0 rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] object-cover md:size-28 ${isInactive ? 'grayscale-[0.55]' : ''}`}
+            />
+          ) : (
+            // Accessible placeholder when the product has no uploaded image yet
+            <div
+              aria-label={`Sin imagen: ${producto.name}`}
+              className={`size-24 shrink-0 rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-high)] md:size-28 ${isInactive ? 'grayscale-[0.55]' : ''}`}
+            />
+          )}
 
           <div className="min-w-0 flex-1">
             <div className="mb-3 flex flex-wrap items-start gap-3">
-              <h2 className="text-headline-md text-[var(--color-on-surface)]">{producto.nombre}</h2>
-              <StatusBadge status={producto.status} />
+              <h2 className="text-headline-md text-[var(--color-on-surface)]">{producto.name}</h2>
+              <StatusBadge status={status} />
+              {producto.moderationStatus !== 'OK' ? (
+                <ModerationBadge status={producto.moderationStatus} />
+              ) : null}
             </div>
 
             <p className="text-label-sm mb-3 uppercase tracking-[0.18em] text-[var(--color-secondary)]">
-              {producto.categoria}{producto.denominacion ? ` · ${producto.denominacion}` : ''}
+              {producto.categoryId}
             </p>
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-body-md text-[var(--color-on-surface)]">
-              <span className="font-semibold text-[var(--color-primary)]">{producto.precio}</span>
+              <span className="font-semibold text-[var(--color-primary)]">{formatMoney(producto.price)}</span>
               <span className="text-[var(--color-secondary)]">·</span>
               {isOutOfStock ? (
                 <span className="inline-flex items-center gap-1 text-[var(--color-error)]">
                   <TriangleAlert size={16} strokeWidth={1.8} />
                   Sin stock
                 </span>
-              ) : producto.stock <= 5 ? (
+              ) : producto.stock <= (producto.lowStockThreshold ?? 5) ? (
                 <span className="inline-flex items-center gap-1 text-amber-700">
                   <TriangleAlert size={16} strokeWidth={1.8} />
-                  {producto.stock} uds
+                  {producto.stock} uds (bajo)
                 </span>
               ) : (
                 <span className="text-[var(--color-secondary)]">{producto.stock} uds</span>
@@ -404,6 +452,10 @@ function ProductCard({ producto, onEdit, onTogglePublication, onDelete }: Produc
   )
 }
 
+// ---------------------------------------------------------------------------
+// Small shared UI components
+// ---------------------------------------------------------------------------
+
 type ActionBtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { danger?: boolean }
 
 function ActionBtn({ children, danger, className = '', ...rest }: ActionBtnProps) {
@@ -418,13 +470,42 @@ function ActionBtn({ children, danger, className = '', ...rest }: ActionBtnProps
   )
 }
 
-function StatusBadge({ status }: { status: ProductoStatus }) {
+function StatusBadge({ status }: { status: DisplayStatus }) {
   switch (status) {
     case 'Publicado':
-      return <span className="text-label-md inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs text-emerald-700"><span className="mr-2 size-1.5 rounded-full bg-emerald-500" />Publicado</span>
+      return (
+        <span className="text-label-md inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
+          <span className="mr-2 size-1.5 rounded-full bg-emerald-500" />
+          Publicado
+        </span>
+      )
     case 'Despublicado':
-      return <span className="text-label-md inline-flex items-center rounded-full border border-dashed border-[var(--color-outline)] bg-[var(--color-surface-container-highest)] px-3 py-1 text-xs text-[var(--color-secondary)]">Despublicado</span>
+      return (
+        <span className="text-label-md inline-flex items-center rounded-full border border-dashed border-[var(--color-outline)] bg-[var(--color-surface-container-highest)] px-3 py-1 text-xs text-[var(--color-secondary)]">
+          Despublicado
+        </span>
+      )
     case 'Sin disponibilidad':
-      return <span className="text-label-md inline-flex items-center rounded-full border border-red-100 bg-red-50 px-3 py-1 text-xs text-[var(--color-error)]">Sin disponibilidad</span>
+      return (
+        <span className="text-label-md inline-flex items-center rounded-full border border-red-100 bg-red-50 px-3 py-1 text-xs text-[var(--color-error)]">
+          Sin disponibilidad
+        </span>
+      )
   }
+}
+
+function ModerationBadge({ status }: { status: 'REPORTED' | 'REMOVED' }) {
+  if (status === 'REPORTED') {
+    return (
+      <span className="text-label-md inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-700">
+        <TriangleAlert size={12} strokeWidth={2} />
+        Reportado
+      </span>
+    )
+  }
+  return (
+    <span className="text-label-md inline-flex items-center rounded-full border border-red-200 bg-red-100 px-3 py-1 text-xs text-[var(--color-error)]">
+      Eliminado por moderación
+    </span>
+  )
 }

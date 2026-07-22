@@ -8,8 +8,8 @@ type CheckoutStep = 1 | 2 | 3
 type DeliveryOption = {
   icon: 'truck' | 'store' | 'car'
   name: string
+  /** Display label for the delivery cost (e.g. "4.95€" or "Gratis"). */
   price: string
-  priceValue: number
   description: string
 }
 
@@ -18,7 +18,8 @@ type ShippingGroup = {
   producer: string
   location: string
   product: string
-  productPriceValue: number
+  /** Display-only product price label (e.g. "42.50€"). Backend computes totals. */
+  productPrice: string
   image: string
   warning?: string
   selectedDeliveryName: string
@@ -35,7 +36,7 @@ const shippingGroups: ShippingGroup[] = [
     producer: 'Aceites de la Montaña',
     location: 'Beniardá, Alicante',
     product: '2x Extra Virgin Olive Oil 500ml',
-    productPriceValue: 42.5,
+    productPrice: '42,50 €',
     warning: 'Solo quedan 2 unidades de este producto.',
     image:
       'https://lh3.googleusercontent.com/aida-public/AB6AXuDOT4B3IlpDVZUGzctOQtw1MWGY3iKsbsXm_UrK0dg5JYk6RP8pzTh1P0FT4Z6wN2CcjMGdYtpOoFKQZHkJTkw7jGbld27hIxtD60q-7vdK7AdEUr21nXtmAMx6C6j-cBZMl3qkLnA7QZKgohVbxZf4RCoLdH7K28ngbXD_SNmy14ZZKOavxiUXoU-_0VX7XSx7OD3G8Bc19rmBX0WyblFnbSlMb01Q5Se1dA2ySn3ZFVgA_Qw4kt80emuRXdu4Dk8WFlXA3h6tDkk',
@@ -48,15 +49,13 @@ const shippingGroups: ShippingGroup[] = [
       {
         icon: 'truck',
         name: 'Mensajería',
-        price: '4.95€',
-        priceValue: 4.95,
+        price: '4,95 €',
         description: 'Envío estándar (2-3 días hábiles).',
       },
       {
         icon: 'store',
         name: 'Recogida en Punto',
         price: 'Gratis',
-        priceValue: 0,
         description: 'Recoge tu pedido en establecimientos asociados.',
       },
     ],
@@ -66,7 +65,7 @@ const shippingGroups: ShippingGroup[] = [
     producer: 'Quesería San Antonio',
     location: 'Elche, Alicante',
     product: '1x Goat Cheese with Rosemary',
-    productPriceValue: 2,
+    productPrice: '2,00 €',
     image:
       'https://lh3.googleusercontent.com/aida-public/AB6AXuACPw5Xagty6uEGbAZPt7ougTRDN902sBzFlMw3a1iad08kHrucHlAZMuCm45n0aFBm-2n17K219zgG62l8PedvWPwNE0hrPq846JdPvDYCL0qp8yGaOj0PExI84qrkFo64pdWvec7foqLbWpWkQ8XXpFmRULcVowwlI6qZWaorxT7kb8QKGFfkDkRsKSRlKGzEfGGi2ds5Yaidpwzkz8vuj6rHRKJ9pJPvHvaTjJjaxGr3h738OZCdMRzZTOD1XjMBHz1tKaYdXE0',
     selectedDeliveryName: 'Mensajería',
@@ -74,15 +73,13 @@ const shippingGroups: ShippingGroup[] = [
       {
         icon: 'car',
         name: 'Entrega Personal',
-        price: '2.00€',
-        priceValue: 2,
+        price: '2,00 €',
         description: 'Entrega directa por el productor en zonas habilitadas.',
       },
       {
         icon: 'truck',
         name: 'Mensajería',
-        price: '5.50€',
-        priceValue: 5.5,
+        price: '5,50 €',
         description: 'Envío estándar refrigerado.',
       },
     ],
@@ -128,12 +125,7 @@ export function CheckoutPage() {
   const [checkoutGroups, setCheckoutGroups] = useState(shippingGroups)
   const [showAddressModalFor, setShowAddressModalFor] = useState<string | null>(null)
 
-  const subtotalProducts = checkoutGroups.reduce((total, group) => total + group.productPriceValue, 0)
-  const shippingTotal = checkoutGroups.reduce((total, group) => {
-    const selectedOption = group.deliveryOptions.find((option) => option.name === group.selectedDeliveryName)
-    return total + (selectedOption?.priceValue ?? 0)
-  }, 0)
-  const grandTotal = subtotalProducts + shippingTotal
+  // Totals are backend-computed. Displayed as '—' until the checkout endpoint provides them.
 
   function handleSelectDelivery(groupId: string, optionName: string) {
     setCheckoutGroups((currentGroups) =>
@@ -166,7 +158,7 @@ export function CheckoutPage() {
               {currentStep === 1 ? <ShippingDetailsStep groups={checkoutGroups} onSelectDelivery={handleSelectDelivery} onOpenAddressModal={setShowAddressModalFor} /> : <PaymentMethodStep onBack={() => setCurrentStep(1)} />}
             </div>
 
-            <OrderSummaryPanel currentStep={currentStep} subtotalProducts={subtotalProducts} shippingTotal={shippingTotal} grandTotal={grandTotal} onContinue={() => setCurrentStep(currentStep === 1 ? 2 : 3)} />
+            <OrderSummaryPanel currentStep={currentStep} onContinue={() => setCurrentStep(currentStep === 1 ? 2 : 3)} />
           </div>
         </main>
       )}
@@ -401,7 +393,7 @@ function PaymentOption({ icon, title, detail, selected = false }: { icon: ReactN
   )
 }
 
-function OrderSummaryPanel({ currentStep, subtotalProducts, shippingTotal, grandTotal, onContinue }: { currentStep: CheckoutStep; subtotalProducts: number; shippingTotal: number; grandTotal: number; onContinue: () => void }) {
+function OrderSummaryPanel({ currentStep, onContinue }: { currentStep: CheckoutStep; onContinue: () => void }) {
   return (
     <aside className="relative lg:col-span-4">
       <div className="sticky top-24 overflow-hidden rounded-[var(--radius-xl)] border border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-surface-container-lowest)] p-6 shadow-sm md:p-8">
@@ -430,25 +422,26 @@ function OrderSummaryPanel({ currentStep, subtotalProducts, shippingTotal, grand
           </ul>
         ) : null}
 
+        {/* Totals are backend-computed — shown as '—' until a checkout endpoint provides them. */}
         <div className="mb-6 flex flex-col gap-3 text-[var(--color-on-surface-variant)]">
           <div className="text-body-md flex justify-between">
             <span>Subtotal Productos</span>
-            <span>{subtotalProducts.toFixed(2)}€</span>
+            <span>—</span>
           </div>
           <div className="text-body-md flex justify-between">
             <span>Gastos de Envío</span>
-            <span>{shippingTotal.toFixed(2)}€</span>
+            <span>—</span>
           </div>
         </div>
 
         <div className="mb-8 flex items-end justify-between border-t border-[var(--color-outline-variant)] pt-6">
           <span className="text-label-md text-[var(--color-on-surface)]">Total</span>
-          <span className="text-headline-md text-[28px] text-[var(--color-primary)]">{grandTotal.toFixed(2)}€</span>
+          <span className="text-headline-md text-[28px] text-[var(--color-primary)]">—</span>
         </div>
 
         <div className="flex flex-col gap-4">
           <button type="button" onClick={onContinue} className="text-label-md flex w-full items-center justify-center gap-2 bg-[var(--color-primary)] px-6 py-4 text-[var(--color-on-primary)] transition-colors duration-300 hover:bg-[var(--color-primary-container)]">
-            {currentStep === 1 ? 'Continuar al pago' : `Confirmar y pagar ${grandTotal.toFixed(2)}€`}
+            {currentStep === 1 ? 'Continuar al pago' : 'Confirmar y pagar'}
             {currentStep === 2 ? <Lock size={16} strokeWidth={1.8} /> : <ArrowRight size={16} strokeWidth={1.8} />}
           </button>
           <Link to="/carrito" className="text-label-md w-full border border-transparent py-2 text-center text-[var(--color-on-surface-variant)] transition-colors hover:border-[var(--color-outline-variant)] hover:text-[var(--color-primary)]">

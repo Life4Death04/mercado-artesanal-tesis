@@ -2,20 +2,10 @@ import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, ChevronLeft, ChevronRight, Mail, MapPin, Phone } from 'lucide-react'
 import { ConsumerProductCard, type ConsumerCatalogCardProduct } from '../../productos/componentes/ConsumerProductCard'
+import { useProducerMeQuery } from '../profile/hooks/useProducerMeQuery'
+import { resolveErrorMessage } from '../../../lib/errorMessages'
 
-const producerProfile = {
-  name: 'Finca Alicante',
-  location: 'Denia, Alicante',
-  email: 'info@fincaalicante.es',
-  phone: '+34 965 123 456',
-  story:
-    'Nuestra herencia se cultiva en las laderas de Denia, donde el aire del Mediterráneo y los suelos calcáreos dan vida a productos de una pureza excepcional. Seguimos procesos ancestrales de recolección manual para garantizar que cada botella de aceite y cada racimo de uva capture la esencia misma de nuestra tierra.',
-  coverImage:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDsKItCbKarmNtU4QmSr1L4gl0bW3gbUoZeZFU6XwTn9RU736jGyfxDjqcWzJJgTuP0zJYjBZOqpszZfgywxBaCXnkv9cRKtrGxMZ_baT_R9u6YfQAkVC1eNKS2YhR1yvVcOvdbJoyNSwSnuTBdi7lsCpDF785KUmOKFnNvMQJLUPp2hnlVkhEpL8ypyvd6dCxI1tKthoiYu44rnDLMM0OcXjdgGUKN2Dh9T4WQhyWWCW4Gyva60nuQCVuvyG7PZNXW3vi9_qjqRO8',
-  logoImage:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuAWWrkIzeok3Tp4CIELd0KwSmSIjsiZ-Vaf7G9rJgzOBWSgX6TEkHMBs7VFobCVMs0z4s5X5-zMMCAitHC19RImSILjyC5AcMirwfYNa3a4w8yna2N54_rUQBLuCzDPEVINFcBgGDvAL8XsWG59fVZ29xHDC5xd_bVX28IgpVJ5dnPSDEqdQuP6JLTpR6MAj37e8BpBjp4F5YquuRf3BQR3xlox05YTRHF1ZGHyEmTEve_0vDuprdaBv6Klum7wbdTxA6FnnXEVUQ8',
-}
-
+// Static catalog placeholder — will be replaced by real product hook in PR#2
 const catalogProducts: ConsumerCatalogCardProduct[] = [
   {
     id: 'aceite-oliva-arbequina',
@@ -143,12 +133,21 @@ const catalogProducts: ConsumerCatalogCardProduct[] = [
   },
 ]
 
+// Static media — not editable via this page (image endpoints are PR#2 scope)
+const STATIC_MEDIA = {
+  cover:
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuDsKItCbKarmNtU4QmSr1L4gl0bW3gbUoZeZFU6XwTn9RU736jGyfxDjqcWzJJgTuP0zJYjBZOqpszZfgywxBaCXnkv9cRKtrGxMZ_baT_R9u6YfQAkVC1eNKS2YhR1yvVcOvdbJoyNSwSnuTBdi7lsCpDF785KUmOKFnNvMQJLUPp2hnlVkhEpL8ypyvd6dCxI1tKthoiYu44rnDLMM0OcXjdgGUKN2Dh9T4WQhyWWCW4Gyva60nuQCVuvyG7PZNXW3vi9_qjqRO8',
+  logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAWWrkIzeok3Tp4CIELd0KwSmSIjsiZ-Vaf7G9rJgzOBWSgX6TEkHMBs7VFobCVMs0z4s5X5-zMMCAitHC19RImSILjyC5AcMirwfYNa3a4w8yna2N54_rUQBLuCzDPEVINFcBgGDvAL8XsWG59fVZ29xHDC5xd_bVX28IgpVJ5dnPSDEqdQuP6JLTpR6MAj37e8BpBjp4F5YquuRf3BQR3xlox05YTRHF1ZGHyEmTEve_0vDuprdaBv6Klum7wbdTxA6FnnXEVUQ8',
+}
+
 const previewLimit = 4
 const expandedPageSize = 8
 
 export function PerfilProductorPublicoPage() {
   const [expandedCatalog, setExpandedCatalog] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+
+  const { data: producer, isLoading, isError, error } = useProducerMeQuery()
 
   const totalPages = Math.max(1, Math.ceil(catalogProducts.length / expandedPageSize))
   const paginatedProducts = catalogProducts.slice((currentPage - 1) * expandedPageSize, currentPage * expandedPageSize)
@@ -158,6 +157,41 @@ export function PerfilProductorPublicoPage() {
     setExpandedCatalog((current) => !current)
     setCurrentPage(1)
   }
+
+  // --- Loading state ---
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[var(--color-surface)]">
+        <p className="text-body-md text-[var(--color-secondary)]">Cargando perfil del productor…</p>
+      </main>
+    )
+  }
+
+  // --- Error state (401 / 5xx / network) ---
+  if (isError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[var(--color-surface)]">
+        <div className="max-w-md text-center">
+          <p role="alert" className="text-body-md text-[var(--color-error)]">
+            {resolveErrorMessage(error)}
+          </p>
+          <Link
+            to="/productos"
+            className="text-label-md mt-6 inline-flex items-center gap-2 text-[var(--color-secondary)] transition-colors hover:text-[var(--color-primary)]"
+          >
+            <ArrowLeft size={16} strokeWidth={1.8} />
+            Volver al catálogo
+          </Link>
+        </div>
+      </main>
+    )
+  }
+
+  const businessName = producer?.businessName ?? '—'
+  const city = producer?.address.city ?? ''
+  const province = producer?.address.province ?? ''
+  const location = province ? `${city}, ${province}` : city
+  const description = producer?.description ?? ''
 
   return (
     <main className="min-h-screen bg-[var(--color-surface)] px-[var(--space-margin-mobile)] py-10 text-[var(--color-on-surface)] md:px-[var(--space-margin-desktop)] md:py-16">
@@ -179,25 +213,38 @@ export function PerfilProductorPublicoPage() {
 
         <article className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] bg-white shadow-[var(--shadow-editorial)]">
           <div className="relative h-64 w-full md:h-80">
-            <img src={producerProfile.coverImage} alt="Olivares soleados en las montañas de Denia, Alicante" className="size-full object-cover" />
+            <img src={STATIC_MEDIA.cover} alt={`Imagen de portada de ${businessName}`} className="size-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
             <div className="absolute -bottom-16 left-6 size-32 rounded-full bg-white p-1 shadow-md md:left-12">
               <div className="flex size-full items-center justify-center overflow-hidden rounded-full border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)]">
-                <img src={producerProfile.logoImage} alt={`Logotipo de ${producerProfile.name}`} className="size-full object-cover" />
+                <img src={STATIC_MEDIA.logo} alt={`Logotipo de ${businessName}`} className="size-full object-cover" />
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-10 px-6 pt-24 pb-10 md:px-12 md:pb-12 lg:grid-cols-12 lg:gap-[var(--space-gutter)]">
             <div className="lg:col-span-8">
-              <h2 className="text-display-lg mb-4 text-[var(--color-primary)]">{producerProfile.name}</h2>
-              <p className="text-body-lg max-w-3xl leading-relaxed text-[var(--color-on-surface)] italic">“{producerProfile.story}”</p>
+              <h2 className="text-display-lg mb-4 text-[var(--color-primary)]">{businessName}</h2>
+              {description ? (
+                <p className="text-body-lg max-w-3xl leading-relaxed text-[var(--color-on-surface)] italic">"{description}"</p>
+              ) : null}
             </div>
 
             <dl className="flex flex-col justify-center gap-4 border-t border-[var(--color-outline-variant)] pt-8 lg:col-span-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-[var(--space-gutter)]">
-              <ContactItem icon={<MapPin size={22} strokeWidth={1.7} />} label="Municipio" value={producerProfile.location} />
-              <ContactItem icon={<Mail size={22} strokeWidth={1.7} />} label="Contacto público" value={producerProfile.email} />
-              <ContactItem icon={<Phone size={22} strokeWidth={1.7} />} label="Teléfono" value={producerProfile.phone} />
+              {location ? (
+                <ContactItem icon={<MapPin size={22} strokeWidth={1.7} />} label="Municipio" value={location} />
+              ) : null}
+              {/* Phone and public email come from future product-catalog integration */}
+              <ContactItem
+                icon={<Mail size={22} strokeWidth={1.7} />}
+                label="Contacto público"
+                value="—"
+              />
+              <ContactItem
+                icon={<Phone size={22} strokeWidth={1.7} />}
+                label="Teléfono"
+                value="—"
+              />
             </dl>
           </div>
         </article>
