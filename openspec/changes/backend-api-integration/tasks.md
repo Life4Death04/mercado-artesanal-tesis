@@ -16,6 +16,10 @@
 
 ## Phase 4: Verification + Apply Readiness
 - [ ] 4.1 [Each PR] Add a manual checklist covering happy path + one 401 + one mapped 4xx + one 5xx/offline path for touched pages. AC: every slice is reviewable/revertible. Files: `openspec/changes/backend-api-integration/tasks.md` during apply. Spec: proposal test-strategy lock. Verify: checklist completion.
+  - **Evidence collection pending**: The checklist template has been created at
+    `openspec/changes/backend-api-integration/manual-smoke-pr4.md`. Task 4.1 MUST remain
+    unchecked until the producer completes the manual walkthrough and fills in all evidence
+    slots in that file. Do NOT mark 4.1 complete on the basis of this commit alone.
 
 ## Review Workload Forecast
 - Total estimated changed lines: 2,100-2,900
