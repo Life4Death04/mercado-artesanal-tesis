@@ -1,26 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import type { Producto } from '../productos.schema'
+import { listPublicProducts } from '../productos.api'
+import { productosKeys } from '../productos.queryKeys'
+import type { PublicProductsQuery } from '../productos.schema'
 
-const productosMock: Producto[] = [
-  {
-    id: 'pan-masa-madre',
-    nombre: 'Pan de masa madre',
-    productor: 'Horno La Colina',
-    precio: '6.50',
-    categoria: 'Panaderia',
-  },
-  {
-    id: 'miel-floracion',
-    nombre: 'Miel de floracion silvestre',
-    productor: 'Apiario Dulce Monte',
-    precio: '9.75',
-    categoria: 'Conservas',
-  },
-]
-
-export function useProductos() {
+export function useProductos(query: PublicProductsQuery = {}) {
   return useQuery({
-    queryKey: ['productos'],
-    queryFn: async () => productosMock,
+    queryKey: productosKeys.list(query),
+    queryFn: ({ signal }) => listPublicProducts(query, signal),
   })
 }
