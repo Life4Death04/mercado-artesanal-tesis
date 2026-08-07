@@ -1,37 +1,18 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ChevronRight, ExternalLink, LogOut, MapPin, Plus } from 'lucide-react'
-import { AgregarDireccionModal, EditarDireccionModal, type NewAddressInput, type EditAddressInput } from '../componentes/ProfileModals'
-
-type Address = {
-  id: string
-  alias: string
-  line1: string
-  line2: string
-  isDefault: boolean
-}
+import { resolveErrorMessage } from '../../../lib/errorMessages'
+import { AgregarDireccionModal, EditarDireccionModal } from '../componentes/ProfileModals'
+import type { Address, CreateAddressInput, UpdateAddressInput } from '../direcciones.schema'
+import { useAddressesQuery } from '../hooks/useAddressesQuery'
+import { useCreateAddressMutation } from '../hooks/useCreateAddressMutation'
+import { useDeleteAddressMutation } from '../hooks/useDeleteAddressMutation'
+import { useUpdateAddressMutation } from '../hooks/useUpdateAddressMutation'
 
 type ProfileFormState = {
   name: string
   phone: string
 }
-
-const initialAddresses: Address[] = [
-  {
-    id: 'addr-1',
-    alias: 'Casa',
-    line1: 'Calle del Teatro, 14, 3º Izquierda',
-    line2: '03001 Alicante, España',
-    isDefault: true,
-  },
-  {
-    id: 'addr-2',
-    alias: 'Trabajo',
-    line1: 'Avenida de la Constitución, 2',
-    line2: '03002 Alicante, España',
-    isDefault: false,
-  },
-]
 
 const initialProfile: ProfileFormState = {
   name: 'Alejandro Valls',
@@ -50,58 +31,54 @@ export function PerfilPage() {
   const navigate = useNavigate()
   const [isEditing, setIsEditing] = useState(false)
   const [profile, setProfile] = useState(initialProfile)
-  const [addresses, setAddresses] = useState(initialAddresses)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingAddress, setEditingAddress] = useState<Address | null>(null)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
+  const addressesQuery = useAddressesQuery()
+  const createAddressMutation = useCreateAddressMutation()
+  const editAddressMutation = useUpdateAddressMutation()
+  const markDefaultMutation = useUpdateAddressMutation()
+  const deleteAddressMutation = useDeleteAddressMutation()
+
+  const addresses = addressesQuery.data ?? []
+  const addressListError = addressesQuery.isError ? resolveErrorMessage(addressesQuery.error) : null
+  const addressActionError = [markDefaultMutation, deleteAddressMutation].find((mutation) => mutation.isError)?.error
+
   function handleToggleEdit() {
     setIsEditing((editing) => !editing)
   }
 
-  function handleSaveAddress(address: NewAddressInput) {
-    setAddresses((currentAddresses) => {
-      const nextAddresses = address.isDefault
-        ? currentAddresses.map((currentAddress) => ({ ...currentAddress, isDefault: false }))
-        : currentAddresses
-
-      return [
-        ...nextAddresses,
-        {
-          id: `addr-${Date.now()}`,
-          alias: address.alias,
-          line1: address.line1,
-          line2: address.line2,
-          isDefault: address.isDefault,
-        },
-      ]
-    })
+  function handleCloseAddModal() {
+    setShowAddModal(false)
+    createAddressMutation.reset()
   }
 
-  function handleEditAddress(addressId: string, updates: EditAddressInput) {
-    setAddresses((currentAddresses) =>
-      currentAddresses.map((address) => {
-        if (address.id !== addressId) {
-          return updates.isDefault ? { ...address, isDefault: false } : address
-        }
+  function handleSaveAddress(input: CreateAddressInput) {
+    createAddressMutation.mutate(input, { onSuccess: () => setShowAddModal(false) })
+  }
 
-        return { ...address, ...updates }
-      }),
+  function handleCloseEditModal() {
+    setEditingAddress(null)
+    editAddressMutation.reset()
+  }
+
+  function handleEditAddress(updates: UpdateAddressInput) {
+    if (!editingAddress) return
+
+    editAddressMutation.mutate(
+      { addressId: editingAddress.id, input: updates },
+      { onSuccess: () => setEditingAddress(null) },
     )
   }
 
   function handleDeleteAddress(addressId: string) {
-    setAddresses((currentAddresses) => currentAddresses.filter((address) => address.id !== addressId))
+    deleteAddressMutation.mutate(addressId)
   }
 
   function handleMarkDefault(addressId: string) {
-    setAddresses((currentAddresses) =>
-      currentAddresses.map((address) => ({
-        ...address,
-        isDefault: address.id === addressId,
-      })),
-    )
+    markDefaultMutation.mutate({ addressId, input: { isDefault: true } })
   }
 
   return (
@@ -226,11 +203,36 @@ export function PerfilPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-[var(--space-gutter)] md:grid-cols-2">
-            {addresses.map((addr) => (
-              <AddressCard key={addr.id} address={addr} onEdit={() => setEditingAddress(addr)} onDelete={() => handleDeleteAddress(addr.id)} onMarkDefault={() => handleMarkDefault(addr.id)} />
-            ))}
-          </div>
+          {addressesQuery.isLoading ? (
+            <p className="text-body-md py-10 text-center text-[var(--color-on-surface-variant)]">Cargando direcciones...</p>
+          ) : addressListError ? (
+            <p role="alert" className="text-body-md rounded-[var(--radius-default)] bg-[var(--color-error-container)] p-4 text-[var(--color-error)]">
+              {addressListError}
+            </p>
+          ) : addresses.length > 0 ? (
+            <div className="grid grid-cols-1 gap-[var(--space-gutter)] md:grid-cols-2">
+              {addresses.map((addr) => (
+                <AddressCard
+                  key={addr.id}
+                  address={addr}
+                  onEdit={() => setEditingAddress(addr)}
+                  onDelete={() => handleDeleteAddress(addr.id)}
+                  onMarkDefault={() => handleMarkDefault(addr.id)}
+                  isDeleting={deleteAddressMutation.isPending && deleteAddressMutation.variables === addr.id}
+                  isMarkingDefault={markDefaultMutation.isPending && markDefaultMutation.variables?.addressId === addr.id}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-body-md rounded-[var(--radius-default)] border border-dashed border-[var(--color-outline-variant)] p-8 text-center text-[var(--color-on-surface-variant)]">
+              Aún no tienes direcciones guardadas.
+            </p>
+          )}
+          {addressActionError ? (
+            <p role="alert" className="text-body-md mt-6 text-[var(--color-error)]">
+              {resolveErrorMessage(addressActionError)}
+            </p>
+          ) : null}
         </section>
 
         <Divider />
@@ -255,15 +257,21 @@ export function PerfilPage() {
       </main>
 
 
-      {showAddModal ? <AgregarDireccionModal onClose={() => setShowAddModal(false)} onSave={handleSaveAddress} /> : null}
+      {showAddModal ? (
+        <AgregarDireccionModal
+          onClose={handleCloseAddModal}
+          onSave={handleSaveAddress}
+          error={createAddressMutation.isError ? resolveErrorMessage(createAddressMutation.error) : null}
+          isSaving={createAddressMutation.isPending}
+        />
+      ) : null}
       {editingAddress ? (
         <EditarDireccionModal
           address={editingAddress}
-          onClose={() => setEditingAddress(null)}
-          onSave={(updates) => {
-            handleEditAddress(editingAddress.id, updates)
-            setEditingAddress(null)
-          }}
+          onClose={handleCloseEditModal}
+          onSave={handleEditAddress}
+          error={editAddressMutation.isError ? resolveErrorMessage(editAddressMutation.error) : null}
+          isSaving={editAddressMutation.isPending}
         />
       ) : null}
       {showLogoutConfirm ? (
@@ -289,7 +297,21 @@ export function PerfilPage() {
   )
 }
 
-function AddressCard({ address, onEdit, onDelete, onMarkDefault }: { address: Address; onEdit: () => void; onDelete: () => void; onMarkDefault: () => void }) {
+function AddressCard({
+  address,
+  onEdit,
+  onDelete,
+  onMarkDefault,
+  isDeleting = false,
+  isMarkingDefault = false,
+}: {
+  address: Address
+  onEdit: () => void
+  onDelete: () => void
+  onMarkDefault: () => void
+  isDeleting?: boolean
+  isMarkingDefault?: boolean
+}) {
   return (
     <div
       className={`group border p-8 bg-white transition-all ${
@@ -299,7 +321,7 @@ function AddressCard({ address, onEdit, onDelete, onMarkDefault }: { address: Ad
       }`}
     >
       <div className="mb-4 flex items-start justify-between">
-        <h3 className="text-label-md uppercase tracking-widest text-[var(--color-outline)]">{address.alias}</h3>
+        <h3 className="text-label-md uppercase tracking-widest text-[var(--color-outline)]">{address.city}</h3>
         {address.isDefault ? (
           <span className="border border-[#7A2E3A] px-2 py-0.5 text-[10px] font-bold uppercase text-[#7A2E3A]">
             Predeterminada
@@ -311,8 +333,14 @@ function AddressCard({ address, onEdit, onDelete, onMarkDefault }: { address: Ad
         <MapPin size={16} strokeWidth={1.8} className="mt-1 shrink-0 text-[var(--color-outline)]" />
         <span>
           {address.line1}
+          {address.line2 ? (
+            <>
+              <br />
+              {address.line2}
+            </>
+          ) : null}
           <br />
-          {address.line2}
+          {address.postalCode} {address.city}, {address.province}
         </span>
       </div>
 
@@ -320,12 +348,22 @@ function AddressCard({ address, onEdit, onDelete, onMarkDefault }: { address: Ad
         <button type="button" onClick={onEdit} className="text-label-sm text-[var(--color-on-surface-variant)] transition-colors hover:text-[#7A2E3A]">
           Editar
         </button>
-        <button type="button" onClick={onDelete} className="text-label-sm text-[var(--color-on-surface-variant)] transition-colors hover:text-[#7A2E3A]">
-          Eliminar
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={isDeleting}
+          className="text-label-sm text-[var(--color-on-surface-variant)] transition-colors hover:text-[#7A2E3A] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isDeleting ? 'Eliminando...' : 'Eliminar'}
         </button>
         {!address.isDefault ? (
-          <button type="button" onClick={onMarkDefault} className="text-label-sm ml-auto text-[#7A2E3A]/60 transition-colors hover:text-[#7A2E3A]">
-            Marcar predeterminada
+          <button
+            type="button"
+            onClick={onMarkDefault}
+            disabled={isMarkingDefault}
+            className="text-label-sm ml-auto text-[#7A2E3A]/60 transition-colors hover:text-[#7A2E3A] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isMarkingDefault ? 'Actualizando...' : 'Marcar predeterminada'}
           </button>
         ) : null}
       </div>
