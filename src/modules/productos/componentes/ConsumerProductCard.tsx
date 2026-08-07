@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Star } from 'lucide-react'
+import { ImageOff, Star } from 'lucide-react'
 
 export type ConsumerCatalogCardProduct = {
   id: string
@@ -11,7 +11,7 @@ export type ConsumerCatalogCardProduct = {
   stock?: 'En stock' | 'Sin stock'
   rating?: number
   reviews?: number
-  imageUrl: string
+  imageUrl?: string
 }
 
 type ConsumerProductCardProps = {
@@ -29,11 +29,18 @@ export function ConsumerProductCard({ product }: ConsumerProductCardProps) {
     >
       <Link to={`/productos/${product.id}`} className="flex h-full flex-col">
         <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--color-surface-container)]">
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="size-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
-          />
+          {product.imageUrl ? (
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="size-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex size-full flex-col items-center justify-center gap-3 px-6 text-center text-[var(--color-on-surface-variant)]" role="img" aria-label={`${product.name} no tiene imagen disponible`}>
+              <ImageOff size={34} strokeWidth={1.4} aria-hidden="true" />
+              <span className="text-label-sm">Imagen no disponible</span>
+            </div>
+          )}
           {product.stock ? <StockBadge status={product.stock} /> : null}
         </div>
 

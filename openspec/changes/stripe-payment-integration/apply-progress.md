@@ -78,3 +78,29 @@ For a PRODUCER who returns to `/checkout?case=C04-return&source=manual`, the con
 ### Task State
 
 - [x] 1.1 PR1 foundation — implementation and C04 complete.
+
+## PR2 Cart
+
+**Mode:** Standard (manual-only; `strict_tdd: false`)
+
+PR2 replaces local cart state with the authenticated cart API, Zod response boundary, TanStack Query cache, corrective mutation errors, and a server-derived cart badge. Checkout is unavailable for an empty or server-unavailable cart.
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Focused quality command | `npm run lint` — exit 0; 0 errors and 1 pre-existing React Compiler warning in `EditarPerfilPublicoPage.tsx` (`watch()`). |
+| Runtime harness | `npm run build` — exit 0; TypeScript and Vite production build completed. Browser scenarios C01–C03 require maintainer observation and are not claimed as passed. |
+| Rollback boundary | Revert `src/modules/carrito/{carrito.api,carrito.schema,carrito.queryKeys}.ts`, `src/modules/carrito/hooks/useCart.ts`, and the PR2 cart integrations in `CarritoPage.tsx`, `DetalleProductoPage.tsx`, and `AuthenticatedTopbar.tsx`. |
+
+### Manual Verification Checklist: C01–C03
+
+| Case | Steps | Expected result | Observed |
+|---|---|---|---|
+| C01 — valid mutation and refresh | Sign in as purchaser, add an available product, change its quantity, then reload `/carrito`. | Network uses cart item endpoints; page and topbar badge converge on the reloaded server cart. | Pending maintainer browser observation. |
+| C02 — corrective mutation failure | Attempt a quantity above server stock or mutate a stale item. | No false success; confirmed cart remains visible and an actionable error is shown. | Pending maintainer browser observation. |
+| C03 — empty/unavailable checkout | Empty the cart, then repeat with a server item marked unavailable. | Empty state renders; unavailable item remains visible with guidance and checkout is blocked. | Pending maintainer browser observation. |
+
+### Task State
+
+- [ ] 1.2 PR2 cart — implementation and bounded checks complete; C01–C03 browser evidence pending, so the task remains open.
