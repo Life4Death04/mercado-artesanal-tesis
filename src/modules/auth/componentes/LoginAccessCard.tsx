@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { LockKeyhole } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { APP_NAME } from '../../../lib/branding'
-import { loginAuthorizationParams, signupAuthorizationParams } from '../authRedirect'
+import { loginAuthorizationParams, safeReturnTo, signupAuthorizationParams } from '../authRedirect'
 import { GoogleIcon } from './GoogleIcon'
 
 export function LoginAccessCard() {
@@ -10,7 +10,7 @@ export function LoginAccessCard() {
   const location = useLocation()
 
   const locationState = location.state as { returnTo?: unknown } | null
-  const returnTo = typeof locationState?.returnTo === 'string' ? locationState.returnTo : '/login'
+  const returnTo = safeReturnTo(locationState?.returnTo, '/login')
 
   function login() {
     void loginWithRedirect({

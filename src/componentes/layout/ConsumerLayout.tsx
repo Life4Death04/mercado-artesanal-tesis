@@ -3,11 +3,12 @@ import { Outlet } from 'react-router-dom'
 import { AuthenticatedTopbar } from './AuthenticatedTopbar'
 import { ConsumerFooter } from './ConsumerFooter'
 import { RoleSidebar } from './RoleSidebar'
+import { useCurrentUser } from '../../modules/auth/hooks/useCurrentUser'
 
 export function ConsumerLayout() {
-  const [sidebarOwner] = useState(() => window.localStorage.getItem('sidebar-owner'))
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
-  const isProducerBrowsingStore = sidebarOwner === 'producer'
+  const currentUserQuery = useCurrentUser()
+  const isProducerBrowsingStore = currentUserQuery.data?.role === 'PRODUCER'
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">

@@ -48,11 +48,15 @@ export function AppRouter() {
             <Route path="productos" element={<CatalogoPage />} />
             <Route path="productos/:productoId" element={<DetalleProductoPage />} />
             <Route path="productores/:productorId" element={<PerfilProductorPublicoPage />} />
+            <Route path="perfil" element={<PerfilPage />} />
+            <Route path="incidencias" element={<MisIncidenciasPage />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoutes allowedRoles={['CONSUMER', 'PRODUCER']} />}>
+          <Route element={<ConsumerLayout />}>
             <Route path="carrito" element={<CarritoPage />} />
             <Route path="checkout" element={<CheckoutPage />} />
             <Route path="pedidos" element={<HistorialPedidosPage />} />
-            <Route path="perfil" element={<PerfilPage />} />
-            <Route path="incidencias" element={<MisIncidenciasPage />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoutes allowedRoles={['PRODUCER']} />}>

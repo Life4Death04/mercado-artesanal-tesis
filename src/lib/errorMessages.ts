@@ -30,7 +30,10 @@ export const ERROR_MESSAGES: Record<string, string> = {
   // --- Business rule violations ---
   INVALID_DEFAULT_TRANSITION: 'Esta transición de estado no está permitida.',
   INVALID_ORDER_TRANSITION: 'El estado del pedido no puede cambiar a la opción seleccionada.',
+  EMPTY_CART_CHECKOUT: 'Tu carrito está vacío. Añade productos antes de continuar con el pago.',
+  CART_ITEM_NOT_AVAILABLE: 'Uno o más productos del carrito ya no están disponibles. Revisa el carrito antes de continuar.',
   INSUFFICIENT_STOCK: 'No hay stock suficiente para completar esta operación.',
+  PAYMENT_INTENT_CREATION_FAILED: 'No se pudo preparar el pago. Revisa tu carrito e inténtalo de nuevo.',
   PRODUCT_HAS_ACTIVE_ORDERS: 'Este producto tiene pedidos activos y no puede modificarse ahora.',
   PRODUCER_HAS_ACTIVE_ORDERS: 'Tu cuenta tiene pedidos activos. Resuélvelos antes de continuar.',
 
