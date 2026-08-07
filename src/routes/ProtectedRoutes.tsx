@@ -24,7 +24,13 @@ export function ProtectedRoutes({
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ returnTo: location.pathname }} />
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ returnTo: `${location.pathname}${location.search}` }}
+      />
+    )
   }
 
   if (currentUserQuery.isLoading) {

@@ -7,6 +7,7 @@ export type ApiRequestOptions = {
   accessToken?: string
   body?: unknown
   headers?: HeadersInit
+  signal?: AbortSignal
 }
 
 export class ApiError extends Error {
@@ -43,6 +44,7 @@ export async function apiRequest<TResponse>(
     method: options.method ?? 'GET',
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    signal: options.signal,
   })
 
   if (!response.ok) {

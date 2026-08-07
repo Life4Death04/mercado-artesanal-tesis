@@ -1,0 +1,37 @@
+schema: spec-driven
+
+context: |
+  Stack: React 19, Vite 8, TypeScript 6, Tailwind CSS 4, React Router 7, TanStack Query 5, Zod 4.
+  Architecture: module-oriented frontend under src/modules with shared UI in src/componentes.
+  Quality: ESLint 10 and TypeScript project build; no formatter or automated test runner is installed.
+  Active change: stripe-payment-integration; frontend-only Stripe Payment Element integration.
+  Delivery: interactive, hybrid persistence, force-chained, 800 changed-line review budget per PR.
+
+testing:
+  strict_tdd: false
+  status: manual-only
+  reason: The maintainer explicitly chose manual frontend verification instead of installing an automated test runner for this change.
+  prerequisite: Define reproducible manual test cases with setup, steps, and expected results for every implementation work unit.
+  test_command: ""
+  build_command: npm run build
+  lint_command: npm run lint
+  typecheck_command: npm run build
+  coverage_command: ""
+
+rules:
+  proposal:
+    - Keep product scope frontend-only and document external backend prerequisites.
+  specs:
+    - Use RFC 2119 requirements with Given/When/Then scenarios.
+  design:
+    - Preserve backend-authoritative payment and order contracts.
+  tasks:
+    - Maintain force-chained work units within the 800 changed-line review budget.
+  apply:
+    - Attach a manual verification checklist to every implementation work unit.
+    - Record observed results for every required manual test before marking a work unit complete.
+    - Do not modify external backend prerequisites or unrelated change artifacts.
+  verify:
+    - Run lint and build, then execute and record the approved manual frontend test matrix.
+  archive:
+    - Warn before merging destructive deltas into main specifications.
