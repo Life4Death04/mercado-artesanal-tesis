@@ -264,3 +264,37 @@ immediate PR2 predecessor; PR3b must target PR3a, never `main`.
 
 A01–A06 are intentionally **pending**. They exercise the profile UI isolated in PR3b and must be
 recorded after that stash is restored on the immediate PR3a child branch and browser-tested.
+
+## PR3b Profile Address UI — Restoration and Static Validation
+
+**Mode:** Standard (manual-only; `strict_tdd: false`)
+
+**Chain strategy:** Feature-branch-chain. `feat/stripe-payment-integration-pr3b-address-ui` is the
+immediate child of `feat/stripe-payment-integration-pr3a-address-contracts` at commit
+`ffa27f33fcca3af0b5747b76603721469fe8f091` (tree
+`fe5523ceab7b57aa03179e7ca8efd24ba5aeb427`); it must target PR3a, never `main`.
+
+### Scope and Preservation
+
+| Item | Result |
+|---|---|
+| Restored source scope | Applied (not popped) named stash `pr3b-addresses-ui` (`4b02269557095ba1d31fb62527e10dc0c75d0fd3`) and restored exactly `src/modules/perfil/componentes/ProfileModals.tsx` and `src/modules/perfil/pages/PerfilPage.tsx`. |
+| Contract integration | The UI consumes the PR3a `Address` types, CRUD hooks, shared `addressKeys.all()` invalidation behavior, and safe error resolver. Mock aliases, recipient, phone, and local address state remain removed. |
+| Bounded compatibility correction | The restored edit modal now constructs a partial `UpdateAddressInput`, sending only fields changed from the confirmed address. This satisfies A02 and avoids rewriting unchanged fields. |
+| Preservation evidence | `git stash list` still reports `stash@{0}: ... pr3b-addresses-ui`; `git stash show --name-status 4b02269557095ba1d31fb62527e10dc0c75d0fd3` still lists the same two UI paths. Nothing was staged, committed, pushed, installed, or changed outside the two UI paths and this progress artifact. |
+| Product task state | No additional product task was completed. `tasks.md` keeps 2.1 checked from the original implementation/static milestone. A01–A06 remain pending maintainer browser observation. |
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Whitespace check | `git diff --check` — exit 0; no whitespace errors. |
+| Focused quality command | `npm run lint` — exit 0; 0 errors and 1 pre-existing React Compiler warning in `src/modules/productor/pages/EditarPerfilPublicoPage.tsx` (`watch()`). |
+| Static build command | `npm run build` — exit 0; `tsc -b` and Vite completed. Vite warned that existing output chunks exceed 500 kB after minification. |
+| Runtime harness | N/A for this static-validation preparation batch. Browser A01–A06 require maintainer observation and are not claimed. A parent-acquired native runtime attempt/ledger was neither acquired, settled, reset, nor mutated. |
+| Rollback boundary | Revert only `src/modules/perfil/componentes/ProfileModals.tsx` and `src/modules/perfil/pages/PerfilPage.tsx` to the PR3a base; the address data layer, other feature slices, and retained named stash are independent. |
+
+### Manual Verification State
+
+A01–A06 remain **pending maintainer browser observation**. No browser evidence is claimed by this
+static-validation batch.
