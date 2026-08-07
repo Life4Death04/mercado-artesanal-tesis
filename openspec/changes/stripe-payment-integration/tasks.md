@@ -22,7 +22,8 @@ Chain strategy: feature-branch-chain
 |---|---|---|
 | PR1 280–360 | tracker → foundation | `npm run lint && npm run build`; C04; revert session/config |
 | PR2 280–360 | PR1 → cart | `npm run lint && npm run build`; C01–C03; revert cart |
-| PR3 300–380 | PR2 → addresses | `npm run lint && npm run build`; A01–A06; revert addresses |
+| PR3a 141 source lines | PR2 → address contracts | `npm run lint && npm run build`; revert address API/schema/query-key/hooks |
+| PR3b 418 source lines | PR3a → profile address UI | `npm run lint && npm run build`; A01–A06; revert profile address UI |
 | PR4 260–340 | PR3 → delivery | `npm run lint && npm run build`; D01–D05; revert delivery |
 | PR5 320–390 | PR4 → payment | `npm run lint && npm run build`; P01–P06; revert Stripe form |
 | PR6 240–340 | PR5 → outcomes | `npm run lint && npm run build`; R01–R05; revert processing route |
@@ -30,14 +31,20 @@ Chain strategy: feature-branch-chain
 
 PR1 targets tracker; each child targets its predecessor. Retarget polluted diffs; only verified tracker merges to `main`.
 
+### PR3 Delivery Slice Status
+
+- **PR3a — address contracts:** Autonomous contract/query-key/hook slice on `feat/stripe-payment-integration-pr3a-address-contracts`. It contains only the seven new address boundary files and the SDD split evidence; it is under the 450 changed-line native ceiling.
+- **PR3b — profile address UI:** The `PerfilPage.tsx` and `ProfileModals.tsx` integration diff is preserved in the named `pr3b-addresses-ui` Git stash and remains out of PR3a. Restore it only on the immediate PR3a child branch, then run the A01–A06 browser matrix.
+- **Task 2.1 remains checked:** Its original implementation/static-check milestone is preserved. This split does not complete any additional product task, and A01–A06 remain pending until PR3b is restored and browser-tested.
+
 ## Phase 1: Foundation and Cart
 
 - [x] 1.1 PR1 — Start: auth/session. CREATE `src/modules/auth/componentes/AuthSessionCacheGuard.tsx` and `src/modules/pedidos/stripeClient.ts`; MODIFY `src/{main.tsx,routes/ProtectedRoutes.tsx,lib/{api,errorMessages}.ts,modules/auth/{componentes/AuthProvider.tsx,hooks/useAuthenticatedApi.ts}}`, `.env.example`, `vite-env.d.ts`, `package.json`. Finish: guard preserves path+query; AbortSignal/cache clear on auth loss; key fail-closed; `main.tsx` wires cache guard only. Manual C04: ADMIN/sign-out request hides content and preserves safe return.
-- [ ] 1.2 PR2 — Start: cart mocks. CREATE `src/modules/carrito/{carrito.api,carrito.schema,carrito.queryKeys}.ts` and hooks; MODIFY `src/modules/{carrito/pages/CarritoPage.tsx,productos/pages/DetalleProductoPage.tsx}`, `src/componentes/layout/AuthenticatedTopbar.tsx`. Finish: server cart/badge. Manual C01–C03: valid/rejected mutation, empty/unavailable; refresh, corrective error, blocked checkout.
+- [x] 1.2 PR2 — Start: cart mocks. CREATE `src/modules/carrito/{carrito.api,carrito.schema,carrito.queryKeys}.ts` and hooks; MODIFY `src/modules/{carrito/pages/CarritoPage.tsx,productos/pages/DetalleProductoPage.tsx}`, `src/componentes/layout/AuthenticatedTopbar.tsx`. Finish: server cart/badge. Manual C01–C03: valid/rejected mutation, empty/unavailable; refresh, corrective error, blocked checkout.
 
 ## Phase 2: Addresses and Delivery
 
-- [ ] 2.1 PR3 — Start: profile address mocks. CREATE `src/modules/perfil/{direcciones.api,direcciones.schema,direcciones.queryKeys}.ts` and address hooks; MODIFY `src/modules/perfil/{pages/PerfilPage.tsx,componentes/ProfileModals.tsx}`. Finish: shared cache. Manual A01–A06: first/default, partial edit, ordering, 422 demotion, delete promotion, owner-safe 404; retain server state.
+- [x] 2.1 PR3 — Start: profile address mocks. CREATE `src/modules/perfil/{direcciones.api,direcciones.schema,direcciones.queryKeys}.ts` and address hooks; MODIFY `src/modules/perfil/{pages/PerfilPage.tsx,componentes/ProfileModals.tsx}`. Finish: shared cache. Manual A01–A06: first/default, partial edit, ordering, 422 demotion, delete promotion, owner-safe 404; retain server state.
 - [ ] 2.2 PR4 — Start: fresh cart/address cache. CREATE `src/modules/pedidos/{pagos.api,pagos.schema,hooks/useDeliveryModesQuery.ts,componentes/CheckoutDeliveryStep.tsx}`; MODIFY `src/modules/pedidos/pages/CheckoutPage.tsx`. Finish: one active mode/producer. Manual D01–D05: complete/changed selections, shipping, pickup omission, invalid address; require bijection and hide ownership.
 
 ## Phase 3: Payment and Return

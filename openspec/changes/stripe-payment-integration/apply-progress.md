@@ -97,10 +97,170 @@ PR2 replaces local cart state with the authenticated cart API, Zod response boun
 
 | Case | Steps | Expected result | Observed |
 |---|---|---|---|
-| C01 — valid mutation and refresh | Sign in as purchaser, add an available product, change its quantity, then reload `/carrito`. | Network uses cart item endpoints; page and topbar badge converge on the reloaded server cart. | Pending maintainer browser observation. |
-| C02 — corrective mutation failure | Attempt a quantity above server stock or mutate a stale item. | No false success; confirmed cart remains visible and an actionable error is shown. | Pending maintainer browser observation. |
-| C03 — empty/unavailable checkout | Empty the cart, then repeat with a server item marked unavailable. | Empty state renders; unavailable item remains visible with guidance and checkout is blocked. | Pending maintainer browser observation. |
+| C01 — valid mutation and refresh | Sign in as purchaser, add an available product, change its quantity, then reload `/carrito`. | Network uses cart item endpoints; page and topbar badge converge on the reloaded server cart. | Maintainer-observed manual browser result: confirmed passing. |
+| C02 — corrective mutation failure | Attempt a quantity above server stock or mutate a stale item. | No false success; confirmed cart remains visible and an actionable error is shown. | Maintainer-observed manual browser result: confirmed passing. |
+| C03 — empty/unavailable checkout | Empty the cart, then repeat with a server item marked unavailable. | Empty state renders; unavailable item remains visible with guidance and checkout is blocked. | Maintainer-observed manual browser result: confirmed passing. |
+
+### PR2 Final Manual Result — PASS
+
+| Field | Record |
+|---|---|
+| Final observation | Maintainer confirmed the cart flow (C01–C03) works in the browser: valid mutation/refresh, corrective mutation-failure handling, and empty/unavailable checkout blocking all behave as specified. |
+| Evidence source / limitation | Maintainer-observed manual browser result; no screenshot or video attachment was supplied in chat. |
 
 ### Task State
 
-- [ ] 1.2 PR2 cart — implementation and bounded checks complete; C01–C03 browser evidence pending, so the task remains open.
+- [x] 1.2 PR2 cart — implementation, bounded checks, and maintainer-confirmed C01–C03 browser pass are complete.
+
+## PR3 Addresses — Original Candidate Evidence
+
+**Mode:** Standard (manual-only; `strict_tdd: false`)
+
+The original PR3 candidate replaces the profile's hardcoded address list with the authenticated address-book CRUD
+(`GET/POST/PATCH/DELETE /api/v1/users/me/addresses`), a Zod response boundary, one shared
+`addressKeys` query-key factory, and TanStack Query hooks. Profile is now the first consumer of
+the shared address cache that checkout (PR4) will also read.
+
+### Backend Contract Confirmation
+
+Verified directly against the backend repository (not assumed) before writing the Zod schema:
+
+- Response fields (`src/modules/addresses/services/addresses.service.ts` + Prisma `Address`
+  model): `id` (cuid string), `userId`, `line1`, `line2` (nullable string), `city`, `postalCode`,
+  `province`, `country`, `isDefault` (boolean), `createdAt`/`updatedAt` (ISO strings),
+  `deletedAt` (null for active rows — the controller returns the full Prisma row, no field
+  stripping). The frontend schema only requires the UI-consumed subset and uses `.passthrough()`
+  so the extra fields never break parsing.
+- Create body (`AddressBaseSchema` in `addresses.controller.ts`): `line1` non-empty, `line2`
+  nullable/optional, `city` non-empty, `postalCode` must match `^\d{5}$` (Spanish 5-digit),
+  `province` non-empty, `country` optional 2-letter (defaults `ES` server-side — omitted from the
+  UI since this is a Spain-only project), `isDefault` optional boolean. Update body is the same
+  shape, `.partial()`.
+- Error codes confirmed against `src/shared/errors/errors.ts`: `NOT_FOUND` (404, owner-safe on
+  foreign/deleted/unowned IDs), `INVALID_DEFAULT_TRANSITION` (422, demoting the current default
+  without promoting another), `ADDRESS_DEFAULT_CONFLICT` (409, concurrent-write race on the
+  partial unique index). All three — plus `VALIDATION_FAILED` — were **already** present in
+  `src/lib/errorMessages.ts` before this PR; no new error codes were added, so no risk of
+  repeating the "frontend assumes a field the backend doesn't return" bug from a prior PR.
+
+### Files Changed
+
+| File | Action | Lines | What Was Done |
+|---|---|---|---|
+| `src/modules/perfil/direcciones.schema.ts` | Created | 49 | Zod `addressSchema`/`addressListSchema` (response) and `createAddressInputSchema`/`updateAddressInputSchema` (request), matching the confirmed backend shape exactly. |
+| `src/modules/perfil/direcciones.api.ts` | Created | 24 | `getAddresses`/`createAddress`/`updateAddress`/`deleteAddress` — URL building + Zod parsing, `AbortSignal` accepted for the list read. |
+| `src/modules/perfil/direcciones.queryKeys.ts` | Created | 3 | `addressKeys.all()` — the one shared cache key for profile and future checkout. |
+| `src/modules/perfil/hooks/useAddressesQuery.ts` | Created | 18 | Authenticated list query, `enabled` gated on Auth0 state. |
+| `src/modules/perfil/hooks/useCreateAddressMutation.ts` | Created | 16 | Create mutation; invalidates `addressKeys.all()` only `onSuccess`. |
+| `src/modules/perfil/hooks/useUpdateAddressMutation.ts` | Created | 16 | Update mutation (used for both edit-save and mark-default); invalidates only `onSuccess`. |
+| `src/modules/perfil/hooks/useDeleteAddressMutation.ts` | Created | 15 | Delete mutation; invalidates only `onSuccess`. |
+| `src/modules/perfil/componentes/ProfileModals.tsx` | Modified | 100 ins / 126 del | Removed the `alias`/`Destinatario`/decorative-phone mock fields (no backend equivalent); modal fields now map 1:1 to `line1`, `line2` (floor/door, nullable), `city`, `postalCode`, `province`, `isDefault`; added `error`/`isSaving` props so mutation failures/pending state surface in the modal instead of always closing on submit. |
+| `src/modules/perfil/pages/PerfilPage.tsx` | Modified | 115 ins / 77 del | Removed the local mock `Address` type/state; wired `useAddressesQuery` + the three mutations; added loading/error/empty states for the address section; `AddressCard` now renders real fields (`city` as the editorial heading instead of the removed `alias`) and disables per-row actions while their mutation is pending. |
+
+### Decisions and Deviations from Design
+
+- **Alias field removed.** The backend `Address` model has no per-address label (`design.md`
+  §"Interfaces and Presentation" lists the exact field set and it is not there). The mock UI's
+  "Casa"/"Trabajo" alias was demo-only. `AddressCard` now uses `address.city` (uppercase) as the
+  editorial heading in the same visual slot — this preserves the card's look without inventing
+  data the backend doesn't store.
+- **Decorative phone field removed.** It was already inert in the mock (no `value`/`onChange`,
+  never sent) and has no backend field to bind to. Keeping a non-functional input that looks
+  functional was judged worse than removing it.
+- **`line2` now maps to floor/door**, not a concatenated "postal code + city" string as the mock
+  did. This matches the backend's actual second address line more faithfully.
+- **Two independent `useUpdateAddressMutation()` instances** in `PerfilPage` (`editAddressMutation`
+  for the modal, `markDefaultMutation` for the inline "Marcar predeterminada" action) so a failure
+  in one flow never shows a stale error in the other, and each can compute its own per-row pending
+  state via `mutation.variables`.
+- **No optimistic updates.** Every mutation invalidates `addressKeys.all()` only `onSuccess`; a
+  failed mutation leaves the previously confirmed server list untouched, satisfying design.md's
+  "failures retain confirmed cache" requirement by construction (nothing to roll back).
+- **422 demotion path is real, not simulated.** Editing the current default address and
+  unchecking "Marcar como dirección predeterminada" sends `PATCH {isDefault:false}` on the
+  default address, which the backend correctly rejects with `INVALID_DEFAULT_TRANSITION` (422).
+  The edit modal surfaces this through its `error` prop (mapped via `resolveErrorMessage`) and
+  stays open so the user can correct it instead of promoting another address first.
+
+### Historical Review Workload Flag — Resolved by PR3a/PR3b Split
+
+The original candidate measured **559 changed lines** (`356 insertions + 203 deletions` per
+`git diff --numstat` including untracked new files), against the assigned target (~400) and
+**hard ceiling (450)**. The maintainer authorized a safe split rather than a size exception.
+
+- New files (schema/api/keys/hooks): 141 lines — lean, additive only.
+- Modified files (`ProfileModals.tsx` + `PerfilPage.tsx`): 418 changed lines — this is where the
+  overage comes from. It is driven by the `alias`-field removal forcing a coupled rewrite of both
+  the modal field set and the card/query wiring in the same slice; splitting it further would
+  leave the UI referencing a mock `Address` shape that no longer type-checks against the modals,
+  or vice versa.
+- Both `npm run lint` and `npm run build` passed on the original candidate (see Work Unit
+  Evidence below). This was a **review-budget governance** issue, not a correctness issue.
+
+The candidate was not committed, staged, pushed, or discarded. The maintainer authorized this
+delivery path:
+
+1. **PR3a — address contracts:** retain the 141 source-line API/schema/query-key/hook boundary
+   in the worktree on `feat/stripe-payment-integration-pr3a-address-contracts`.
+2. **PR3b — profile address UI:** preserve the two UI diffs in the path-scoped named Git stash
+   `pr3b-addresses-ui`, restore it only on an immediate PR3a child branch, and then perform the
+   A01–A06 browser matrix.
+
+Task 2.1 below remains `[x]` because its original implementation and static-check milestone is
+complete. This slicing continuation does not mark any additional product task complete; A01–A06
+remain pending until PR3b UI is restored and browser-tested.
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Focused quality command | `npm run lint` — exit 0; 0 errors and 1 pre-existing React Compiler warning in `EditarPerfilPublicoPage.tsx` (`watch()`), unrelated to this PR. |
+| Runtime harness | `npm run build` — exit 0; TypeScript project build (`tsc -b`) and Vite production build both completed. Browser scenarios A01–A06 require maintainer observation and are not claimed as passed. |
+| `git diff --check` | Exit 0 — no whitespace errors. |
+| Rollback boundary | Revert `src/modules/perfil/{direcciones.api,direcciones.schema,direcciones.queryKeys}.ts`, `src/modules/perfil/hooks/use{Addresses,CreateAddress,UpdateAddress,DeleteAddress}*.ts`, and the PR3 address integrations in `PerfilPage.tsx` and `ProfileModals.tsx`. No cart, checkout, payment, or order code was touched. |
+
+### Manual Verification Checklist: A01–A06 (pending maintainer browser observation)
+
+| Case | Steps | Expected result | Observed |
+|---|---|---|---|
+| A01 — first address auto-defaults | With zero saved addresses, add one via "Añadir dirección". | The new address is created with `isDefault: true` without checking the box. | Pending maintainer browser observation. |
+| A02 — partial edit | Edit an existing address, changing only `city`. | `PATCH` sends only the changed field(s); other fields on the address are unchanged after refresh. | Pending maintainer browser observation. |
+| A03 — default-first, newest ordering | Create two non-default addresses, then mark the second as default. | The list reorders default-first, then newest-first among the rest, after refetch. | Pending maintainer browser observation. |
+| A04 — 422 demotion | Edit the current default address and uncheck "Marcar como dirección predeterminada". | Save is rejected; the modal stays open showing "Esta transición de estado no está permitida."; no client-side state changes. | Pending maintainer browser observation. |
+| A05 — delete auto-promotion | Delete the current default address while another exists. | The deleted address disappears; the newest remaining address becomes default after refetch. | Pending maintainer browser observation. |
+| A06 — owner-safe 404 | Trigger a delete/edit on an address ID that no longer exists (e.g. deleted in another tab, then retried). | A generic "No encontramos el recurso solicitado." error appears; no ownership details are leaked. | Pending maintainer browser observation. |
+
+### Task State
+
+- [x] 2.1 PR3 addresses — implementation and static checks (`npm run lint`, `npm run build`,
+  `git diff --check`) complete. A01–A06 browser evidence pending in PR3b.
+
+## PR3a Address Contracts — Delivery Slice Preparation
+
+**Mode:** Standard (manual-only; `strict_tdd: false`)
+
+**Chain strategy:** Feature-branch-chain. PR3a is the current autonomous child and targets its
+immediate PR2 predecessor; PR3b must target PR3a, never `main`.
+
+### Scope and Preservation
+
+| Item | Result |
+|---|---|
+| PR3a worktree scope | `direcciones.api.ts`, `direcciones.queryKeys.ts`, `direcciones.schema.ts`, and the four address hooks only, plus SDD split artifacts. |
+| PR3b preservation | Named path-scoped stash `stash@{0}` (`pr3b-addresses-ui`) contains exactly `src/modules/perfil/pages/PerfilPage.tsx` and `src/modules/perfil/componentes/ProfileModals.tsx`. |
+| Branch and review count | Renamed safely to `feat/stripe-payment-integration-pr3a-address-contracts`; final PR3a worktree count is 322 changed lines (141 source + 181 SDD artifact lines), below the 450 native ceiling. No staging, commit, push, dependency install, or backend change occurred. |
+| Product task state | No additional task marked complete; task 2.1 remains checked from the original candidate. |
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Focused quality command | `npm run lint` — exit 0; 0 errors and 1 pre-existing React Compiler warning in `src/modules/productor/pages/EditarPerfilPublicoPage.tsx` (`watch()`), unrelated to PR3a. |
+| Runtime harness | `npm run build` — exit 0; `tsc -b` and Vite completed. The Vite reporter warned that existing production chunks exceed 500 kB after minification. Browser A01–A06 are intentionally N/A for PR3a because it has no UI consumer; they remain pending for PR3b. |
+| `git diff --check` | Exit 0 — no whitespace errors. |
+| Rollback boundary | Revert only `src/modules/perfil/direcciones.{api,queryKeys,schema}.ts`, `src/modules/perfil/hooks/use{AddressesQuery,CreateAddressMutation,UpdateAddressMutation,DeleteAddressMutation}.ts`, and this PR3a split documentation. The independently preserved PR3b stash remains untouched. |
+
+### Manual Verification State
+
+A01–A06 are intentionally **pending**. They exercise the profile UI isolated in PR3b and must be
+recorded after that stash is restored on the immediate PR3a child branch and browser-tested.
