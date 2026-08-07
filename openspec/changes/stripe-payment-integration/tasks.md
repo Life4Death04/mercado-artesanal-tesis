@@ -34,8 +34,8 @@ PR1 targets tracker; each child targets its predecessor. Retarget polluted diffs
 ### PR3 Delivery Slice Status
 
 - **PR3a — address contracts:** Autonomous contract/query-key/hook slice on `feat/stripe-payment-integration-pr3a-address-contracts`. It contains only the seven new address boundary files and the SDD split evidence; it is under the 450 changed-line native ceiling.
-- **PR3b — profile address UI:** The `PerfilPage.tsx` and `ProfileModals.tsx` integration diff is preserved in the named `pr3b-addresses-ui` Git stash and remains out of PR3a. Restore it only on the immediate PR3a child branch, then run the A01–A06 browser matrix.
-- **Task 2.1 remains checked:** Its original implementation/static-check milestone is preserved. This split does not complete any additional product task, and A01–A06 remain pending until PR3b is restored and browser-tested.
+- **PR3b — profile address UI:** `PerfilPage.tsx` and `ProfileModals.tsx` were verified in the browser for CONSUMER and PRODUCER: A01–A06 all PASS. The retained `pr3b-addresses-ui` stash is a redundant backup and must not be mutated.
+- **Task 2.1 remains checked:** PR3a `ffa27f3` is an ancestor of PR3b `c0e2e10`; both were merged into the tracker at `68c5589` (merges #19/#20). Administrator is intentionally out of scope because it has no commerce or commerce-management functions.
 
 ## Phase 1: Foundation and Cart
 
@@ -45,7 +45,7 @@ PR1 targets tracker; each child targets its predecessor. Retarget polluted diffs
 ## Phase 2: Addresses and Delivery
 
 - [x] 2.1 PR3 — Start: profile address mocks. CREATE `src/modules/perfil/{direcciones.api,direcciones.schema,direcciones.queryKeys}.ts` and address hooks; MODIFY `src/modules/perfil/{pages/PerfilPage.tsx,componentes/ProfileModals.tsx}`. Finish: shared cache. Manual A01–A06: first/default, partial edit, ordering, 422 demotion, delete promotion, owner-safe 404; retain server state.
-- [ ] 2.2 PR4 — Start: fresh cart/address cache. CREATE `src/modules/pedidos/{pagos.api,pagos.schema,hooks/useDeliveryModesQuery.ts,componentes/CheckoutDeliveryStep.tsx}`; MODIFY `src/modules/pedidos/pages/CheckoutPage.tsx`. Finish: one active mode/producer. Manual D01–D05: complete/changed selections, shipping, pickup omission, invalid address; require bijection and hide ownership.
+- [x] 2.2 PR4 — Start: fresh cart/address cache. CREATE `src/modules/pedidos/{pagos.api,pagos.schema,hooks/useDeliveryModesQuery.ts,componentes/CheckoutDeliveryStep.tsx}`; MODIFY `src/modules/pedidos/pages/CheckoutPage.tsx`. Finish: one active mode/producer. Static milestone complete; maintainer-observed Manual D01–D05 browser verification PASS: complete/changed selections, shipping, pickup omission, invalid address; require bijection and hide ownership.
 
 ## Phase 3: Payment and Return
 

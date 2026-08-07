@@ -298,3 +298,54 @@ immediate child of `feat/stripe-payment-integration-pr3a-address-contracts` at c
 
 A01–A06 remain **pending maintainer browser observation**. No browser evidence is claimed by this
 static-validation batch.
+
+### PR3 Final Browser and Merge Reconciliation
+
+- Maintainer-supplied browser evidence: A01, A02, A03, A04, A05, and A06 are all **PASS** for CONSUMER and PRODUCER flows.
+- ADMIN is intentionally out of scope: that role has no commerce or commerce-management functions.
+- Merge lineage is verified: PR3a `ffa27f3` is an ancestor of PR3b `c0e2e10`; PR3b is an ancestor of tracker merge `68c5589` (merged PRs #19 and #20).
+- The retained `pr3b-addresses-ui` stash is a redundant verified backup and was not applied, dropped, or otherwise mutated.
+
+## PR4 Checkout Delivery Selection
+
+**Mode:** Standard (manual-only; `strict_tdd: false`)
+
+PR4 replaces checkout delivery mocks with a server-backed delivery step. It reads the current cart, shared authenticated address cache, and `GET /api/v1/pagos/delivery-modes`; local state represents at most one valid mode per current cart producer. Invalid or changed modes are excluded from the active selection and are cleared on explicit validation. A shipping selection requires an active cached address; pickup-only selections do not require or carry an address into the future intent boundary.
+
+### Backend Contract Confirmation
+
+- `GET /api/v1/pagos/delivery-modes` is authenticated and returns `[{ producerId, modes: [{ id, name, type: "shipping"|"pickup", price: string }] }]`; groups include every current cart producer, including `modes: []` when no active option exists.
+- The backend maps persisted `SHIPPING_FLAT_RATE`/`PICKUP` to the lowercase checkout discriminator and serializes `price` with two decimal places as a string.
+- `POST /api/v1/pagos/intent` (not called in PR4) validates a producer/mode bijection against the live cart and requires an owned, non-deleted `addressId` only when a resolved selected mode is shipping; pickup-only ignores `addressId`. Its owner-safe invalid-address outcome is `VALIDATION_FAILED` without ownership disclosure.
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Whitespace check | `git diff --check` — exit 0; no whitespace errors. |
+| Focused quality command | `npm run lint` — exit 0; 0 errors and one pre-existing React Compiler `watch()` warning in `src/modules/productor/pages/EditarPerfilPublicoPage.tsx`. |
+| Runtime harness | `npm run build` — exit 0; `tsc -b` and Vite production build completed. Vite reported the existing >500 kB post-minification chunk warning. At this static milestone, browser D01–D05 were pending maintainer observation and were not claimed as passed. The parent-acquired native runtime ledger was not acquired, settled, reset, or mutated. |
+| Rollback boundary | Revert only `src/modules/pedidos/pagos.{api,schema}.ts`, `src/modules/pedidos/hooks/useDeliveryModesQuery.ts`, `src/modules/pedidos/componentes/CheckoutDeliveryStep.tsx`, and the checkout delivery wiring in `src/modules/pedidos/pages/CheckoutPage.tsx`; no payment-intent, Stripe Element, order, backend, or unrelated behavior is removed. |
+
+### Manual Verification Checklist: D01–D05
+
+| Case | Setup and steps | Expected result | Observed |
+|---|---|---|---|
+| D01 — complete selections | Use a cart with two producers and choose one active mode for each. | Continue becomes available only with exactly one valid selection per current producer. | Maintainer-observed browser result: PASS. |
+| D02 — changed selection | Change the cart or deactivate/remove a selected producer mode, then attempt to continue. | The stale selection is cleared and checkout remains blocked until a current mode is selected. | Maintainer-observed browser result: PASS. |
+| D03 — shipping address | Select at least one shipping mode. | A current saved address is required; an owned active address can be selected. | Maintainer-observed browser result: PASS. |
+| D04 — pickup omission | Select pickup for every producer. | No address selector or address requirement appears; future intent payload omits `addressId`. | Maintainer-observed browser result: PASS. |
+| D05 — invalid address | Delete the selected address in another tab, refresh, then attempt to continue. | The stale address is cleared, checkout remains blocked, and no ownership information is exposed. | Maintainer-observed browser result: PASS. |
+
+### PR4 Final Manual Result — PASS
+
+| Field | Record |
+|---|---|
+| Final observation | The maintainer formally reported D01, D02, D03, D04, and D05 all passing in real-browser testing. |
+| Covered behavior | Complete producer-mode selection, stale-mode correction, shipping-address requirement, pickup-only address omission, and stale-address rejection behaved as specified. |
+| Evidence source / limitation | Maintainer-observed real-browser result supplied in chat; no screenshot, video, network export, environment record, or commit SHA was supplied with the report. |
+| Deployment limitation | The producer delivery-mode backend contract used by the auxiliary producer work unit exists only in the backend working tree at the time of this record and is not yet committed; independent deployability is not claimed. |
+
+### Task State
+
+- [x] 2.2 PR4 checkout delivery selection — implementation and static milestone complete; maintainer-observed D01–D05 browser verification PASS.

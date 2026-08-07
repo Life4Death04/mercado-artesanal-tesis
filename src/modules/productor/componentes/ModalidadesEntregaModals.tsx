@@ -166,10 +166,16 @@ export function AgregarPuntoModal({ onClose, onConfirm }: AgregarPuntoModalProps
                 <textarea
                   id="indicaciones"
                   rows={3}
+                  maxLength={1000}
                   placeholder="Instrucciones para encontrar el local, parking cercano..."
                   className="resize-none border-b border-[var(--color-outline-variant)] bg-transparent pt-2 text-body-md text-[var(--color-on-surface)] placeholder-[var(--color-secondary)] focus:border-[var(--color-primary)] focus:outline-none"
                   {...register('indicaciones')}
                 />
+                {errors.indicaciones ? (
+                  <p className="text-body-sm text-[var(--color-error)]">
+                    {errors.indicaciones.message}
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>
