@@ -1,5 +1,6 @@
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ZodError } from 'zod'
 import {
   ChevronRight,
   Loader2,
@@ -19,9 +20,17 @@ import {
   type PuntoRecogida,
 } from '../componentes/ModalidadesEntregaModals'
 import { useEntregasQuery } from '../entregas/hooks/useEntregasQuery'
+import { useCreateEntregaMutation } from '../entregas/hooks/useCreateEntregaMutation'
+import { useDeleteEntregaMutation } from '../entregas/hooks/useDeleteEntregaMutation'
 import { useUpdateEntregasMutation } from '../entregas/hooks/useUpdateEntregasMutation'
 import { resolveErrorMessage } from '../../../lib/errorMessages'
-import type { DeliveryModeDTO } from '../entregas/entregas.schema'
+import {
+  createDeliveryModePayloadSchema,
+  updateDeliveryModePayloadSchema,
+  type CreateDeliveryModePayload,
+  type DeliveryModeDTO,
+  type UpdateDeliveryModePayload,
+} from '../entregas/entregas.schema'
 
 // ---------------------------------------------------------------------------
 // Local draft types — UI-facing shapes derived from DeliveryModeDTO
@@ -41,13 +50,16 @@ type MensajeriaState = {
   empresa: string
   ambito: string
   coste: string
+  notas: string
 }
+
+type PuntoRecogidaState = PuntoRecogida & { coste: string }
 
 type DraftConfig = {
   entregaPersonal: EntregaPersonalState
   mensajeria: MensajeriaState
   puntosActiva: boolean
-  puntos: PuntoRecogida[]
+  puntos: PuntoRecogidaState[]
 }
 
 // ---------------------------------------------------------------------------
@@ -58,7 +70,7 @@ const EMPTY_ENTREGA_PERSONAL: EntregaPersonalState = {
   id: null,
   activa: false,
   ambito: '',
-  coste: '0,00 EUR',
+  coste: '0,00',
   notas: '',
 }
 
@@ -67,31 +79,48 @@ const EMPTY_MENSAJERIA: MensajeriaState = {
   activa: false,
   empresa: '',
   ambito: 'Nacional',
-  coste: '0,00 EUR',
+  coste: '0,00',
+  notas: '',
+}
+
+class InvalidDeliveryCostError extends Error {}
+
+type DeliveryModeOperation =
+  | { kind: 'create'; payload: CreateDeliveryModePayload }
+  | { kind: 'update'; id: string; payload: UpdateDeliveryModePayload }
+  | { kind: 'delete'; id: string }
+
+function parseDeliveryCost(value: string): number {
+  const normalized = value.trim().replace(',', '.')
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+    throw new InvalidDeliveryCostError('El coste debe ser cero o un número positivo con hasta 2 decimales.')
+  }
+
+  const cost = Number(normalized)
+  if (!Number.isFinite(cost) || cost > 99_999_999.99) {
+    throw new InvalidDeliveryCostError('El coste indicado está fuera del rango permitido.')
+  }
+
+  return cost
 }
 
 /**
  * Maps the backend delivery mode list to the local DraftConfig shape.
  *
- * PICKUP modes are displayed as "Entrega personal" (first PICKUP found) and
- * subsequent PICKUP modes are surfaced as "Punto de recogida" entries.
- * SHIPPING_FLAT_RATE modes map to "Mensajeria".
- *
- * This is a best-effort mapping: the backend may have 0 items (new producer),
- * exactly 1 of each type, or multiple. Only the first of each type is bound
- * to the dedicated card; extras are ignored in this view.
+ * The dedicated cards use the first personal-delivery and carrier-shipping
+ * row. Every PICKUP row remains independently editable in the pickup list.
  */
 function mapDtosToConfig(modes: DeliveryModeDTO[]): DraftConfig {
-  const pickup = modes.find((m) => m.type === 'PICKUP')
+  const personal = modes.find((m) => m.type === 'PERSONAL_DELIVERY')
   const shipping = modes.find((m) => m.type === 'SHIPPING_FLAT_RATE')
 
-  const entregaPersonal: EntregaPersonalState = pickup
+  const entregaPersonal: EntregaPersonalState = personal
     ? {
-        id: pickup.id,
-        activa: pickup.isActive,
-        ambito: pickup.coverageScope ?? pickup.locationAddress ?? '',
-        coste: '0,00 EUR', // PICKUP has no flat rate — cost is always shown as free
-        notas: pickup.openingHours ?? '',
+        id: personal.id,
+        activa: personal.isActive,
+        ambito: personal.coverageZone ?? '',
+        coste: personal.cost.replace('.', ','),
+        notas: personal.notes ?? '',
       }
     : EMPTY_ENTREGA_PERSONAL
 
@@ -99,30 +128,31 @@ function mapDtosToConfig(modes: DeliveryModeDTO[]): DraftConfig {
     ? {
         id: shipping.id,
         activa: shipping.isActive,
-        empresa: shipping.locationName ?? '',
-        ambito: shipping.coverageScope ?? 'Nacional',
-        coste: shipping.flatRate ? shipping.flatRate.replace('.', ',') + ' EUR' : '0,00 EUR',
+        empresa: shipping.carrierCompany ?? '',
+        ambito: shipping.coverageZone ?? 'Nacional',
+        coste: shipping.cost.replace('.', ','),
+        notas: shipping.notes ?? '',
       }
     : EMPTY_MENSAJERIA
 
-  // Pickup points sourced from locationAddress / locationName on PICKUP modes
-  // In the current backend model, each PICKUP entry IS a pickup point.
-  // We surface all PICKUP modes as "puntos de recogida" in the list.
-  const puntos: PuntoRecogida[] = modes
+  // Each PICKUP row is one independently persisted pickup point.
+  const puntos: PuntoRecogidaState[] = modes
     .filter((m) => m.type === 'PICKUP')
     .map((m) => ({
       id: m.id,
-      nombre: m.locationName ?? 'Punto sin nombre',
-      calle: m.locationAddress ?? '',
-      municipio: m.coverageScope ?? '',
-      codigoPostal: '',
-      horario: m.openingHours ?? '',
+      nombre: m.pickupLocationName ?? 'Punto sin nombre',
+      calle: m.pickupStreet ?? m.pickupLocation ?? '',
+      municipio: m.pickupMunicipality ?? '',
+      codigoPostal: m.pickupPostalCode ?? '',
+      horario: m.pickupOpeningHours ?? '',
+      indicaciones: m.notes ?? undefined,
+      coste: m.cost,
     }))
 
   return {
     entregaPersonal,
     mensajeria,
-    puntosActiva: puntos.length > 0 && puntos.some(() => pickup?.isActive ?? false),
+    puntosActiva: modes.some((mode) => mode.type === 'PICKUP' && mode.isActive),
     puntos,
   }
 }
@@ -132,7 +162,15 @@ function mapDtosToConfig(modes: DeliveryModeDTO[]): DraftConfig {
 // ---------------------------------------------------------------------------
 
 export function ModalidadesEntregaPage() {
-  const { data: modes = [], isLoading, isError, error: queryError } = useEntregasQuery()
+  const {
+    data: modes = [],
+    isLoading,
+    isError,
+    error: queryError,
+    refetch,
+  } = useEntregasQuery()
+  const createMutation = useCreateEntregaMutation()
+  const deleteMutation = useDeleteEntregaMutation()
   const updateMutation = useUpdateEntregasMutation()
 
   // Derive initial config from server data
@@ -144,6 +182,8 @@ export function ModalidadesEntregaPage() {
   const [puntoAEliminar, setPuntoAEliminar] = useState<PuntoRecogida | null>(null)
   const [mutationError, setMutationError] = useState<string | null>(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const saveInFlightRef = useRef(false)
 
   // Effective config: draft when editing, server otherwise
   const effectiveConfig = isEditing && draftConfig !== null ? draftConfig : serverConfig
@@ -166,69 +206,154 @@ export function ModalidadesEntregaPage() {
     setPuntoAEliminar(null)
     setShowAgregar(false)
     setMutationError(null)
+    createMutation.reset()
     updateMutation.reset()
+    deleteMutation.reset()
     setIsEditing(false)
   }
 
   async function saveChanges() {
-    if (!draftConfig) return
+    if (!draftConfig || saveInFlightRef.current) return
+    saveInFlightRef.current = true
+    setIsSaving(true)
     setMutationError(null)
-
-    // Collect all mutations needed (isActive changes and field changes)
-    const updates: Array<() => Promise<unknown>> = []
-
-    // Update entrega personal (PICKUP) if id exists
-    if (draftConfig.entregaPersonal.id) {
-      updates.push(() =>
-        updateMutation.mutateAsync({
-          id: draftConfig.entregaPersonal.id!,
-          payload: {
-            isActive: draftConfig.entregaPersonal.activa,
-            coverageScope: draftConfig.entregaPersonal.ambito || null,
-            openingHours: draftConfig.entregaPersonal.notas || null,
-          },
-        }),
-      )
-    }
-
-    // Update mensajeria (SHIPPING_FLAT_RATE) if id exists
-    if (draftConfig.mensajeria.id) {
-      // Parse flatRate from display format "5,50 EUR" → "5.50"
-      const rawCost = draftConfig.mensajeria.coste
-        .replace(/\s*EUR\s*$/i, '')
-        .trim()
-        .replace(',', '.')
-      const isValidRate = /^\d+(\.\d{1,2})?$/.test(rawCost)
-
-      updates.push(() =>
-        updateMutation.mutateAsync({
-          id: draftConfig.mensajeria.id!,
-          payload: {
-            isActive: draftConfig.mensajeria.activa,
-            locationName: draftConfig.mensajeria.empresa || null,
-            coverageScope: draftConfig.mensajeria.ambito || null,
-            flatRate: isValidRate ? rawCost : undefined,
-          },
-        }),
-      )
-    }
-
-    if (updates.length === 0) {
-      // No backend IDs available — local state only (new producer scenario)
-      setIsEditing(false)
-      return
-    }
+    let completedRequestCount = 0
+    let requestStarted = false
 
     try {
-      for (const update of updates) {
-        await update()
+      const operations: DeliveryModeOperation[] = []
+      const personal = draftConfig.entregaPersonal
+      const shipping = draftConfig.mensajeria
+
+      if (personal.id) {
+        operations.push({
+          kind: 'update',
+          id: personal.id,
+          payload: updateDeliveryModePayloadSchema.parse({
+            cost: parseDeliveryCost(personal.coste),
+            coverageZone: personal.ambito || null,
+            notes: personal.notas || null,
+            isActive: personal.activa,
+          }),
+        })
+      } else if (personal.activa) {
+        operations.push({
+          kind: 'create',
+          payload: createDeliveryModePayloadSchema.parse({
+            type: 'PERSONAL_DELIVERY',
+            cost: parseDeliveryCost(personal.coste),
+            ...(personal.ambito && { coverageZone: personal.ambito }),
+            ...(personal.notas && { notes: personal.notas }),
+          }),
+        })
       }
+
+      if (shipping.id) {
+        operations.push({
+          kind: 'update',
+          id: shipping.id,
+          payload: updateDeliveryModePayloadSchema.parse({
+            cost: parseDeliveryCost(shipping.coste),
+            coverageZone: shipping.ambito || null,
+            carrierCompany: shipping.empresa || null,
+            notes: shipping.notas || null,
+            isActive: shipping.activa,
+          }),
+        })
+      } else if (shipping.activa) {
+        operations.push({
+          kind: 'create',
+          payload: createDeliveryModePayloadSchema.parse({
+            type: 'SHIPPING_FLAT_RATE',
+            cost: parseDeliveryCost(shipping.coste),
+            ...(shipping.ambito && { coverageZone: shipping.ambito }),
+            ...(shipping.empresa && { carrierCompany: shipping.empresa }),
+            ...(shipping.notas && { notes: shipping.notas }),
+          }),
+        })
+      }
+
+      const draftPointIds = new Set(draftConfig.puntos.map((point) => point.id))
+      const removedPointIds = modes
+        .filter((mode) => mode.type === 'PICKUP' && !draftPointIds.has(mode.id))
+        .map((mode) => mode.id)
+      for (const id of removedPointIds) {
+        operations.push({ kind: 'delete', id })
+      }
+
+      for (const point of draftConfig.puntos) {
+        if (point.id.startsWith('local-')) {
+          if (!draftConfig.puntosActiva) continue
+          operations.push({
+            kind: 'create',
+            payload: createDeliveryModePayloadSchema.parse({
+              type: 'PICKUP',
+              cost: parseDeliveryCost(point.coste),
+              pickupLocationName: point.nombre,
+              pickupStreet: point.calle,
+              pickupMunicipality: point.municipio,
+              pickupPostalCode: point.codigoPostal,
+              pickupOpeningHours: point.horario,
+              ...(point.indicaciones && { notes: point.indicaciones }),
+            }),
+          })
+        } else {
+          operations.push({
+            kind: 'update',
+            id: point.id,
+            payload: updateDeliveryModePayloadSchema.parse({
+              cost: parseDeliveryCost(point.coste),
+              pickupLocationName: point.nombre || null,
+              pickupStreet: point.calle || null,
+              pickupMunicipality: point.municipio || null,
+              pickupPostalCode: point.codigoPostal || null,
+              pickupOpeningHours: point.horario || null,
+              notes: point.indicaciones || null,
+              isActive: draftConfig.puntosActiva,
+            }),
+          })
+        }
+      }
+
+      for (const operation of operations) {
+        requestStarted = true
+        if (operation.kind === 'create') {
+          await createMutation.mutateAsync(operation.payload)
+        } else if (operation.kind === 'update') {
+          await updateMutation.mutateAsync({ id: operation.id, payload: operation.payload })
+        } else {
+          await deleteMutation.mutateAsync(operation.id)
+        }
+        completedRequestCount += 1
+      }
+
       setSaveSuccess(true)
       setIsEditing(false)
       setDraftConfig(null)
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err: unknown) {
-      setMutationError(resolveErrorMessage(err))
+      const message = err instanceof InvalidDeliveryCostError
+        ? err.message
+        : err instanceof ZodError
+          ? (err.issues[0]?.message ?? 'Revisa los datos de las modalidades de entrega.')
+          : resolveErrorMessage(err)
+      setMutationError(message)
+
+      if (requestStarted) {
+        const refreshResult = await refetch()
+        if (completedRequestCount > 0) {
+          setMutationError(
+            refreshResult.isError
+              ? `${message} Algunos cambios sí pudieron guardarse y no se pudo recargar el estado del servidor.`
+              : `${message} Algunos cambios sí pudieron guardarse. Se ha recargado el estado confirmado por el servidor.`,
+          )
+        }
+        setDraftConfig(null)
+        setIsEditing(false)
+      }
+    } finally {
+      saveInFlightRef.current = false
+      setIsSaving(false)
     }
   }
 
@@ -257,7 +382,7 @@ export function ModalidadesEntregaPage() {
       const base = current ?? serverConfig
       return {
         ...base,
-        puntos: [...base.puntos, { ...datos, id: `local-${Date.now()}` }],
+        puntos: [...base.puntos, { ...datos, id: `local-${Date.now()}`, coste: '0,00' }],
       }
     })
   }
@@ -312,7 +437,7 @@ export function ModalidadesEntregaPage() {
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  disabled={updateMutation.isPending}
+                  disabled={isSaving}
                   className="text-label-md inline-flex items-center justify-center gap-2 border border-[var(--color-outline-variant)] bg-white px-5 py-3 text-[var(--color-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <X size={16} strokeWidth={1.8} />
@@ -321,10 +446,10 @@ export function ModalidadesEntregaPage() {
                 <button
                   type="button"
                   onClick={() => { void saveChanges() }}
-                  disabled={updateMutation.isPending}
+                  disabled={isSaving}
                   className="text-label-md inline-flex items-center justify-center gap-2 bg-[var(--color-primary)] px-5 py-3 text-white transition-colors hover:bg-[var(--color-primary-container)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {updateMutation.isPending ? (
+                  {isSaving ? (
                     <Loader2 size={16} strokeWidth={1.8} className="animate-spin" />
                   ) : (
                     <Save size={16} strokeWidth={1.8} />
@@ -432,7 +557,7 @@ export function ModalidadesEntregaPage() {
             title="Entrega personal"
             subtitle="Gestion directa de repartos"
             active={effectiveConfig.entregaPersonal.activa}
-            editable={isEditing}
+            editable={isEditing && !isSaving}
             onToggle={() => updateEntregaPersonal('activa', !effectiveConfig.entregaPersonal.activa)}
           >
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -440,19 +565,20 @@ export function ModalidadesEntregaPage() {
                 label="Ambito de cobertura"
                 value={effectiveConfig.entregaPersonal.ambito}
                 onChange={(value) => updateEntregaPersonal('ambito', value)}
-                disabled={!isEditing}
+                disabled={!isEditing || isSaving}
+                maxLength={255}
               />
               <CardField
                 label="Coste del servicio"
                 value={effectiveConfig.entregaPersonal.coste}
                 onChange={(value) => updateEntregaPersonal('coste', value)}
-                disabled={!isEditing}
+                disabled={!isEditing || isSaving}
               />
               <TextAreaField
                 label="Notas o condiciones"
                 value={effectiveConfig.entregaPersonal.notas}
                 onChange={(value) => updateEntregaPersonal('notas', value)}
-                disabled={!isEditing}
+                disabled={!isEditing || isSaving}
               />
             </div>
           </DeliveryCard>
@@ -462,7 +588,7 @@ export function ModalidadesEntregaPage() {
             title="Mensajeria"
             subtitle="Envio por agencia externa"
             active={effectiveConfig.mensajeria.activa}
-            editable={isEditing}
+            editable={isEditing && !isSaving}
             onToggle={() => updateMensajeria('activa', !effectiveConfig.mensajeria.activa)}
           >
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -470,20 +596,27 @@ export function ModalidadesEntregaPage() {
                 label="Empresa de transporte"
                 value={effectiveConfig.mensajeria.empresa}
                 onChange={(value) => updateMensajeria('empresa', value)}
-                disabled={!isEditing}
+                disabled={!isEditing || isSaving}
+                maxLength={120}
               />
               <SelectField
                 label="Ambito"
                 value={effectiveConfig.mensajeria.ambito}
                 onChange={(value) => updateMensajeria('ambito', value)}
-                disabled={!isEditing}
+                disabled={!isEditing || isSaving}
                 options={['Provincial', 'Nacional', 'Internacional']}
               />
               <CardField
                 label="Coste base"
                 value={effectiveConfig.mensajeria.coste}
                 onChange={(value) => updateMensajeria('coste', value)}
-                disabled={!isEditing}
+                disabled={!isEditing || isSaving}
+              />
+              <TextAreaField
+                label="Notas o instrucciones"
+                value={effectiveConfig.mensajeria.notas}
+                onChange={(value) => updateMensajeria('notas', value)}
+                disabled={!isEditing || isSaving}
               />
             </div>
           </DeliveryCard>
@@ -493,7 +626,7 @@ export function ModalidadesEntregaPage() {
             title="Punto de recogida"
             subtitle="Recogida local por parte del cliente"
             active={effectiveConfig.puntosActiva}
-            editable={isEditing}
+            editable={isEditing && !isSaving}
             onToggle={() =>
               setDraftConfig((current) => {
                 const base = current ?? serverConfig
@@ -513,7 +646,7 @@ export function ModalidadesEntregaPage() {
                 </div>
                 <button
                   type="button"
-                  disabled={!isEditing || !effectiveConfig.puntosActiva}
+                  disabled={!isEditing || isSaving || !effectiveConfig.puntosActiva}
                   onClick={() => setShowAgregar(true)}
                   className="text-label-md inline-flex w-fit items-center gap-2 border border-[var(--color-outline-variant)] bg-white px-4 py-2 text-[var(--color-primary)] transition-colors hover:border-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-40"
                 >
@@ -561,7 +694,7 @@ export function ModalidadesEntregaPage() {
                         type="button"
                         aria-label={`Eliminar ${punto.nombre}`}
                         onClick={() => setPuntoAEliminar(punto)}
-                        disabled={!isEditing || !effectiveConfig.puntosActiva}
+                        disabled={!isEditing || isSaving || !effectiveConfig.puntosActiva}
                         className="text-label-md inline-flex items-center gap-2 self-start text-[var(--color-secondary)] transition-colors hover:text-[var(--color-error)] disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <Trash2 size={16} strokeWidth={1.8} />
@@ -576,11 +709,11 @@ export function ModalidadesEntregaPage() {
         </div>
       </main>
 
-      {showAgregar && isEditing ? (
+      {showAgregar && isEditing && !isSaving ? (
         <AgregarPuntoModal onClose={() => setShowAgregar(false)} onConfirm={agregarPunto} />
       ) : null}
 
-      {puntoAEliminar && isEditing ? (
+      {puntoAEliminar && isEditing && !isSaving ? (
         <EliminarPuntoModal
           nombrePunto={puntoAEliminar.nombre}
           onClose={() => setPuntoAEliminar(null)}
@@ -714,11 +847,13 @@ function CardField({
   value,
   onChange,
   disabled,
+  maxLength,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
   disabled?: boolean
+  maxLength?: number
 }) {
   return (
     <label className="flex flex-col gap-2">
@@ -729,6 +864,7 @@ function CardField({
         type="text"
         value={value}
         disabled={disabled}
+        maxLength={maxLength}
         onChange={(event) => onChange(event.target.value)}
         className="text-body-md border border-[var(--color-outline-variant)] bg-white px-4 py-3 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-surface-container)] disabled:text-[var(--color-secondary)]"
       />
@@ -788,6 +924,7 @@ function TextAreaField({
       </span>
       <textarea
         rows={4}
+        maxLength={1000}
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}

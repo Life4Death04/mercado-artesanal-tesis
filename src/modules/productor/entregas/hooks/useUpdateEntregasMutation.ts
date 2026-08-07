@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthenticatedApi } from '../../../auth/hooks/useAuthenticatedApi'
+import { deliveryModeKeys } from '../../../pedidos/deliveryModes.queryKeys'
 import { updateEntrega } from '../entregas.api'
 import { ENTREGAS_QUERY_KEY } from './useEntregasQuery'
 import type { UpdateDeliveryModePayload } from '../entregas.schema'
@@ -28,6 +29,7 @@ export function useUpdateEntregasMutation() {
       updateEntrega(apiCaller, id, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ENTREGAS_QUERY_KEY })
+      void queryClient.invalidateQueries({ queryKey: deliveryModeKeys.all() })
     },
     // No onError cache touch — spec R4 / task AC: "failed mutations keep prior cache"
   })

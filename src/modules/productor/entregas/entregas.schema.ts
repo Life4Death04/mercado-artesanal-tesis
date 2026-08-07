@@ -1,114 +1,101 @@
 import { z } from 'zod'
 
-// ---------------------------------------------------------------------------
-// DeliveryModeType enum — control-flow enum; edge-parsed at hook boundary
-// [source: mercado-artesanal-backend/openspec/specs/delivery-modes/spec.md]
-//
-// "DeliveryMode.type (enum DeliveryModeType): PICKUP | SHIPPING_FLAT_RATE"
-// Unknown values → schema parse error → fail closed (spec R6).
-// ---------------------------------------------------------------------------
-
-export const DeliveryModeTypeSchema = z.enum(['PICKUP', 'SHIPPING_FLAT_RATE'], {
-  error: 'Tipo de modalidad de entrega desconocido.',
-})
+export const DeliveryModeTypeSchema = z.enum(
+  ['PERSONAL_DELIVERY', 'PICKUP', 'SHIPPING_FLAT_RATE'],
+  { error: 'Tipo de modalidad de entrega desconocido.' },
+)
 
 export type DeliveryModeType = z.infer<typeof DeliveryModeTypeSchema>
 
-// ---------------------------------------------------------------------------
-// DeliveryMode DTO — response shape for GET /producers/me/delivery-modes
-// [source: mercado-artesanal-backend/openspec/specs/delivery-modes/spec.md]
-//
-// money-typing R1–R3: price fields (e.g. flatRate) are strings from Prisma Decimal.
-// NEVER perform arithmetic on monetary string fields client-side.
-// ---------------------------------------------------------------------------
+const decimalStringSchema = z
+  .string()
+  .regex(/^\d+(\.\d+)?$/, 'El coste recibido debe ser una cadena decimal válida.')
 
-export type DeliveryModeDTO = {
-  id: string
-  producerId: string
-  /** Control-flow enum — edge-parsed in the API layer to guard display branches. */
-  type: DeliveryModeType
-  isActive: boolean
-  /**
-   * Flat shipping rate as a Decimal string from Prisma.
-   * Display via formatMoney(). NEVER parse for math.
-   * Present only when type === 'SHIPPING_FLAT_RATE'; null for PICKUP.
-   */
-  flatRate: string | null
-  /** Coverage scope description entered by the producer (e.g. "Nacional"). */
-  coverageScope: string | null
-  /** Pickup-specific: name of the pickup location. */
-  locationName: string | null
-  /** Pickup-specific: full address of the pickup point. */
-  locationAddress: string | null
-  /** Pickup-specific: opening hours note. */
-  openingHours: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-// ---------------------------------------------------------------------------
-// UpdateDeliveryMode request DTO — PATCH /producers/me/delivery-modes/:id
-// [frontend-defined; mirrors backend UpdateDeliveryModeSchema partial strict]
-// ---------------------------------------------------------------------------
-
-export type UpdateDeliveryModePayload = {
-  isActive?: boolean
-  flatRate?: string
-  coverageScope?: string | null
-  locationName?: string | null
-  locationAddress?: string | null
-  openingHours?: string | null
-}
-
-// ---------------------------------------------------------------------------
-// Delivery mode form schema — input/output generics for React Hook Form v7
-//
-// All monetary fields are z.string() — we never coerce or parse money values
-// client-side (money-typing R1–R3 lock). The isActive toggle is a boolean
-// (checkbox / RHF Controller), not a DOM string input.
-// ---------------------------------------------------------------------------
-
-export const deliveryModeFormSchema = z
+export const deliveryModeSchema = z
   .object({
+    id: z.string().min(1),
+    producerId: z.string().min(1),
+    type: DeliveryModeTypeSchema,
+    cost: decimalStringSchema,
+    coverageZone: z.string().nullable(),
+    carrierCompany: z.string().nullable(),
+    notes: z.string().nullable(),
+    pickupLocation: z.string().nullable(),
+    pickupLocationName: z.string().nullable(),
+    pickupStreet: z.string().nullable(),
+    pickupMunicipality: z.string().nullable(),
+    pickupPostalCode: z.string().nullable(),
+    pickupOpeningHours: z.string().nullable(),
     isActive: z.boolean(),
-    /**
-     * Flat shipping rate — string input matching /^\d+([.,]\d{1,2})?$/.
-     * Backend stores as Decimal; we send the string as-is after validation.
-     * Money-typing R1: zero math here. Null/empty = cleared field.
-     */
-    flatRate: z
-      .string()
-      .regex(
-        /^\d+([.,]\d{1,2})?$/,
-        'El coste base debe ser un número positivo con hasta 2 decimales.',
-      )
-      .nullable()
-      .optional(),
-    coverageScope: z.string().trim().max(200).nullable().optional(),
-    locationName: z.string().trim().max(200).nullable().optional(),
-    locationAddress: z.string().trim().max(500).nullable().optional(),
-    openingHours: z.string().trim().max(200).nullable().optional(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+  })
+  .passthrough()
+
+export const deliveryModeListSchema = z.array(deliveryModeSchema)
+
+export type DeliveryModeDTO = z.infer<typeof deliveryModeSchema>
+
+const optionalConfigurationFields = {
+  coverageZone: z.string().trim().min(1).max(255, 'El ámbito de cobertura no puede superar 255 caracteres.').optional(),
+  carrierCompany: z.string().trim().min(1).max(120, 'La empresa de transporte no puede superar 120 caracteres.').optional(),
+  notes: z.string().trim().min(1).max(1000, 'Las notas no pueden superar 1000 caracteres.').optional(),
+  pickupLocation: z.string().trim().min(1).max(500, 'La ubicación no puede superar 500 caracteres.').optional(),
+  pickupLocationName: z.string().trim().min(1).max(120, 'El nombre del punto no puede superar 120 caracteres.').optional(),
+  pickupStreet: z.string().trim().min(1).max(255, 'La calle no puede superar 255 caracteres.').optional(),
+  pickupMunicipality: z.string().trim().min(1).max(120, 'El municipio no puede superar 120 caracteres.').optional(),
+  pickupPostalCode: z.string().regex(/^\d{5}$/, 'El código postal debe tener 5 dígitos.').optional(),
+  pickupOpeningHours: z.string().trim().min(1).max(500, 'El horario no puede superar 500 caracteres.').optional(),
+}
+
+const deliveryModeCostSchema = z
+  .number()
+  .nonnegative('El coste no puede ser negativo.')
+  .max(99_999_999.99, 'El coste indicado está fuera del rango permitido.')
+  .multipleOf(0.01, 'El coste debe tener como máximo 2 decimales.')
+
+export const createDeliveryModePayloadSchema = z
+  .object({
+    type: DeliveryModeTypeSchema,
+    cost: deliveryModeCostSchema,
+    ...optionalConfigurationFields,
   })
   .strict()
 
-export type DeliveryModeFormInput = z.input<typeof deliveryModeFormSchema>
-export type DeliveryModeFormValues = z.output<typeof deliveryModeFormSchema>
+const nullableConfigurationFields = {
+  coverageZone: optionalConfigurationFields.coverageZone.unwrap().nullable().optional(),
+  carrierCompany: optionalConfigurationFields.carrierCompany.unwrap().nullable().optional(),
+  notes: optionalConfigurationFields.notes.unwrap().nullable().optional(),
+  pickupLocation: optionalConfigurationFields.pickupLocation.unwrap().nullable().optional(),
+  pickupLocationName: optionalConfigurationFields.pickupLocationName.unwrap().nullable().optional(),
+  pickupStreet: optionalConfigurationFields.pickupStreet.unwrap().nullable().optional(),
+  pickupMunicipality: optionalConfigurationFields.pickupMunicipality.unwrap().nullable().optional(),
+  pickupPostalCode: optionalConfigurationFields.pickupPostalCode.unwrap().nullable().optional(),
+  pickupOpeningHours: optionalConfigurationFields.pickupOpeningHours.unwrap().nullable().optional(),
+}
 
-// ---------------------------------------------------------------------------
-// Pickup point form schema — used in AgregarPuntoModal when wired to Zod
-// [frontend-defined]
-// ---------------------------------------------------------------------------
+export const updateDeliveryModePayloadSchema = z
+  .object({
+    type: DeliveryModeTypeSchema.optional(),
+    cost: deliveryModeCostSchema.optional(),
+    ...nullableConfigurationFields,
+    isActive: z.boolean().optional(),
+  })
+  .strict()
+
+export type CreateDeliveryModePayload = z.infer<typeof createDeliveryModePayloadSchema>
+export type UpdateDeliveryModePayload = z.infer<typeof updateDeliveryModePayloadSchema>
 
 export const pickupPointFormSchema = z
   .object({
-    nombre: z.string().trim().min(1, 'El nombre del punto es obligatorio.'),
-    calle: z.string().trim().min(1, 'La calle es obligatoria.'),
-    municipio: z.string().trim().min(1, 'El municipio es obligatorio.'),
+    nombre: z.string().trim().min(1, 'El nombre del punto es obligatorio.').max(120, 'El nombre del punto no puede superar 120 caracteres.'),
+    calle: z.string().trim().min(1, 'La calle es obligatoria.').max(255, 'La calle no puede superar 255 caracteres.'),
+    municipio: z.string().trim().min(1, 'El municipio es obligatorio.').max(120, 'El municipio no puede superar 120 caracteres.'),
     codigoPostal: z
       .string()
       .regex(/^\d{5}$/, 'El código postal debe tener 5 dígitos.'),
-    horario: z.string().trim().min(1, 'El horario es obligatorio.'),
-    indicaciones: z.string().trim().nullable().optional(),
+    horario: z.string().trim().min(1, 'El horario es obligatorio.').max(500, 'El horario no puede superar 500 caracteres.'),
+    indicaciones: z.string().trim().max(1000, 'Las indicaciones no pueden superar 1000 caracteres.').nullable().optional(),
   })
   .strict()
 
