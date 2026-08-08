@@ -55,4 +55,4 @@ PR1 targets tracker; each child targets its predecessor. Retarget polluted diffs
 ## Phase 4: Purchaser Orders and Closure
 
 - [x] 4.1 PR7 — Start: purchaser order mocks. CREATE `src/modules/pedidos/{pedidos.api,pedidos.queryKeys}.ts` and order hooks; MODIFY `src/modules/pedidos/{pedidos.schema.ts,pages/HistorialPedidosPage.tsx,componentes/ConsumerOrderModals.tsx}`. Finish: cache-safe reads/cancellation. Manual O01–O05: list/detail, 404, cancel success/rejection, auth loss; preserve server state.
-- [ ] 4.2 Each PR records environment/commit/case/evidence; verify responsive keyboard labels/errors and no raw card/secret values before tracker merge.
+- [ ] 4.2 Each PR records environment/commit/case/evidence; verify responsive keyboard labels/errors and no raw card/secret values before tracker merge. PR8 completed an honest partial static audit, but required per-PR environment records and evidence links/captures for PR1–PR7 are unavailable; see `apply-progress.md`.
