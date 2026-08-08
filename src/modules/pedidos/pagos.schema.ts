@@ -34,4 +34,33 @@ export const paymentIntentResponseSchema = z.object({
   clientSecret: z.string().min(1),
 }).strict()
 
+export const paymentStatusSchema = z.discriminatedUnion('state', [
+  z.object({
+    state: z.literal('PROCESSING'),
+    orderId: z.null(),
+    code: z.literal('PAYMENT_PROCESSING'),
+  }).strict(),
+  z.object({
+    state: z.literal('SUCCEEDED'),
+    orderId: z.string().min(1),
+    code: z.literal('PAYMENT_SUCCEEDED'),
+  }).strict(),
+  z.object({
+    state: z.literal('FAILED'),
+    orderId: z.null(),
+    code: z.literal('PAYMENT_FAILED'),
+  }).strict(),
+  z.object({
+    state: z.literal('PENDING'),
+    orderId: z.null(),
+    code: z.literal('PAYMENT_NEEDS_REVIEW'),
+  }).strict(),
+  z.object({
+    state: z.literal('CANCELED'),
+    orderId: z.null(),
+    code: z.literal('PAYMENT_CANCELED'),
+  }).strict(),
+])
+
 export type CreatePaymentIntentInput = z.infer<typeof createPaymentIntentInputSchema>
+export type PaymentStatus = z.infer<typeof paymentStatusSchema>

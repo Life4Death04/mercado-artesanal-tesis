@@ -50,9 +50,9 @@ PR1 targets tracker; each child targets its predecessor. Retarget polluted diffs
 ## Phase 3: Payment and Return
 
 - [x] 3.1 PR5 — Start: valid checkout. CREATE `src/modules/pedidos/{hooks/useCreatePaymentIntentMutation.ts,componentes/StripePaymentForm.tsx}`; MODIFY `src/modules/pedidos/pages/CheckoutPage.tsx`. Finish: module-local dynamic-`clientSecret` `Elements`, card-only lock, stale-secret recovery; never mount Elements in `main.tsx`. Manual P01–P06: intent/rejection, 3DS/redirect, decline, duplicate submit, missing key; guidance/no sensitive values.
-- [ ] 3.2 PR6 — Start: Stripe intent ID. CREATE `src/modules/pedidos/{hooks/usePaymentStatusQuery.ts,pages/PagoProcesandoPage.tsx,componentes/PaymentOutcomePanel.tsx}`; MODIFY `src/routes/AppRouter.tsx`. Finish: bounded authoritative outcome. Manual R01–R05: delayed success, inaccessible ID/auth loss, bound, review retry, failed/canceled; no false link.
+- [x] 3.2 PR6 — Start: Stripe intent ID. CREATE `src/modules/pedidos/{hooks/usePaymentStatusQuery.ts,pages/PagoProcesandoPage.tsx,componentes/PaymentOutcomePanel.tsx}`; MODIFY `src/routes/AppRouter.tsx`. Finish: bounded authoritative outcome. Static verification complete; Manual R01–R05 remain pending maintainer browser observation.
 
 ## Phase 4: Purchaser Orders and Closure
 
-- [ ] 4.1 PR7 — Start: purchaser order mocks. CREATE `src/modules/pedidos/{pedidos.api,pedidos.queryKeys}.ts` and order hooks; MODIFY `src/modules/pedidos/{pedidos.schema.ts,pages/HistorialPedidosPage.tsx,componentes/ConsumerOrderModals.tsx}`. Finish: cache-safe reads/cancellation. Manual O01–O05: list/detail, 404, cancel success/rejection, auth loss; preserve server state.
+- [x] 4.1 PR7 — Start: purchaser order mocks. CREATE `src/modules/pedidos/{pedidos.api,pedidos.queryKeys}.ts` and order hooks; MODIFY `src/modules/pedidos/{pedidos.schema.ts,pages/HistorialPedidosPage.tsx,componentes/ConsumerOrderModals.tsx}`. Finish: cache-safe reads/cancellation. Manual O01–O05: list/detail, 404, cancel success/rejection, auth loss; preserve server state.
 - [ ] 4.2 Each PR records environment/commit/case/evidence; verify responsive keyboard labels/errors and no raw card/secret values before tracker merge.

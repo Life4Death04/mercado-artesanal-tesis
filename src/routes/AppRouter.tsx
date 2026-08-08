@@ -20,6 +20,7 @@ import { PedidosAdminPage } from '../modules/admin/pages/PedidosAdminPage'
 import { ProductosAdminPage } from '../modules/admin/pages/ProductosAdminPage'
 import { UsuariosAdminPage } from '../modules/admin/pages/UsuariosAdminPage'
 import { CheckoutPage } from '../modules/pedidos/pages/CheckoutPage'
+import { PagoProcesandoPage } from '../modules/pedidos/pages/PagoProcesandoPage'
 import { HistorialPedidosPage } from '../modules/pedidos/pages/HistorialPedidosPage'
 import { PerfilPage } from '../modules/perfil/pages/PerfilPage'
 import { MisIncidenciasPage } from '../modules/perfil/pages/MisIncidenciasPage'
@@ -56,6 +57,7 @@ export function AppRouter() {
           <Route element={<ConsumerLayout />}>
             <Route path="carrito" element={<CarritoPage />} />
             <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="checkout/procesando" element={<PagoProcesandoPage />} />
             <Route path="pedidos" element={<HistorialPedidosPage />} />
           </Route>
         </Route>
