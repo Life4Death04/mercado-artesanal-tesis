@@ -22,12 +22,12 @@ export function EditarDireccionModal({ address, onClose, onSave, error = null, i
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-on-surface)]/40 p-4 backdrop-blur-[1px]"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[var(--color-on-surface)]/40 p-4 backdrop-blur-[1px] sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-labelledby="edit-address-title"
     >
-      <div className="relative w-full max-w-[600px] overflow-hidden bg-[#FAF7F0] shadow-2xl">
+      <div className="relative my-auto w-full max-w-[600px] overflow-hidden bg-[#FAF7F0] shadow-2xl">
         <button
           type="button"
           aria-label="Cerrar modal"
@@ -63,16 +63,16 @@ export function EditarDireccionModal({ address, onClose, onSave, error = null, i
             onSave(updates)
           }}
         >
-          <FormField label="Calle y número" value={line1} onChange={setLine1} placeholder="Ej. Calle del Teatro, 14" fullWidth />
+          <FormField id="edit-address-line1" label="Calle y número" value={line1} onChange={setLine1} placeholder="Ej. Calle del Teatro, 14" fullWidth />
 
           <div className="grid grid-cols-2 gap-[var(--space-gutter)]">
-            <FormField label="Piso / Puerta (Opcional)" value={line2} onChange={setLine2} placeholder="Ej. 3º Izquierda" />
-            <FormField label="Código Postal" value={postalCode} onChange={setPostalCode} placeholder="03001" maxLength={5} />
+            <FormField id="edit-address-line2" label="Piso / Puerta (Opcional)" value={line2} onChange={setLine2} placeholder="Ej. 3º Izquierda" />
+            <FormField id="edit-address-postal-code" label="Código Postal" value={postalCode} onChange={setPostalCode} placeholder="03001" maxLength={5} />
           </div>
 
           <div className="grid grid-cols-2 gap-[var(--space-gutter)]">
-            <FormField label="Localidad" value={city} onChange={setCity} placeholder="Alicante" />
-            <ProvinceField value={province} onChange={setProvince} />
+            <FormField id="edit-address-city" label="Localidad" value={city} onChange={setCity} placeholder="Alicante" />
+            <ProvinceField id="edit-address-province" value={province} onChange={setProvince} />
           </div>
 
           <DefaultAddressCheckbox checked={isDefault} onChange={setIsDefault} />
@@ -123,12 +123,12 @@ export function AgregarDireccionModal({ onClose, onSave, error = null, isSaving 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-on-surface)]/40 p-4 backdrop-blur-[1px]"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[var(--color-on-surface)]/40 p-4 backdrop-blur-[1px] sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-labelledby="add-address-title"
     >
-      <div className="relative w-full max-w-[600px] overflow-hidden bg-[var(--color-background)]  shadow-2xl">
+      <div className="relative my-auto w-full max-w-[600px] overflow-hidden bg-[var(--color-background)] shadow-2xl">
         <button
           type="button"
           aria-label="Cerrar modal"
@@ -154,16 +154,16 @@ export function AgregarDireccionModal({ onClose, onSave, error = null, isSaving 
             onSave({ line1, line2: line2.trim().length > 0 ? line2 : null, postalCode, city, province, isDefault })
           }}
         >
-          <FormField label="Calle y número" value={line1} onChange={setLine1} placeholder="Ej. Calle de las Castañuelas, 45" fullWidth />
+          <FormField id="add-address-line1" label="Calle y número" value={line1} onChange={setLine1} placeholder="Ej. Calle de las Castañuelas, 45" fullWidth />
 
           <div className="grid grid-cols-2 gap-[var(--space-gutter)]">
-            <FormField label="Piso / Puerta (Opcional)" value={line2} onChange={setLine2} placeholder="Ej. 4º Izq" />
-            <FormField label="Código Postal" value={postalCode} onChange={setPostalCode} placeholder="03000" maxLength={5} />
+            <FormField id="add-address-line2" label="Piso / Puerta (Opcional)" value={line2} onChange={setLine2} placeholder="Ej. 4º Izq" />
+            <FormField id="add-address-postal-code" label="Código Postal" value={postalCode} onChange={setPostalCode} placeholder="03000" maxLength={5} />
           </div>
 
           <div className="grid grid-cols-2 gap-[var(--space-gutter)]">
-            <FormField label="Localidad" value={city} onChange={setCity} placeholder="Alicante" />
-            <ProvinceField value={province} onChange={setProvince} />
+            <FormField id="add-address-city" label="Localidad" value={city} onChange={setCity} placeholder="Alicante" />
+            <ProvinceField id="add-address-province" value={province} onChange={setProvince} />
           </div>
 
           <DefaultAddressCheckbox checked={isDefault} onChange={setIsDefault} />
@@ -216,14 +216,15 @@ function DefaultAddressCheckbox({ checked, onChange }: { checked: boolean; onCha
   )
 }
 
-function ProvinceField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+function ProvinceField({ id, value, onChange }: { id: string; value: string; onChange: (value: string) => void }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-label-sm block uppercase tracking-wider text-[var(--color-on-surface-variant)]">
+      <label htmlFor={id} className="text-label-sm block uppercase tracking-wider text-[var(--color-on-surface-variant)]">
         Provincia
       </label>
       <div className="relative">
         <select
+          id={id}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           className="text-body-md w-full appearance-none border border-[var(--color-outline-variant)] bg-transparent px-4 py-3 text-[var(--color-on-surface)] transition-all focus:border-[#7A2E3A] focus:ring-0 focus:outline-none"
@@ -239,6 +240,7 @@ function ProvinceField({ value, onChange }: { value: string; onChange: (value: s
 }
 
 function FormField({
+  id,
   label,
   placeholder,
   value,
@@ -246,6 +248,7 @@ function FormField({
   fullWidth = false,
   maxLength,
 }: {
+  id: string
   label: string
   placeholder?: string
   value: string
@@ -255,10 +258,11 @@ function FormField({
 }) {
   return (
     <div className={`space-y-1.5 ${fullWidth ? 'col-span-full' : ''}`}>
-      <label className="text-label-sm block uppercase tracking-wider text-[var(--color-on-surface-variant)]">
+      <label htmlFor={id} className="text-label-sm block uppercase tracking-wider text-[var(--color-on-surface-variant)]">
         {label}
       </label>
       <input
+        id={id}
         type="text"
         placeholder={placeholder}
         value={value}
