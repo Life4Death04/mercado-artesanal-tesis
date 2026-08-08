@@ -349,3 +349,68 @@ PR4 replaces checkout delivery mocks with a server-backed delivery step. It read
 ### Task State
 
 - [x] 2.2 PR4 checkout delivery selection — implementation and static milestone complete; maintainer-observed D01–D05 browser verification PASS.
+
+## PR5 Payment Element
+
+**Mode:** Standard (manual-only; `strict_tdd: false`)
+
+PR5 creates a server-authoritative payment intent only after the checkout's live cart, delivery selection, and address validation complete. Its Zod boundary accepts only `deliverySelections` and an optional shipping `addressId`, then parses only the returned `clientSecret`. The delivery step is unmounted and cannot be changed after a successful intent response. `Elements` is module-local, mounts only with that dynamic secret and a resolved valid Stripe instance, and is never mounted in `main.tsx`.
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Whitespace check | `git diff --check` and untracked-file checks — exit 0; no whitespace errors. |
+| Focused quality command | `npx eslint src/modules/pedidos/hooks/useCreatePaymentIntentMutation.ts src/modules/pedidos/componentes/StripePaymentForm.tsx src/modules/pedidos/pages/CheckoutPage.tsx src/modules/pedidos/pagos.api.ts src/modules/pedidos/pagos.schema.ts` — exit 0; 0 errors, 0 warnings. |
+| Full lint | `npm run lint` — exit 0; 0 errors and 1 pre-existing React Compiler warning in `src/modules/productor/pages/EditarPerfilPublicoPage.tsx` (`watch()`). |
+| Build/runtime harness | `npm run build` — exit 0; TypeScript and Vite production build completed. Vite reported the existing >500 kB post-minification chunk warning. Browser/Stripe P01–P06 are pending maintainer observation; no runtime result is claimed and the parent-owned native runtime ledger was not mutated. |
+| Rollback boundary | Revert only `src/modules/pedidos/pagos.{api,schema}.ts`, `src/modules/pedidos/hooks/useCreatePaymentIntentMutation.ts`, `src/modules/pedidos/componentes/StripePaymentForm.tsx`, and the PR5 payment wiring in `src/modules/pedidos/pages/CheckoutPage.tsx`. This removes intent creation and payment collection without changing delivery, cart, outcome-route, order, or backend behavior. |
+
+### Manual Verification Checklist: P01–P06
+
+| Case | Setup and steps | Expected result | Observed |
+|---|---|---|---|
+| P01 — intent creation and rejection | With a valid purchaser cart, complete delivery and continue; repeat with an empty, unavailable, stale, or invalid delivery/address state. | Valid state sends only delivery selections and conditional address ID, then shows Stripe's card form. Rejection leaves card collection unavailable and shows safe corrective guidance. | Pending maintainer browser/Network observation. |
+| P02 — 3DS or redirect | Use a Stripe test card/payment setup that requires 3DS or redirect and submit through the Payment Element. | Stripe completes required authentication and returns to `/checkout/procesando` with only the payment intent reference. No order success is shown by PR5. | Pending maintainer Stripe test-mode observation. |
+| P03 — declined card | Use a Stripe test card that is declined. | Stripe's actionable safe message appears, the form remains reusable, and no delivery/cart selection unlocks. | Pending maintainer Stripe test-mode observation. |
+| P04 — duplicate confirmation | With a valid Payment Element, activate “Confirmar pago seguro” twice before the first request resolves. | The button and synchronous ref allow exactly one `elements.submit()`/`confirmPayment` attempt until it resolves. | Pending maintainer browser/Network observation. |
+| P05 — unavailable publishable configuration | Start with missing, malformed, or Stripe-load-failed `VITE_STRIPE_PUBLISHABLE_KEY`; reach a valid payment intent state. | A fail-closed unavailable message appears; Elements and confirmation do not mount or send card data. | Pending maintainer browser observation. |
+| P06 — sensitive-data and guidance review | Inspect the checkout DOM, browser console, Network request body, and visible UI during P01–P05. | No raw card fields or client secret are rendered/logged; the intent request contains no amount, currency, total, secret key, or card value; secure-payment guidance is visible. | Pending maintainer browser/Network observation. |
+
+### Task State
+
+- [x] 3.1 PR5 payment — implementation and required static verification complete. P01–P06 remain pending maintainer browser/Stripe test-mode observation.
+
+## PR5 Robustness Correction
+
+`PaymentElement` now fails closed until `onReady`; `onLoadError` shows generic recovery without logging Stripe details. `Elements` remounts per `clientSecret`; recovery and BFCache `pageshow.persisted` discard only the secret, preserve delivery/cart choices, return to delivery, and require an explicit fresh intent request. No route or backend changed.
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Focused ESLint | `npx eslint src/modules/pedidos/componentes/StripePaymentForm.tsx src/modules/pedidos/pages/CheckoutPage.tsx` — exit 0; 0 errors, 0 warnings. |
+| Whitespace | `git diff --check` plus untracked-file checks — exit 0. |
+| Full checks | `npm run lint` — exit 0; 0 errors, 1 pre-existing `watch()` warning. `npm run build` — exit 0; existing >500 kB chunk warning. |
+| Runtime / rollback | Runtime N/A: no browser harness was available. Revert only the two payment-form/checkout correction paths to remove load recovery, remount, and BFCache reset. |
+
+### Runtime Status
+
+| Case | Observed status |
+|---|---|
+| P01 | First Stripe payment reached `/checkout/procesando`; route remains PR6 scope. Second Element session request returned 400; exact subtype was not captured. |
+| P04 | Pending; no duplicate-confirmation result is claimed. |
+| P05 | Static fail-closed handling passes; live Element load failure was observed, while missing/invalid-key browser coverage remains pending. |
+
+### Task State
+
+- [x] 3.1 PR5 payment — correction static verification passed; runtime cases remain pending.
+
+### PR5 Final Maintainer Validation — Commit Authorization
+
+- The maintainer formally validates the frontend PR5 changes and authorizes commits.
+- A real Stripe test payment processed successfully.
+- Return to the landing/login flow is expected because `/checkout/procesando` is PR6 scope; PR5 does not claim that return flow as fixed.
+- Repeating an equivalent checkout confirmed a backend dependency: deterministic idempotency can return a terminal PaymentIntent. This remains a backend blocker and MUST NOT be represented as a frontend PR5 pass.
+- The robustness correction safely reports Element load failure and offers fresh-intent recovery, but cannot override backend terminal-intent reuse.
+- P02–P06 are not broadly claimed passed unless evidence already exists above.

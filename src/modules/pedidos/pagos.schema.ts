@@ -21,3 +21,17 @@ export type DeliverySelection = {
   producerId: string
   deliveryModeId: string
 }
+
+export const createPaymentIntentInputSchema = z.object({
+  deliverySelections: z.array(z.object({
+    producerId: z.string().min(1),
+    deliveryModeId: z.string().min(1),
+  }).strict()).min(1),
+  addressId: z.string().min(1).optional(),
+}).strict()
+
+export const paymentIntentResponseSchema = z.object({
+  clientSecret: z.string().min(1),
+}).strict()
+
+export type CreatePaymentIntentInput = z.infer<typeof createPaymentIntentInputSchema>
