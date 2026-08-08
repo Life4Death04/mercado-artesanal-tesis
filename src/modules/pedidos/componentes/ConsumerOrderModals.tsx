@@ -7,6 +7,9 @@ type OrderDetailModalProps = {
   onClose: () => void
   onReport: (subOrder: ConsumerSubOrder) => void
   onReview: (subOrderId: string, product: ConsumerOrderProduct) => void
+  onCancel?: () => void
+  isCancelling: boolean
+  cancelError: string | null
 }
 
 type ProductReviewModalProps = {
@@ -17,7 +20,7 @@ type ProductReviewModalProps = {
 
 const statusSteps: ConsumerOrderStatus[] = ['Pendiente', 'Confirmado', 'En preparación', 'En camino', 'Entregado']
 
-export function OrderDetailModal({ order, onClose, onReport, onReview }: OrderDetailModalProps) {
+export function OrderDetailModal({ order, onClose, onReport, onReview, onCancel, isCancelling, cancelError }: OrderDetailModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#1A1A1A]/60 p-4 backdrop-blur-sm sm:p-[var(--space-margin-mobile)] md:p-[var(--space-margin-desktop)]" role="dialog" aria-modal="true" aria-labelledby="order-detail-title">
       <div className="relative flex max-h-full w-full max-w-5xl flex-col border border-[color-mix(in_srgb,var(--color-outline)_20%,transparent)] bg-[#FAF7F0] shadow-2xl">
@@ -36,6 +39,7 @@ export function OrderDetailModal({ order, onClose, onReport, onReview }: OrderDe
             <p className="text-body-lg text-[var(--color-on-surface-variant)]">
               Compra del {order.date} · {order.subOrders.length} envío{order.subOrders.length === 1 ? '' : 's'} · {order.address}
             </p>
+            {order.paymentStatus ? <p className="text-label-sm mt-2 uppercase tracking-wider text-[var(--color-outline)]">Pago: {order.paymentStatus}</p> : null}
           </header>
 
           <div className="grid gap-5">
@@ -44,10 +48,11 @@ export function OrderDetailModal({ order, onClose, onReport, onReview }: OrderDe
             ))}
           </div>
 
-          <footer className="mt-8 flex flex-col items-center justify-between gap-6 border-t border-[color-mix(in_srgb,var(--color-outline)_20%,transparent)] pt-8 sm:flex-row-reverse">
+           <footer className="mt-8 flex flex-col items-center justify-between gap-6 border-t border-[color-mix(in_srgb,var(--color-outline)_20%,transparent)] pt-8 sm:flex-row-reverse">
             <button type="button" onClick={onClose} className="text-label-md w-full bg-[#7A2E3A] px-8 py-4 uppercase tracking-wider text-white transition-colors duration-200 hover:bg-[#63222d] sm:w-auto">
               Volver
-            </button>
+             </button>
+             {onCancel ? <div className="w-full sm:mr-auto sm:w-auto"><button type="button" disabled={isCancelling} onClick={onCancel} className="text-label-md border border-[var(--color-error)] px-5 py-3 uppercase tracking-wider text-[var(--color-error)] disabled:cursor-not-allowed disabled:opacity-60">{isCancelling ? 'Cancelando...' : 'Cancelar pedido'}</button>{cancelError ? <p role="alert" className="text-label-sm mt-2 text-[var(--color-error)]">{cancelError}</p> : null}</div> : null}
             <a href="#" className="text-label-sm flex items-center gap-1 text-[var(--color-on-surface-variant)] transition-colors hover:text-[#1A1A1A]">
               <Download size={16} strokeWidth={1.8} />
               Descargar comprobante

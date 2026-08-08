@@ -500,3 +500,66 @@ terminal-state changes.
 - The backend-authoritative processing/success flow, bounded polling, terminal states, inaccessible/auth-loss handling, review/retry guidance, and safe order link were accepted.
 - Evidence is maintainer-observed browser testing; no screenshot, video, or Network export was supplied in chat.
 - The separate backend terminal-PaymentIntent reuse issue remains an external dependency and is not claimed fixed by PR6.
+
+## PR7 Purchaser Orders
+
+**Mode:** Standard (manual-only; `strict_tdd: false`)
+
+PR7 replaces the active purchaser-order flow with authenticated, owner-scoped reads and cancellation. The Zod boundary accepts only documented summary/detail fields; producer IDs, delivery-mode IDs, product IDs, and other internal fields are stripped. The existing purchaser route continues to exclude ADMIN. `/pedidos?orderId=` accepts only bounded, non-empty, control-character-free backend string IDs before a detail request; missing, malformed, deleted, unowned, or 404 values render no order data.
+
+### Backend Contract Confirmation
+
+- Read-only backend verification: `GET /api/v1/pedidos` returns unpaginated, newest-first owner summaries; no backend filter or pagination query shape exists.
+- `GET /api/v1/pedidos/:id` and `PATCH /api/v1/pedidos/:id/cancelar` are owner-scoped. Unknown and unowned IDs both return `404 NOT_FOUND`; cancellation returns `409 INVALID_ORDER_TRANSITION` unless the derived order status is `PENDING`.
+- Detail values: order `PENDING|PARTIAL|FULFILLED|CANCELLED`; payment `PENDING|SUCCEEDED|FAILED|CANCELED|REFUNDED`; sub-order `pending|preparing|sent|delivered|cancelled`; decimal strings remain server-authoritative.
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Focused ESLint | `npx eslint src/modules/pedidos/{pedidos.api,pedidos.queryKeys,pedidos.schema}.ts src/modules/pedidos/hooks/{useConsumerOrdersQuery,useConsumerOrderQuery,useCancelConsumerOrderMutation}.ts src/modules/pedidos/{pages/HistorialPedidosPage.tsx,componentes/ConsumerOrderModals.tsx}` — exit 0; 0 errors, 0 warnings. |
+| Untracked-aware whitespace | `git diff --check` plus `git diff --no-index --check /dev/null` for every new source file — exit 0. |
+| Full lint | `npm run lint` — exit 0; 0 errors and one pre-existing React Compiler `watch()` warning in `EditarPerfilPublicoPage.tsx`. |
+| Build/runtime harness | `npm run build` — exit 0; TypeScript and Vite completed. Existing >500 kB chunk warning remains. Browser harness N/A: no browser run; parent runtime token `sha256:9d627234f8a07ceeeab52f8c99319033600c35b65f278871adc40299aee791a5` was not touched. |
+| Changed lines | Superseded by the correction record below. |
+| Rollback boundary | Revert only `src/modules/pedidos/{pedidos.api.ts,pedidos.queryKeys.ts,pedidos.schema.ts,hooks/useConsumerOrdersQuery.ts,hooks/useConsumerOrderQuery.ts,hooks/useCancelConsumerOrderMutation.ts,pages/HistorialPedidosPage.tsx,componentes/ConsumerOrderModals.tsx}` and this PR7 artifact state. |
+
+### Manual Verification Checklist: O01–O05
+
+| Case | Expected result | Observed |
+|---|---|---|
+| O01 — list, detail, and payment deep link | Owner summaries load; an owned valid `orderId` opens its validated detail. | Pending maintainer browser observation. |
+| O02 — inaccessible detail | Unknown, unowned, malformed, missing, or deleted references show the same safe no-detail state. | Pending maintainer browser observation. |
+| O03 — cancellation success | A `PENDING` owned order permits one request and refreshes list/detail to returned `CANCELLED`. | Pending maintainer browser observation. |
+| O04 — cancellation rejection | `INVALID_ORDER_TRANSITION`/owner-safe `NOT_FOUND` show a safe error and retain confirmed server state. | Pending maintainer browser observation. |
+| O05 — auth loss/cache safety | Authentication failure clears protected presentation through the established auth cache guard. | Pending maintainer browser observation. |
+
+### Task State
+
+- [x] 4.1 PR7 purchaser orders — implementation and static verification complete. O01–O05 browser evidence remains pending.
+
+### PR7 Correction — Fresh Validation
+
+- Removed the unsupported CUID assumption: backend route parameters are plain strings, so request/deep-link validation is bounded and safe without altering the supplied ID before URL encoding.
+- A detail modal now renders only when its parsed response ID matches the current requested ID and the current key is neither fetching nor errored. Malformed values and owner-safe errors share the same no-detail presentation.
+- Schemas require positive producer counts, at least one sub-order, and at least one order line. `preparing` remains “En preparación”, `sent` is “En camino”, and every payment state is rendered truthfully.
+- Cancellation pending/error UI is scoped to its mutation variable and is reset on selection changes/close. “Pedidos filtrados” now reports the filtered count.
+
+| Correction evidence | Result |
+|---|---|
+| Focused ESLint | exit 0; 0 errors, 0 warnings. |
+| Untracked-aware whitespace | exit 0. |
+| `npm run lint` | exit 0; one pre-existing `watch()` warning. |
+| `npm run build` | exit 0; existing >500 kB chunk warning. |
+| Runtime | N/A: no browser harness or native runtime attempt; parent token was not touched. |
+| Final changed lines | 242 source lines; total candidate count recalculated after this artifact update and remains below 800. |
+
+### PR7 Maintainer Evidence — Commit Authorization
+
+- **O01 — list, detail, and payment deep link: PASS.** The maintainer observed the purchaser order list, owned order detail, and valid deep-link flow working in the browser.
+- **O02 — owner-safe 404: pending.** No pass is claimed.
+- **O03 — cancellation success: pending.** No pass is claimed.
+- **O04 — cancellation rejection: pending.** No pass is claimed.
+- **O05 — auth-loss/cache safety: pending.** No pass is claimed.
+- The maintainer explicitly accepts the O01 browser result as sufficient to authorize the PR7 commit despite the remaining browser evidence.
+- **Evidence source / limitation:** Maintainer browser observation; no screenshots, video, or Network export was supplied.

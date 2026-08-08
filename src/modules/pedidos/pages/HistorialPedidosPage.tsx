@@ -1,8 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Filter, Search, SlidersHorizontal } from 'lucide-react'
 import { OrderDetailModal, ProductReviewModal } from '../componentes/ConsumerOrderModals'
 import { ReportarIncidenciaModal } from '../../perfil/componentes/IncidenciaModals'
+import { resolveErrorMessage } from '../../../lib/errorMessages'
+import { orderIdSchema, type ConsumerOrder as ConsumerOrderResponse } from '../pedidos.schema'
+import { useCancelConsumerOrderMutation } from '../hooks/useCancelConsumerOrderMutation'
+import { useConsumerOrderQuery } from '../hooks/useConsumerOrderQuery'
+import { useConsumerOrdersQuery } from '../hooks/useConsumerOrdersQuery'
 
 export type ConsumerOrderStatus = 'Pendiente' | 'Confirmado' | 'En preparación' | 'En camino' | 'Entregado' | 'Cancelado'
 
@@ -38,6 +43,7 @@ export type ConsumerOrder = {
   status: ConsumerOrderStatus
   total: string
   address: string
+  paymentStatus?: string
   subOrders: ConsumerSubOrder[]
 }
 
@@ -305,28 +311,26 @@ const initialOrders: ConsumerOrder[] = [
 const pageSize = 5
 
 export function HistorialPedidosPage() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const initialSearch = searchParams.get('search') ?? ''
   const [search, setSearch] = useState(initialSearch)
   const [statusFilter, setStatusFilter] = useState<ConsumerOrderStatus | 'Todos'>('Todos')
   const [dateFilters, setDateFilters] = useState<DateFilters>({ from: '', to: '' })
   const [showDateFilters, setShowDateFilters] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const requestedOrderId = searchParams.get('orderId')
+  const selectedOrderId = requestedOrderId && orderIdSchema.safeParse(requestedOrderId).success ? requestedOrderId : null
+  const hasMalformedOrderId = requestedOrderId !== null && selectedOrderId === null
   const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null)
   const [reportPedidoLabel, setReportPedidoLabel] = useState<string | null>(null)
   const [reviewedKeys, setReviewedKeys] = useState<string[]>([])
 
-  const orders = initialOrders.map((order) => ({
-    ...order,
-    subOrders: order.subOrders.map((subOrder) => ({
-      ...subOrder,
-      products: subOrder.products.map((product) => ({
-        ...product,
-        reviewed: product.reviewed || reviewedKeys.includes(getReviewKey(subOrder.id, product.name)),
-      })),
-    })),
-  }))
+  const ordersQuery = useConsumerOrdersQuery()
+  const detailQuery = useConsumerOrderQuery(selectedOrderId)
+  const cancelMutation = useCancelConsumerOrderMutation()
+  const resetCancelMutation = cancelMutation.reset
+  const cancelStartedRef = useRef(false)
+  const orders = ordersQuery.data?.map(toOrderSummaryView) ?? initialOrders.filter(() => false)
 
   const normalizedSearch = search.trim().toLowerCase()
   const filteredOrders = orders.filter((order) => {
@@ -351,7 +355,12 @@ export function HistorialPedidosPage() {
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize))
   const safePage = Math.min(currentPage, totalPages)
   const visibleOrders = filteredOrders.slice((safePage - 1) * pageSize, safePage * pageSize)
-  const selectedOrder = selectedOrderId ? orders.find((order) => order.id === selectedOrderId) ?? null : null
+  const selectedOrder = detailQuery.data?.id === selectedOrderId && !detailQuery.isFetching && !detailQuery.isError ? toOrderDetailView(detailQuery.data, reviewedKeys) : null
+
+  useEffect(() => {
+    cancelStartedRef.current = false
+    resetCancelMutation()
+  }, [selectedOrderId, resetCancelMutation])
 
   function updateSearch(value: string) {
     setSearch(value)
@@ -366,6 +375,22 @@ export function HistorialPedidosPage() {
   function updateDateFilter(key: keyof DateFilters, value: string) {
     setDateFilters((current) => ({ ...current, [key]: value }))
     setCurrentPage(1)
+  }
+
+  function selectOrder(orderId: string | null) {
+    cancelStartedRef.current = false
+    resetCancelMutation()
+    setSearchParams((current) => {
+      if (orderId) current.set('orderId', orderId)
+      else current.delete('orderId')
+      return current
+    })
+  }
+
+  function cancelOrder(orderId: string) {
+    if (cancelStartedRef.current) return
+    cancelStartedRef.current = true
+    cancelMutation.mutate(orderId, { onSettled: () => { cancelStartedRef.current = false } })
   }
 
   return (
@@ -388,7 +413,7 @@ export function HistorialPedidosPage() {
             </div>
             <div className="border border-[color-mix(in_srgb,var(--color-outline-variant)_40%,transparent)] bg-white/45 px-5 py-4 text-right">
               <span className="text-label-sm block uppercase tracking-[0.18em] text-[var(--color-outline)]">Pedidos filtrados</span>
-              <strong className="text-headline-md text-[28px] text-[#7A2E3A]">{filteredOrders.length}</strong>
+               <strong className="text-headline-md text-[28px] text-[#7A2E3A]">{filteredOrders.length}</strong>
             </div>
           </div>
         </section>
@@ -436,10 +461,12 @@ export function HistorialPedidosPage() {
           </div>
         </section>
 
-        <div className="flex flex-col gap-4">
-            {visibleOrders.map((order) => (
-            <OrderRow key={order.id} order={order} highlighted={normalizedSearch.length > 0 && order.id.toLowerCase().includes(normalizedSearch)} onView={() => setSelectedOrderId(order.id)} />
-          ))}
+         {ordersQuery.isLoading ? <p className="text-body-md py-10 text-[var(--color-on-surface-variant)]">Cargando tus pedidos...</p> : null}
+         {ordersQuery.isError ? <p role="alert" className="text-body-md border border-[var(--color-error)] p-5 text-[var(--color-error)]">{resolveErrorMessage(ordersQuery.error)}</p> : null}
+         <div className="flex flex-col gap-4">
+           {visibleOrders.map((order) => (
+             <OrderRow key={order.id} order={order} highlighted={normalizedSearch.length > 0 && order.id.toLowerCase().includes(normalizedSearch)} onView={() => selectOrder(order.id)} />
+           ))}
         </div>
 
         {visibleOrders.length === 0 ? (
@@ -456,11 +483,17 @@ export function HistorialPedidosPage() {
       {selectedOrder ? (
         <OrderDetailModal
           order={selectedOrder}
-          onClose={() => setSelectedOrderId(null)}
+          onClose={() => selectOrder(null)}
           onReport={(subOrder) => setReportPedidoLabel(`Pedido ${selectedOrder.id} · ${subOrder.producer}`)}
           onReview={(subOrderId, product) => setReviewTarget({ subOrderId, product })}
+          onCancel={selectedOrder.status === 'Pendiente' ? () => cancelOrder(selectedOrder.id) : undefined}
+          isCancelling={cancelMutation.variables === selectedOrder.id && cancelMutation.isPending}
+          cancelError={cancelMutation.variables === selectedOrder.id && cancelMutation.isError ? resolveErrorMessage(cancelMutation.error) : null}
         />
       ) : null}
+
+      {selectedOrderId && detailQuery.isLoading ? <p className="sr-only" aria-live="polite">Cargando detalle del pedido...</p> : null}
+      {hasMalformedOrderId || (selectedOrderId !== null && detailQuery.isError) ? <div role="alert" className="fixed inset-x-4 bottom-6 z-50 mx-auto max-w-xl border border-[var(--color-error)] bg-white p-4 text-[var(--color-error)]">No pudimos abrir este pedido. Vuelve al historial para continuar de forma segura.</div> : null}
 
       {reviewTarget ? (
         <ProductReviewModal
@@ -480,6 +513,58 @@ export function HistorialPedidosPage() {
 
 function getReviewKey(subOrderId: string, productName: string) {
   return `${subOrderId}:${productName}`
+}
+
+function toOrderSummaryView(order: { id: string; createdAt: string; totalAmount: string; status: 'PENDING' | 'PARTIAL' | 'FULFILLED' | 'CANCELLED'; producerCount: number }): ConsumerOrder {
+  return { id: order.id, date: formatDate(order.createdAt), dateISO: order.createdAt.slice(0, 10), status: toDisplayStatus(order.status), total: formatAmount(order.totalAmount), address: '', subOrders: Array.from({ length: order.producerCount }, (_, index) => ({ id: `summary-${index}`, producer: 'Envío', location: '', status: toDisplayStatus(order.status), deliveryMethod: '', deliveryAddress: '', tracking: '', subtotal: '', shipping: '', total: '', products: [] })) }
+}
+
+function toOrderDetailView(order: ConsumerOrderResponse, reviewedKeys: string[]): ConsumerOrder {
+  return {
+    id: order.id,
+    date: formatDate(order.createdAt),
+    dateISO: order.createdAt.slice(0, 10),
+    status: toDisplayStatus(order.status),
+    total: formatAmount(order.totalAmount),
+    address: 'Información de entrega protegida',
+    paymentStatus: toPaymentStatusLabel(order.payment.status),
+    subOrders: order.subOrders.map((subOrder, subOrderIndex) => ({
+      id: subOrder.id,
+      producer: `Envío ${subOrderIndex + 1}`,
+      location: '',
+      status: toDisplaySubOrderStatus(subOrder.status),
+      deliveryMethod: { PERSONAL_DELIVERY: 'Entrega personal', PICKUP: 'Recogida', SHIPPING_FLAT_RATE: 'Envío' }[subOrder.deliveryMode.type],
+      deliveryAddress: 'Consulta la dirección en el comprobante de tu pedido.',
+      tracking: subOrder.trackingNumber ?? 'No disponible',
+      subtotal: '—',
+      shipping: formatAmount(subOrder.shippingCostSnapshot),
+      total: '—',
+      products: subOrder.orderLines.map((line, index) => ({ name: `Artículo ${index + 1}`, detail: 'Detalle disponible en tu comprobante', quantity: `${line.quantity}x`, unitPrice: formatAmount(line.unitPriceSnapshot), total: '—', image: '', reviewed: reviewedKeys.includes(getReviewKey(subOrder.id, `Artículo ${index + 1}`)) })),
+    })),
+  }
+}
+
+function toDisplayStatus(status: 'PENDING' | 'PARTIAL' | 'FULFILLED' | 'CANCELLED'): ConsumerOrderStatus {
+  const labels: Record<'PENDING' | 'PARTIAL' | 'FULFILLED' | 'CANCELLED', ConsumerOrderStatus> = { PENDING: 'Pendiente', PARTIAL: 'En preparación', FULFILLED: 'Entregado', CANCELLED: 'Cancelado' }
+  return labels[status]
+}
+
+function toDisplaySubOrderStatus(status: 'pending' | 'preparing' | 'sent' | 'delivered' | 'cancelled'): ConsumerOrderStatus {
+  const labels: Record<'pending' | 'preparing' | 'sent' | 'delivered' | 'cancelled', ConsumerOrderStatus> = { pending: 'Pendiente', preparing: 'En preparación', sent: 'En camino', delivered: 'Entregado', cancelled: 'Cancelado' }
+  return labels[status]
+}
+
+function toPaymentStatusLabel(status: ConsumerOrderResponse['payment']['status']) {
+  const labels: Record<ConsumerOrderResponse['payment']['status'], string> = { PENDING: 'Pendiente', SUCCEEDED: 'Confirmado', FAILED: 'Fallido', CANCELED: 'Cancelado', REFUNDED: 'Reembolsado' }
+  return labels[status]
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat('es-ES').format(new Date(value))
+}
+
+function formatAmount(value: string) {
+  return `${value} €`
 }
 
 function DateField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
