@@ -587,12 +587,11 @@ function OrderRow({ order, highlighted, onView }: { order: ConsumerOrder; highli
 
   return (
     <article
-      className={`group relative flex cursor-pointer flex-col gap-6 rounded-[var(--radius-lg)] border p-6 transition-colors md:flex-row md:items-center md:justify-between ${
+      className={`group relative flex flex-col gap-6 rounded-[var(--radius-lg)] border p-6 transition-colors md:flex-row md:items-center md:justify-between ${
         highlighted
           ? 'border-[#7A2E3A] bg-[color-mix(in_srgb,#7A2E3A_8%,white)] shadow-[0_18px_45px_-32px_rgba(122,46,58,0.65)]'
           : 'border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] bg-white/50 hover:border-[var(--color-outline-variant)]'
       }`}
-      onClick={onView}
     >
       <div className="flex flex-grow flex-col gap-4 md:flex-row md:items-center md:gap-8">
         <OrderMeta label="Nº de pedido" value={order.id} />
@@ -604,7 +603,7 @@ function OrderRow({ order, highlighted, onView }: { order: ConsumerOrder; highli
 
       <div className="flex min-w-[220px] items-center justify-between gap-6 md:justify-end">
         <StatusBadge status={order.status} />
-        <button type="button" className="text-label-md flex items-center gap-1 text-[#1A1A1A] transition-colors group-hover:underline hover:text-[#7A2E3A]">
+        <button type="button" onClick={onView} className="text-label-md flex items-center gap-1 text-[#1A1A1A] transition-colors hover:underline hover:text-[#7A2E3A]">
           Ver detalle
           <ArrowRight size={18} strokeWidth={1.8} />
         </button>

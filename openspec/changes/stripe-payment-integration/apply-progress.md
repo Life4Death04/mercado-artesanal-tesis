@@ -563,3 +563,68 @@ PR7 replaces the active purchaser-order flow with authenticated, owner-scoped re
 - **O05 — auth-loss/cache safety: pending.** No pass is claimed.
 - The maintainer explicitly accepts the O01 browser result as sufficient to authorize the PR7 commit despite the remaining browser evidence.
 - **Evidence source / limitation:** Maintainer browser observation; no screenshots, video, or Network export was supplied.
+
+## PR8 Partial Closure Audit — Cross-PR Static Review and Evidence Ledger
+
+**Mode:** Standard (manual-only; `strict_tdd: false`)
+
+**Branch / base / scope:** `feat/stripe-payment-integration-pr8-closure` from PR7 commit
+`e9a21d28a811fe0e757ff36092887a4f7659371d`. This closure slice audits the payment-environment
+surfaces, consolidates evidence, and contains only the bounded accessibility corrections below.
+It does not modify backend code, runtime/review ledgers, environment values, dependencies, or
+payment contracts.
+
+### Completion Gate — Pending
+
+PR8 completed the static responsive, keyboard, labels/errors, and sensitive-data review, and the
+two documented source corrections pass the bounded checks below. It is **not** a completed closure:
+task 4.2 remains unchecked because the maintainer confirms that the required per-PR environment
+records and evidence links/captures/videos/Network exports for PR1–PR7 are unavailable. This record
+preserves all available observations without substituting or fabricating the missing evidence.
+
+### PR Evidence Ledger
+
+| PR | Branch / implementation commit | Cases and recorded evidence | Remaining limitation |
+|---|---|---|---|
+| PR1 | `feat/stripe-payment-integration-pr1-foundation` / `3e50dac` | C04 PASS: maintainer confirmed purchaser access, protected-cache behavior, and safe producer return after the documented correction. | No screenshot, video, or Network export was supplied. |
+| PR2 | `feat/stripe-payment-integration-pr2-cart` / `ae258b2` | C01–C03 PASS: maintainer confirmed mutation/refresh, corrective failure, and empty/unavailable checkout behavior. | No screenshot, video, or Network export was supplied. |
+| PR3a + PR3b | `feat/stripe-payment-integration-pr3a-address-contracts` / `ffa27f3`; `feat/stripe-payment-integration-pr3b-address-ui` / `c0e2e10` | A01–A06 PASS for CONSUMER and PRODUCER; merged through tracker `68c5589`. | ADMIN is deliberately outside commerce scope; no captured browser artifacts were supplied. |
+| PR4 | `feat/stripe-payment-integration-pr4-delivery` / checkout `57509b4` (branch tip `d6b1a00`) | D01–D05 PASS: complete/stale selections, shipping address, pickup omission, and invalid-address behavior were maintainer-observed. | No screenshot, video, Network export, or environment record was supplied; the auxiliary producer backend dependency was not independently deployable when recorded. |
+| PR5 | `feat/stripe-payment-integration-pr5-payment` / `fd2f9c8` | A real Stripe test payment reached processing; static fail-closed and load-recovery paths passed. | P01 rejection branch, P02 3DS/redirect, P03 decline, P04 duplicate submit, P05 missing/malformed-key variants, and P06 browser DOM/console/Network sensitive-data inspection remain pending. Terminal-intent reuse is an external backend dependency. |
+| PR6 | `feat/stripe-payment-integration-pr6-outcomes` / `e4cad3f` | Maintainer reported the R01–R05 authoritative outcomes flow working and accepted it for commit. | Individual case screenshots, videos, and Network exports were not supplied; the backend terminal-intent reuse issue remains external. |
+| PR7 | `feat/stripe-payment-integration-pr7-orders` / `e9a21d2` | O01 PASS: maintainer observed list, owned detail, and valid payment deep link. | O02 owner-safe 404, O03 cancellation success, O04 cancellation rejection, and O05 auth-loss/cache safety are **pending**. No pass is claimed. |
+
+### Static Responsive, Keyboard, Labels, Errors, and Sensitive-Data Audit
+
+| Area | Static result | Evidence / limitation |
+|---|---|---|
+| Cart and authenticated topbar | PASS | Responsive flex/grid layouts, semantic links/buttons, named cart/profile/menu controls, disabled quantity increase, and truthful loading/error/empty states are present in `CarritoPage.tsx` and `AuthenticatedTopbar.tsx`. Browser viewport observation remains pending. |
+| Profile address modals | CORRECTED | Both address dialogs now scroll at constrained viewport heights and associate every text/select control with a programmatic label. Save/cancel states disable safely and mutation failures use `role="alert"`. Escape handling and focus trapping are not implemented in these existing dialogs and require browser/accessibility-tool confirmation before any broader claim. |
+| Checkout delivery step | PASS | Delivery and address choices use native radios wrapped by labels; sections collapse responsively; loading/unavailable/address errors use alerts. Browser layout and screen-reader observation remain pending. |
+| Payment Element shell and recovery | PASS (static) | The Stripe iframe is the sole card-data surface; the form is native, disabled until ready, uses safe failure/recovery alerts, and its narrow layout is responsive. P01–P06 browser/Stripe/Network evidence remains pending as listed above. |
+| Processing and outcomes | PASS (static) | Protected processing route validates only `pi_` references; state messages use an `aria-live` outcome section; retry is a disabled-aware button; success link exists only for validated `SUCCEEDED` data. R01–R05 lack captured artifacts despite maintainer acceptance. |
+| Purchaser orders, detail, and cancellation | CORRECTED | Replaced the click-only order-card activation with the existing semantic “Ver detalle” button. Detail dialog already has an explicit close button and scrollable panel; narrow layouts use responsive columns. O02–O05 remain pending. |
+| Protected role/auth-loss behavior | PASS (static) | Cart, checkout, processing, and orders are guarded to CONSUMER/PRODUCER; unauthenticated routes preserve path/query for login; cache guard clears authenticated query state on logout or identity change. C04 is maintainer-observed; O05 remains pending. |
+| Sensitive-data boundary | PASS (static) | Source scan found no raw card/CVC fields, `sk_` private keys, `console.*` calls, client-secret storage, or amount/currency/total fields in the intent request. `createPaymentIntentInputSchema` permits only `deliverySelections` and optional `addressId`; `clientSecret` is an opaque in-memory prop supplied to Stripe `Elements`, never rendered, logged, persisted, or placed in a URL. `.env.example` explicitly prohibits `sk_` values. Browser DOM/console/Network confirmation remains P06 pending. |
+
+### Minimal Corrections
+
+| File | Correction | Reason |
+|---|---|---|
+| `src/modules/perfil/componentes/ProfileModals.tsx` | Added stable input/select IDs with `htmlFor` labels; made address-dialog overlays vertically scrollable at small viewport heights. | Static audit found unassociated labels and a fixed dialog shell that could clip tall content. |
+| `src/modules/pedidos/pages/HistorialPedidosPage.tsx` | Removed pointer-only row activation and bound detail opening to the semantic existing button. | Static audit found a click-only order-card interaction that keyboard users could not invoke through the card. |
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Focused quality command | `npx eslint src/modules/perfil/componentes/ProfileModals.tsx src/modules/pedidos/pages/HistorialPedidosPage.tsx` — exit 0; 0 errors, 0 warnings. |
+| Untracked-aware whitespace | `git diff --check` plus `git diff --no-index --check /dev/null` for every untracked path — exit 0; no whitespace errors. |
+| Full lint | `npm run lint` — exit 0; 0 errors and one pre-existing React Compiler `watch()` warning in `src/modules/productor/pages/EditarPerfilPublicoPage.tsx`. |
+| Build | `npm run build` — exit 0; TypeScript and Vite completed. Existing >500 kB output-chunk warning remains. |
+| Runtime harness | N/A: no browser/Stripe harness was available for this static closure. The parent native token `sha256:4b504adccb40aa521445136e61eec9fca77cf033a3ea5d402c2f1b1aa5eaa842` and every runtime/review ledger were not acquired, settled, reset, or mutated. |
+| Rollback boundary | Revert only `ProfileModals.tsx`, `HistorialPedidosPage.tsx`, this PR8 ledger entry, and the task 4.2 checkbox. This removes the partial-audit corrections without changing payment, cart, delivery, outcome, backend, or prior PR behavior. |
+
+### Task State
+
+- [ ] 4.2 PR8 partial closure audit — static responsive/keyboard/labels/errors/sensitive-data review and bounded corrections are complete; the task remains pending until per-PR environment records and evidence links/captures for PR1–PR7 are available. O01 remains PASS; O02–O05 and every other listed manual evidence gap remain pending.
