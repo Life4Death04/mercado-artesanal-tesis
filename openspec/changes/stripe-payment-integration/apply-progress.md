@@ -414,3 +414,89 @@ PR5 creates a server-authoritative payment intent only after the checkout's live
 - Repeating an equivalent checkout confirmed a backend dependency: deterministic idempotency can return a terminal PaymentIntent. This remains a backend blocker and MUST NOT be represented as a frontend PR5 pass.
 - The robustness correction safely reports Element load failure and offers fresh-intent recovery, but cannot override backend terminal-intent reuse.
 - P02–P06 are not broadly claimed passed unless evidence already exists above.
+
+## PR6 Payment Return Outcomes
+
+**Mode:** Standard (manual-only; `strict_tdd: false`)
+
+PR6 adds the authenticated `/checkout/procesando` route and an owner-scoped status boundary for
+`GET /pagos/status/:paymentIntentId`. The page reads only a syntactically safe `pi_` query value,
+uses the exact backend status DTO, and fails closed for malformed, missing, unknown, unowned, or
+authentication-failed lookups. It never treats a Stripe redirect as success.
+
+`PROCESSING` polls immediately, then at 1, 2, and bounded 4-second intervals until the 31-second
+limit. Polling is aborted by query cancellation on unmount/key change and stops for every terminal
+state or the timeout. `PENDING` and timeout have manual status-refresh guidance. `FAILED` and
+`CANCELED` have distinct terminal guidance and no order navigation. Only the strict validated
+`SUCCEEDED` DTO (`orderId` required) invalidates the existing cart cache and renders the `/pedidos`
+link. PR7 order APIs/query keys do not exist in this boundary and were not invented.
+
+### Backend Contract Confirmation
+
+Read-only verification against `mercado-artesanal-backend` confirmed:
+
+- Route: `GET /api/v1/pagos/status/:paymentIntentId`.
+- DTO: `{ state: "PROCESSING"|"SUCCEEDED"|"FAILED"|"PENDING"|"CANCELED", orderId: string|null, code }`.
+- `SUCCEEDED` only carries a non-null order ID; no linked order maps to `PENDING` +
+  `PAYMENT_NEEDS_REVIEW`.
+- Missing and unowned IDs both return the same owner-safe `404 NOT_FOUND`; unauthenticated polls
+  return `401`.
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Focused ESLint | `npx eslint src/modules/pedidos/hooks/usePaymentStatusQuery.ts src/modules/pedidos/pages/PagoProcesandoPage.tsx src/modules/pedidos/componentes/PaymentOutcomePanel.tsx src/modules/pedidos/pagos.api.ts src/modules/pedidos/pagos.schema.ts src/modules/pedidos/paymentStatus.queryKeys.ts src/routes/AppRouter.tsx` — exit 0; 0 errors, 0 warnings. |
+| Whitespace | `git diff --check` plus each untracked source file checked with `git diff --no-index --check /dev/null <file>` — exit 0; no whitespace errors. |
+| Full lint | `npm run lint` — exit 0; 0 errors and 1 pre-existing React Compiler `watch()` warning in `src/modules/productor/pages/EditarPerfilPublicoPage.tsx`. |
+| Build | `npm run build` — exit 0; TypeScript and Vite production build completed; existing >500 kB chunk warning remains. |
+| Runtime harness | N/A: no browser harness was available. The parent-owned native runtime token `sha256:3123bac70fbfb3fc85fd548a008a4580c6daf2d4395df619176b6a75e148e210` was not acquired, settled, reset, or mutated. |
+| Rollback boundary | Revert only `src/modules/pedidos/{pagos.api.ts,pagos.schema.ts,paymentStatus.queryKeys.ts,hooks/usePaymentStatusQuery.ts,pages/PagoProcesandoPage.tsx,componentes/PaymentOutcomePanel.tsx}` and the `/checkout/procesando` route in `src/routes/AppRouter.tsx`; cart, checkout payment collection, PR7 order APIs, and backend behavior remain untouched. |
+
+### Manual Verification Checklist: R01–R05
+
+| Case | Setup and steps | Expected result | Observed |
+|---|---|---|---|
+| R01 — delayed authoritative success | Complete a Stripe test payment whose status first returns `PROCESSING`, then arrange a backend `SUCCEEDED` response with an owned `orderId`. | The page polls on the bounded schedule, stops at `SUCCEEDED`, invalidates the cart cache, and shows the order link only then. | Pending maintainer browser/Network observation. |
+| R02 — inaccessible ID or auth loss | Open with a missing/malformed `payment_intent`, then use unknown/unowned ID; repeat after session loss. | No status/order details render; safe sign-in or checkout guidance appears and protected cache handling remains in force. | Pending maintainer browser/Network observation. |
+| R03 — bounded processing timeout | Keep every authoritative response at `PROCESSING` for at least 31 seconds and inspect Network requests. | Polling stops at the bound and presents recoverable pending guidance; it does not claim success or failure. | Pending maintainer browser/Network observation. |
+| R04 — review and safe retry | Return `PENDING` / `PAYMENT_NEEDS_REVIEW`, select “Volver a consultar”, then inspect the next read. | Review guidance makes no duplicate-payment claim; manual retry performs one safe status read and can resume bounded processing only if the backend returns `PROCESSING`. | Pending maintainer browser/Network observation. |
+| R05 — failed/canceled and no false order link | Return `FAILED`, then `CANCELED`; also return any non-success state with no order ID and inspect visible links. | Each terminal outcome is distinct, polling stops, checkout recovery is offered, and no `/pedidos?orderId=…` link is rendered outside valid `SUCCEEDED` with owned `orderId`. | Pending maintainer browser/Network observation. |
+
+### Task State
+
+- [x] 3.2 PR6 outcomes — implementation and required static verification complete. R01–R05 browser/Stripe evidence remains pending maintainer observation.
+
+### PR6 Polling Correction
+
+Fresh-context review found four scheduling defects in the original polling hook. The correction uses
+only scalar/stable effect dependencies, refuses to arm a timer while authentication is unavailable,
+the query is fetching/error, or a manual retry is pending, and prevents overlapping retry/refetches.
+Manual retry uses TanStack Query v5 `refetch({ cancelRefetch: false })`; cached `PROCESSING` cannot
+restart polling until that explicit request succeeds. The deterministic state machine makes reads at
+`t=0,1,3,7,11,15,19,23,27,31` seconds, performs the final `t=31` read, then presents timeout if it
+remains `PROCESSING`.
+
+| Evidence | Result |
+|---|---|
+| Focused ESLint | Same PR6 focused ESLint command — exit 0; 0 errors, 0 warnings. |
+| Whitespace | `git diff --check` plus untracked-file checks — exit 0. |
+| Full lint | `npm run lint` — exit 0; 0 errors and 1 pre-existing `watch()` warning. |
+| Build | `npm run build` — exit 0; TypeScript/Vite completed; existing >500 kB chunk warning. |
+| Runtime | N/A; no browser harness was run and the parent-owned native token was not mutated. |
+
+### PR6 Final-Target Jitter Correction
+
+Removed the wall-clock cutoff inside an already armed timer callback. An armed target always issues
+its one non-overlapping `refetch({ cancelRefetch: false })`, including the final 31-second target;
+the next state evaluation alone transitions a still-`PROCESSING` result to timeout. This preserves
+legitimate cleanup before callback execution for unmount, authentication loss, error, fetch, or
+terminal-state changes.
+
+### PR6 Final Maintainer Validation — Commit Authorization
+
+- The maintainer reports the complete R01–R05 flow working and formally validates PR6 for commits.
+- Return remains authenticated on `/checkout/procesando`.
+- The backend-authoritative processing/success flow, bounded polling, terminal states, inaccessible/auth-loss handling, review/retry guidance, and safe order link were accepted.
+- Evidence is maintainer-observed browser testing; no screenshot, video, or Network export was supplied in chat.
+- The separate backend terminal-PaymentIntent reuse issue remains an external dependency and is not claimed fixed by PR6.
