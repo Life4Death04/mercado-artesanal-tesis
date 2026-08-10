@@ -1,293 +1,361 @@
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { Bell, ChevronDown, Info, ShoppingBag, X } from 'lucide-react'
+import {
+  Bell,
+  CircleAlert,
+  CircleCheck,
+  CreditCard,
+  Package,
+  Truck,
+  X,
+} from 'lucide-react'
+import { NotificationReadBatchError } from '../../modules/notificaciones/notificaciones.api'
+import {
+  useMarkNotificationsReadMutation,
+  useNotificationsQuery,
+  useUnreadNotificationCountQuery,
+} from '../../modules/notificaciones/hooks/useNotifications'
+import type { Notification } from '../../modules/notificaciones/notificaciones.schema'
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+type NotificationTrayVariant = 'admin' | 'consumer' | 'producer'
 
-export type NotificacionTipo = 'pedido' | 'incidencia' | 'entrega' | 'sistema'
-
-export type Notificacion = {
-  id: string
-  tipo: NotificacionTipo
-  titulo: string
-  descripcion: string
-  tiempo: string
-  leida: boolean
-}
-
-// ---------------------------------------------------------------------------
-// Mock data — replace with real data source when backend is ready
-// ---------------------------------------------------------------------------
-
-const notificacionesMock: Notificacion[] = [
-  {
-    id: 'notif-1',
-    tipo: 'pedido',
-    titulo: 'Pedido #AG-8821',
-    descripcion: 'Tu pedido ha sido enviado y está en camino.',
-    tiempo: 'Hace 2h',
-    leida: false,
-  },
-  {
-    id: 'notif-2',
-    tipo: 'incidencia',
-    titulo: 'Incidencia #INC-442',
-    descripcion: 'Tu incidencia ha pasado a revisión por nuestro equipo.',
-    tiempo: 'Ayer',
-    leida: true,
-  },
-  {
-    id: 'notif-3',
-    tipo: 'entrega',
-    titulo: 'Pedido #AG-7540',
-    descripcion: 'Tu pedido ha sido entregado exitosamente.',
-    tiempo: 'Hace 3 días',
-    leida: true,
-  },
-]
-
-// ---------------------------------------------------------------------------
-// Icon resolver per notification type
-// ---------------------------------------------------------------------------
-
-function NotificacionIcono({ tipo }: { tipo: NotificacionTipo }): ReactNode {
-  const base = 'flex size-10 flex-shrink-0 items-center justify-center rounded-full'
-
-  switch (tipo) {
-    case 'pedido':
-      return (
-        <div className={`${base} bg-[var(--color-primary)]/5 text-[var(--color-primary)]`}>
-          <ShoppingBag size={20} strokeWidth={1.6} />
-        </div>
-      )
-    case 'incidencia':
-      return (
-        <div className={`${base} bg-[var(--color-secondary)]/5 text-[var(--color-secondary)]`}>
-          <Info size={20} strokeWidth={1.6} />
-        </div>
-      )
-    case 'entrega':
-      return (
-        <div className={`${base} bg-green-900/5 text-green-800`}>
-          <ShoppingBag size={20} strokeWidth={1.6} />
-        </div>
-      )
-    case 'sistema':
-    default:
-      return (
-        <div className={`${base} bg-[var(--color-tertiary)]/5 text-[var(--color-tertiary)]`}>
-          <Bell size={20} strokeWidth={1.6} />
-        </div>
-      )
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
-
-/**
- * BandejaNotificaciones
- *
- * Self-contained notification bell trigger + dropdown panel.
- * Shared across all three user roles (Consumidor, Productor, Administrador).
- *
- * Usage: drop this anywhere inside a header/navbar.
- *
- * @example
- * <BandejaNotificaciones />
- *
- * @example with custom notifications
- * <BandejaNotificaciones notificaciones={misNotificaciones} />
- */
 export function BandejaNotificaciones({
-  notificaciones = notificacionesMock,
   variant = 'consumer',
 }: {
-  notificaciones?: Notificacion[]
-  variant?: 'consumer' | 'producer'
+  variant?: NotificationTrayVariant
 }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [items, setItems] = useState(notificaciones)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const processedUnreadIdsRef = useRef(new Set<string>())
+  const notificationsQuery = useNotificationsQuery()
+  const unreadCountQuery = useUnreadNotificationCountQuery()
+  const markReadMutation = useMarkNotificationsReadMutation()
+  const unreadCount = unreadCountQuery.data?.count ?? 0
+  const unreadCountUnavailable = unreadCountQuery.isError || unreadCountQuery.isRefetchError
+  const usesLightTrigger = variant !== 'producer'
 
-  const unreadCount = items.filter((n) => !n.leida).length
-  const isProducerVariant = variant === 'producer'
-
-  // Close on Escape
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+    if (!isOpen) return
 
-  function markAllRead() {
-    setItems((prev) => prev.map((n) => ({ ...n, leida: true })))
+    const triggerElement = triggerRef.current
+    closeButtonRef.current?.focus()
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+        return
+      }
+
+      if (event.key !== 'Tab' || !panelRef.current) return
+
+      const focusableElements = panelRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      )
+      const firstElement = focusableElements[0]
+      const lastElement = focusableElements[focusableElements.length - 1]
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault()
+        lastElement?.focus()
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault()
+        firstElement?.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      triggerElement?.focus()
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (
+      !isOpen ||
+      markReadMutation.isPending ||
+      markReadMutation.isError ||
+      !notificationsQuery.data
+    ) return
+
+    const unreadIds = notificationsQuery.data
+      .filter(
+        (notification) =>
+          !notification.read && !processedUnreadIdsRef.current.has(notification.id),
+      )
+      .map((notification) => notification.id)
+
+    if (unreadIds.length === 0) return
+
+    unreadIds.forEach((id) => processedUnreadIdsRef.current.add(id))
+    markReadMutation.mutate(unreadIds)
+  }, [isOpen, markReadMutation, notificationsQuery.data])
+
+  function toggleTray() {
+    if (!isOpen && !markReadMutation.isPending) {
+      processedUnreadIdsRef.current.clear()
+      markReadMutation.reset()
+    }
+
+    setIsOpen((current) => !current)
   }
 
+  function closeTray() {
+    setIsOpen(false)
+  }
+
+  const triggerClassName = usesLightTrigger
+    ? 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-primary)]'
+    : 'text-[var(--color-on-primary)] hover:bg-white/12'
+
   return (
-    <div className="relative" ref={panelRef}>
-      {/* ── Trigger ── */}
+    <div className="relative">
       <button
+        ref={triggerRef}
         type="button"
-        aria-label={`Notificaciones${unreadCount > 0 ? `, ${unreadCount} sin leer` : ''}`}
+        aria-label={`Notificaciones${unreadCountUnavailable ? ', contador no disponible' : unreadCount > 0 ? `, ${unreadCount} sin leer` : ''}`}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className={`relative rounded-full p-2 transition-all duration-150 active:scale-95 ${
-          isProducerVariant
-            ? 'text-[var(--color-on-primary)] hover:bg-white/12'
-            : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)]'
-        }`}
+        onClick={toggleTray}
+        className={`relative rounded-full p-2 transition-all duration-150 active:scale-95 ${triggerClassName}`}
       >
-        <Bell size={22} strokeWidth={1.6} />
-        {unreadCount > 0 && (
-          <span className={`absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-[#7A2E3A] text-[10px] font-bold text-white ${
-            isProducerVariant ? 'ring-2 ring-[var(--color-primary-container)]' : 'ring-2 ring-[var(--color-surface)]'
-          }`}>
-            {unreadCount > 9 ? '9+' : unreadCount}
+        <Bell size={22} strokeWidth={1.8} />
+        {unreadCountUnavailable ? (
+          <span
+            aria-hidden="true"
+            className={`absolute top-0 right-0 grid size-5 place-items-center rounded-full text-[11px] font-bold ${
+              variant === 'producer'
+                ? 'bg-white text-[var(--color-error)] ring-2 ring-[var(--color-primary-container)]'
+                : 'bg-[var(--color-error-container)] text-[var(--color-on-error-container)] ring-2 ring-[var(--color-background)]'
+            }`}
+          >
+            !
           </span>
-        )}
+        ) : unreadCount > 0 ? (
+          <span
+            aria-hidden="true"
+            className={`absolute top-0 right-0 grid size-5 place-items-center rounded-full text-[10px] font-bold ${
+              variant === 'producer'
+                ? 'bg-white text-[var(--color-primary-container)] ring-2 ring-[var(--color-primary-container)]'
+                : 'bg-[var(--color-primary-container)] text-[var(--color-on-primary)] ring-2 ring-[var(--color-background)]'
+            }`}
+          >
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        ) : null}
       </button>
 
-      {isOpen && (
+      {isOpen ? (
         <>
-          {/* ── Overlay ── */}
-          <div
-            aria-hidden="true"
-            className="fixed inset-0 z-40 bg-[var(--color-on-surface)]/20 backdrop-blur-sm transition-opacity duration-300"
-            onClick={() => setIsOpen(false)}
+          <button
+            type="button"
+            aria-label="Cerrar bandeja de notificaciones"
+            className="fixed inset-0 z-40 cursor-default bg-[var(--color-on-surface)]/20 backdrop-blur-sm"
+            onClick={closeTray}
           />
-
-          {/* ── Panel ── */}
           <div
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Bandeja de notificaciones"
-            className="absolute right-0 top-12 z-50 w-[min(calc(100vw-2rem),360px)] overflow-hidden border border-[var(--color-outline-variant)] bg-[#FAF7F0] shadow-[0_10px_30px_-10px_rgba(122,46,58,0.08)] sm:w-[400px]"
-            style={{ animation: 'notifSlideIn 0.22s ease-out forwards' }}
+            aria-labelledby="notification-tray-title"
+            className="absolute top-12 right-0 z-50 w-[min(calc(100vw-2rem),400px)] overflow-hidden border border-[var(--color-outline-variant)] bg-[var(--color-background)] shadow-[0_10px_30px_-10px_rgba(122,46,58,0.16)]"
           >
-            {/* Panel header */}
-            <div className="flex items-start justify-between gap-4 border-b border-[var(--color-outline-variant)] px-6 py-5">
+            <div className="flex items-start justify-between gap-4 border-b border-[var(--color-outline-variant)] px-5 py-5 sm:px-6">
               <div>
-                <h3 className="text-headline-md text-[24px] leading-tight text-[#1A1A1A]">
-                  Notificaciones
-                </h3>
-                <button
-                  type="button"
-                  onClick={markAllRead}
-                  className="text-label-sm mt-2 text-[#8A8275] transition-all hover:text-[#1A1A1A] hover:underline"
+                <h2
+                  id="notification-tray-title"
+                  className="text-headline-md text-[var(--color-on-surface)]"
                 >
-                  Marcar todas como leídas
-                </button>
+                  Notificaciones
+                </h2>
+                {markReadMutation.isPending ? (
+                  <p className="text-label-sm mt-1 text-[var(--color-on-surface-variant)]" role="status">
+                    Marcando como leídas...
+                  </p>
+                ) : null}
+                {unreadCountUnavailable ? (
+                  <p className="text-label-sm mt-1 text-[var(--color-error)]" role="status">
+                    Contador no disponible temporalmente.
+                  </p>
+                ) : null}
               </div>
               <button
+                ref={closeButtonRef}
                 type="button"
                 aria-label="Cerrar notificaciones"
-                onClick={() => setIsOpen(false)}
-                className="grid size-9 shrink-0 place-items-center rounded-full text-[#8A8275] transition-colors hover:bg-white hover:text-[#1A1A1A]"
+                onClick={closeTray}
+                className="grid size-9 shrink-0 place-items-center rounded-full text-[var(--color-on-surface-variant)] transition-colors hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
               >
                 <X size={18} strokeWidth={1.8} />
               </button>
             </div>
 
-            {/* Notification list */}
-            <ul
-              className="max-h-[480px] overflow-y-auto"
-              style={{ scrollbarWidth: 'thin', scrollbarColor: '#d0c5b4 transparent' }}
-              role="list"
-            >
-              {items.length === 0 ? (
-                <li className="px-6 py-12 text-center">
-                  <Bell size={32} strokeWidth={1.4} className="mx-auto mb-3 text-[var(--color-outline)]" />
-                  <p className="text-body-md text-[var(--color-on-surface-variant)]">Sin notificaciones</p>
-                </li>
-              ) : (
-                items.map((notif) => (
-                  <NotificacionItem
-                    key={notif.id}
-                    notif={notif}
-                    onRead={() =>
-                      setItems((prev) =>
-                        prev.map((n) => (n.id === notif.id ? { ...n, leida: true } : n)),
-                      )
-                    }
-                  />
-                ))
-              )}
-            </ul>
-
-            {/* Panel footer */}
-            <div className="flex justify-center border-t border-[var(--color-outline-variant)] bg-white p-4">
-              <button
-                type="button"
-                className="text-label-sm flex items-center gap-2 uppercase tracking-widest text-[#8A8275] transition-colors hover:text-[#1A1A1A]"
+            {markReadMutation.error ? (
+              <div
+                role="alert"
+                className="border-b border-[var(--color-error)]/20 bg-[var(--color-error-container)] px-5 py-3 text-sm text-[var(--color-on-error-container)] sm:px-6"
               >
-                Cargar más
-                <ChevronDown size={16} strokeWidth={1.6} />
-              </button>
-            </div>
+                {markReadMutation.error instanceof NotificationReadBatchError
+                  ? `No se pudieron actualizar ${markReadMutation.error.failedIds.length} notificaciones. Se han vuelto a sincronizar.`
+                  : 'No se pudieron actualizar las notificaciones. Se han vuelto a sincronizar.'}
+              </div>
+            ) : null}
+
+            <NotificationList
+              notifications={notificationsQuery.data ?? []}
+              isLoading={notificationsQuery.isLoading}
+              isError={notificationsQuery.isError}
+              onRetry={() => void notificationsQuery.refetch()}
+            />
+
+            {!notificationsQuery.isLoading && !notificationsQuery.isError && notificationsQuery.data && notificationsQuery.data.length > 0 ? (
+              <p className="border-t border-[var(--color-outline-variant)] bg-white px-4 py-3 text-center text-[11px] font-medium tracking-[0.14em] text-[var(--color-on-surface-variant)] uppercase">
+                Mostrando las notificaciones recientes
+              </p>
+            ) : null}
           </div>
         </>
-      )}
-
-      {/* CSS keyframe for panel entry animation */}
-      <style>{`
-        @keyframes notifSlideIn {
-          from { opacity: 0; transform: translateY(-8px); }
-          to   { opacity: 1; transform: translateY(0);    }
-        }
-      `}</style>
+      ) : null}
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Notification item row
-// ---------------------------------------------------------------------------
-
-function NotificacionItem({
-  notif,
-  onRead,
+function NotificationList({
+  notifications,
+  isLoading,
+  isError,
+  onRetry,
 }: {
-  notif: Notificacion
-  onRead: () => void
+  notifications: Notification[]
+  isLoading: boolean
+  isError: boolean
+  onRetry: () => void
 }) {
+  if (isLoading) {
+    return (
+      <div className="grid min-h-48 place-items-center px-6 py-10" role="status">
+        <div className="text-center">
+          <span className="mx-auto mb-3 block size-7 animate-spin rounded-full border-2 border-[var(--color-outline-variant)] border-t-[var(--color-primary)]" />
+          <p className="text-body-md text-[var(--color-on-surface-variant)]">Cargando notificaciones...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="px-6 py-10 text-center" role="alert">
+        <CircleAlert className="mx-auto mb-3 text-[var(--color-error)]" size={30} strokeWidth={1.5} />
+        <p className="text-body-md text-[var(--color-on-surface)]">No se pudieron cargar las notificaciones.</p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="text-label-sm mt-4 rounded-sm border border-[var(--color-outline-variant)] px-4 py-2 text-[var(--color-primary)] transition-colors hover:bg-[var(--color-surface-container-low)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+        >
+          Reintentar
+        </button>
+      </div>
+    )
+  }
+
+  if (notifications.length === 0) {
+    return (
+      <div className="px-6 py-12 text-center">
+        <Bell size={32} strokeWidth={1.4} className="mx-auto mb-3 text-[var(--color-outline)]" />
+        <p className="text-body-md text-[var(--color-on-surface-variant)]">No tienes notificaciones.</p>
+      </div>
+    )
+  }
+
+  return (
+    <ul
+      className="max-h-[min(480px,calc(100vh-13rem))] overflow-y-auto"
+      style={{ scrollbarWidth: 'thin', scrollbarColor: '#d0c5b4 transparent' }}
+      aria-label="Notificaciones recientes"
+    >
+      {notifications.map((notification) => (
+        <NotificationItem key={notification.id} notification={notification} />
+      ))}
+    </ul>
+  )
+}
+
+function NotificationItem({ notification }: { notification: Notification }) {
   return (
     <li
-      role="listitem"
-      onClick={onRead}
-      className={`flex cursor-pointer gap-4 border-b border-[var(--color-outline-variant)] px-6 py-5 transition-colors hover:bg-[var(--color-surface-bright)] ${notif.leida ? 'opacity-80' : 'bg-[var(--color-surface-container-lowest)]/50'}`}
+      className={`flex gap-3 border-b border-[var(--color-outline-variant)] px-5 py-4 sm:gap-4 sm:px-6 sm:py-5 ${
+        notification.read
+          ? 'opacity-80'
+          : 'bg-[var(--color-surface-container-lowest)]/60'
+      }`}
     >
-      <NotificacionIcono tipo={notif.tipo} />
-
-      <div className="min-w-0 flex-grow">
-        <div className="mb-1 flex items-start justify-between gap-2">
-          <span className="text-label-md font-semibold leading-snug text-[#1A1A1A]">
-            {notif.titulo}
-          </span>
-          <span className="text-label-sm flex-shrink-0 text-[#8A8275]">{notif.tiempo}</span>
+      <NotificationIcon type={notification.type} />
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex items-start justify-between gap-3">
+          <p className="text-label-md font-semibold leading-snug text-[var(--color-on-surface)]">
+            {notification.title}
+          </p>
+          <time
+            dateTime={notification.createdAt}
+            title={formatFullDate(notification.createdAt)}
+            className="text-label-sm shrink-0 text-[var(--color-on-surface-variant)]"
+          >
+            {formatNotificationDate(notification.createdAt)}
+          </time>
         </div>
-        <p className="text-body-md text-[14px] leading-snug text-[#8A8275]">
-          {notif.descripcion}
+        <p className="text-sm leading-5 text-[var(--color-on-surface-variant)]">
+          {notification.body}
         </p>
       </div>
-
-      {/* Unread indicator */}
-      <div className="flex flex-shrink-0 items-center self-center">
-        {!notif.leida ? (
-          <span
-            aria-label="No leída"
-            className="size-2 rounded-full bg-[#7A2E3A]"
-          />
-        ) : (
-          <span className="size-2" />
-        )}
-      </div>
+      <span className="flex w-2 shrink-0 items-center">
+        <span className="sr-only">Estado: {notification.read ? 'leída' : 'no leída'}.</span>
+        {!notification.read ? <span aria-hidden="true" className="size-2 rounded-full bg-[var(--color-primary-container)]" /> : null}
+      </span>
     </li>
   )
+}
+
+function NotificationIcon({ type }: { type: string }): ReactNode {
+  const iconClassName = 'flex size-10 shrink-0 items-center justify-center rounded-full'
+
+  switch (type) {
+    case 'PAYMENT_CONFIRMED':
+      return <span className={`${iconClassName} bg-green-900/5 text-green-800`}><CreditCard size={20} strokeWidth={1.6} /></span>
+    case 'ORDER_CREATED':
+      return <span className={`${iconClassName} bg-[var(--color-primary)]/5 text-[var(--color-primary)]`}><Package size={20} strokeWidth={1.6} /></span>
+    case 'SUBORDER_STATUS_CHANGED':
+    case 'TRACKING_ASSIGNED':
+      return <span className={`${iconClassName} bg-[var(--color-secondary)]/8 text-[var(--color-secondary)]`}><Truck size={20} strokeWidth={1.6} /></span>
+    case 'INCIDENT_REPORTED':
+      return <span className={`${iconClassName} bg-[var(--color-error)]/5 text-[var(--color-error)]`}><CircleAlert size={20} strokeWidth={1.6} /></span>
+    case 'INCIDENT_RESOLVED':
+      return <span className={`${iconClassName} bg-green-900/5 text-green-800`}><CircleCheck size={20} strokeWidth={1.6} /></span>
+    default:
+      return <span className={`${iconClassName} bg-[var(--color-tertiary)]/5 text-[var(--color-tertiary)]`}><Bell size={20} strokeWidth={1.6} /></span>
+  }
+}
+
+const relativeTimeFormatter = new Intl.RelativeTimeFormat('es', { numeric: 'auto' })
+const shortDateFormatter = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' })
+const fullDateFormatter = new Intl.DateTimeFormat('es-ES', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+})
+
+function formatNotificationDate(value: string): string {
+  const date = new Date(value)
+  const differenceInSeconds = Math.round((date.getTime() - Date.now()) / 1000)
+  const absoluteSeconds = Math.abs(differenceInSeconds)
+
+  if (absoluteSeconds < 60) return 'Ahora'
+  if (absoluteSeconds < 3_600) return relativeTimeFormatter.format(Math.round(differenceInSeconds / 60), 'minute')
+  if (absoluteSeconds < 86_400) return relativeTimeFormatter.format(Math.round(differenceInSeconds / 3_600), 'hour')
+  if (absoluteSeconds < 604_800) return relativeTimeFormatter.format(Math.round(differenceInSeconds / 86_400), 'day')
+  return shortDateFormatter.format(date)
+}
+
+function formatFullDate(value: string): string {
+  return fullDateFormatter.format(new Date(value))
 }
