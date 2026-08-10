@@ -20,3 +20,20 @@ export function formatMoney(value: string | null | undefined): string {
     currency: 'EUR',
   }).format(numeric)
 }
+
+export function moneyToCents(value: string): bigint | null {
+  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(value.trim())
+  if (!match) return null
+
+  const [, euros, decimal = ''] = match
+  return BigInt(euros) * 100n + BigInt(decimal.padEnd(2, '0'))
+}
+
+export function formatMoneyFromCents(value: bigint | null): string {
+  if (value === null) return '—'
+
+  const sign = value < 0n ? '-' : ''
+  const absolute = value < 0n ? -value : value
+  const decimal = `${sign}${absolute / 100n}.${(absolute % 100n).toString().padStart(2, '0')}`
+  return formatMoney(decimal)
+}
