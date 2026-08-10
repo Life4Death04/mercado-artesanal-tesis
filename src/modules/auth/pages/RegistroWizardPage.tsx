@@ -3,6 +3,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ApiError } from '../../../lib/api'
+import { ERROR_MESSAGES } from '../../../lib/errorMessages'
 import { homePathForRole } from '../authNavigation'
 import { BasicDataStep } from '../componentes/BasicDataStep'
 import { Auth0Redirect } from '../componentes/Auth0Redirect'
@@ -185,17 +186,12 @@ export function RegistroWizardPage() {
     producerOnboarding.mutate(producerPayload.value)
   }
 
-  function onboardingErrorMessage() {
-    if (submitError) return submitError
-    if (consumerOnboarding.error instanceof ApiError) return consumerOnboarding.error.message
-    if (producerOnboarding.error instanceof ApiError) return producerOnboarding.error.message
-    if (consumerOnboarding.isError) return 'No se pudo finalizar el registro. Inténtalo de nuevo.'
-    if (producerOnboarding.isError) return 'No se pudo finalizar el registro de productor. Inténtalo de nuevo.'
-
-    return null
-  }
-
   const isSubmitting = consumerOnboarding.isPending || producerOnboarding.isPending
+  const onboardingError = getOnboardingError(
+    submitError,
+    consumerOnboarding.error ?? producerOnboarding.error,
+    producerOnboarding.isError,
+  )
 
   function goToPreviousStep() {
     if (currentStep === 'basic') {
@@ -227,11 +223,7 @@ export function RegistroWizardPage() {
       <RegistrationWizardShell onExit={exitRegistration}>
         <RegistrationProgress steps={progressSteps} currentStep={currentStep} />
         <ReviewRegistrationStep data={wizardData} />
-        {onboardingErrorMessage() ? (
-          <p className="mx-auto w-full max-w-3xl px-[var(--space-margin-mobile)] pb-4 text-label-md text-red-700 md:px-0">
-            {onboardingErrorMessage()}
-          </p>
-        ) : null}
+        {onboardingError ? <OnboardingErrorSummary error={onboardingError} /> : null}
         <WizardFooter
           currentLabel={stepCounter}
           onBack={goToPreviousStep}
@@ -257,6 +249,139 @@ export function RegistroWizardPage() {
       {currentStep === 'producer' && <ProducerInfoStep data={wizardData} onChange={updateData} />}
       <WizardFooter currentLabel={stepCounter} onBack={goToPreviousStep} onNext={goToNextStep} backLabel="Atrás" nextLabel="Continuar" />
     </RegistrationWizardShell>
+  )
+}
+
+type OnboardingError = {
+  summary: string
+  fields: { field: string; message: string }[]
+  fallback: string[]
+}
+
+const onboardingFieldLabels: Record<string, string> = {
+  firstName: 'Nombre',
+  lastName: 'Apellido',
+  businessName: 'Nombre del emprendimiento',
+  nif: 'NIF/CIF',
+  description: 'Descripción del productor',
+  'address.line1': 'Dirección',
+  'address.line2': 'Piso o puerta',
+  'address.city': 'Municipio',
+  'address.postalCode': 'Código postal',
+  'address.province': 'Provincia',
+  categorySlugs: 'Tipos de producto',
+}
+
+function getOnboardingError(submitError: string | null, error: unknown, producerFailed: boolean): OnboardingError | null {
+  if (submitError) return { summary: submitError, fields: [], fallback: [] }
+
+  if (error instanceof ApiError) {
+    const knownMessage = getKnownApiErrorMessage(error.payload)
+    const issues = extractValidationIssues(error.payload)
+    const hasStructuredValidationIssues =
+      issues.length > 0 &&
+      typeof error.payload === 'object' &&
+      error.payload !== null &&
+      'code' in error.payload &&
+      error.payload.code === 'VALIDATION_FAILED'
+
+    if (knownMessage && !hasStructuredValidationIssues) return { summary: knownMessage, fields: [], fallback: [] }
+
+    const fields: OnboardingError['fields'] = []
+    const fallback: string[] = []
+
+    for (const issue of issues) {
+      const label = issue.field ? onboardingFieldLabels[normalizeFieldPath(issue.field)] : undefined
+      const message = translateValidationMessage(issue.message, Boolean(label))
+      if (label) fields.push({ field: label, message })
+      else fallback.push(message)
+    }
+
+    if (fields.length > 0 || fallback.length > 0) {
+      return { summary: 'Revisa los datos indicados antes de finalizar el registro.', fields, fallback }
+    }
+
+    return {
+      summary: 'No se pudo validar el registro.',
+      fields: [],
+      fallback: ['Revisa los datos del formulario e inténtalo de nuevo.'],
+    }
+  }
+
+  if (!error) return null
+  return {
+    summary: producerFailed ? 'No se pudo finalizar el registro de productor.' : 'No se pudo finalizar el registro.',
+    fields: [],
+    fallback: ['Inténtalo de nuevo.'],
+  }
+}
+
+function getKnownApiErrorMessage(payload: unknown): string | null {
+  if (typeof payload !== 'object' || payload === null || !('code' in payload) || typeof payload.code !== 'string') return null
+  return ERROR_MESSAGES[payload.code] ?? null
+}
+
+function translateValidationMessage(message: string, hasFieldLabel: boolean): string {
+  const normalized = message.trim().toLocaleLowerCase('en')
+  const fieldFallback = hasFieldLabel ? 'El valor proporcionado no es válido.' : 'Hay un dato del formulario que no es válido.'
+
+  if (/required|should not be empty|must not be empty|is not allowed to be empty/.test(normalized)) {
+    return 'Este campo es obligatorio.'
+  }
+  if (/must be (a )?(string|text)/.test(normalized)) return 'Introduce un texto válido.'
+  if (/must be (an )?array|must be a list/.test(normalized)) return 'Selecciona una lista de opciones válida.'
+  if (/must (contain|have) at least one|at least 1 (element|item)/.test(normalized)) return 'Selecciona al menos una opción.'
+  if (/must be (a )?valid e-?mail|invalid e-?mail/.test(normalized)) return 'Introduce un correo electrónico válido.'
+  if (/must be longer than|too short|minimum length|minlength/.test(normalized)) return 'El valor es demasiado corto.'
+  if (/must be shorter than|too long|maximum length|maxlength/.test(normalized)) return 'El valor es demasiado largo.'
+  if (/must match|invalid format|must be valid|is invalid/.test(normalized)) return 'El formato introducido no es válido.'
+  if (/must be one of|must be a valid enum|unsupported value/.test(normalized)) return 'Selecciona una opción válida.'
+
+  return fieldFallback
+}
+
+function extractValidationIssues(payload: unknown): { field?: string; message: string }[] {
+  if (typeof payload !== 'object' || payload === null || !('errors' in payload)) return []
+  const errors = payload.errors
+
+  if (Array.isArray(errors)) {
+    return errors.flatMap((error) => {
+      if (typeof error === 'string') return [{ message: error }]
+      if (typeof error !== 'object' || error === null) return []
+      const field = ['field', 'path', 'property'].map((key) => key in error ? error[key as keyof typeof error] : undefined).find((value) => typeof value === 'string')
+      const message = ['message', 'detail'].map((key) => key in error ? error[key as keyof typeof error] : undefined).find((value) => typeof value === 'string')
+      return typeof message === 'string' ? [{ ...(typeof field === 'string' ? { field } : {}), message }] : []
+    })
+  }
+
+  if (typeof errors === 'object' && errors !== null) {
+    return Object.entries(errors).flatMap(([field, value]) => {
+      if (typeof value === 'string') return [{ field, message: value }]
+      if (Array.isArray(value)) return value.filter((message): message is string => typeof message === 'string').map((message) => ({ field, message }))
+      if (typeof value === 'object' && value !== null && 'message' in value && typeof value.message === 'string') return [{ field, message: value.message }]
+      return []
+    })
+  }
+
+  return []
+}
+
+function normalizeFieldPath(field: string): string {
+  return field
+    .replace(/^body\./, '')
+    .replace(/\[(\w+)\]/g, '.$1')
+    .split('.')
+    .filter((segment) => !/^\d+$/.test(segment))
+    .join('.')
+}
+
+function OnboardingErrorSummary({ error }: { error: OnboardingError }) {
+  return (
+    <section role="alert" aria-live="assertive" className="mx-auto mb-4 w-[calc(100%-2*var(--space-margin-mobile))] max-w-3xl border-l-4 border-[var(--color-error)] bg-[var(--color-error-container)] px-5 py-4 text-[var(--color-on-error-container)] md:w-full">
+      <h3 className="text-label-md">{error.summary}</h3>
+      {error.fields.length > 0 ? <ul className="text-body-md mt-3 list-disc space-y-1 pl-5">{error.fields.map((issue, index) => <li key={`${issue.field}-${index}`}><strong>{issue.field}:</strong> {issue.message}</li>)}</ul> : null}
+      {error.fallback.length > 0 ? <div className="text-body-md mt-3 space-y-1">{error.fallback.map((message, index) => <p key={`${message}-${index}`}>{message}</p>)}</div> : null}
+    </section>
   )
 }
 
