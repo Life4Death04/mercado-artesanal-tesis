@@ -25,6 +25,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   ROLE_ALREADY_SET: 'El rol de esta cuenta ya está asignado y no puede cambiarse.',
   NIF_ALREADY_REGISTERED: 'Este NIF ya está registrado en otro productor.',
   UNKNOWN_CATEGORY: 'Una o más categorías indicadas no existen.',
+  CATEGORY_SLUG_CONFLICT: 'Ya existe una categoría con un nombre equivalente. Elige otro nombre.',
   ADDRESS_DEFAULT_CONFLICT: 'Solo puede haber una dirección predeterminada. Revisa tu configuración de entregas.',
 
   // --- Business rule violations ---

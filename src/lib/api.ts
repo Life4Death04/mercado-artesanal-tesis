@@ -64,11 +64,18 @@ export async function apiRequest<TResponse>(
 async function readResponsePayload(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type')
 
-  if (contentType?.includes('application/json')) {
+  if (isJsonMediaType(contentType)) {
     return response.json()
   }
 
   return response.text()
+}
+
+function isJsonMediaType(contentType: string | null): boolean {
+  if (!contentType) return false
+
+  const mediaType = contentType.split(';', 1)[0].trim().toLowerCase()
+  return mediaType === 'application/json' || /^application\/[^;\s/]+\+json$/.test(mediaType)
 }
 
 function getErrorMessage(payload: unknown): string | undefined {
