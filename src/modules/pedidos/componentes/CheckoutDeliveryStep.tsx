@@ -1,12 +1,12 @@
-import { Check, MapPin, Store, Truck } from 'lucide-react'
+import { Check, Store, Truck } from 'lucide-react'
+import { formatMoney } from '../../../lib/formatMoney'
 import type { Address } from '../../perfil/direcciones.schema'
 import type { DeliveryMode, DeliveryModeGroup, DeliverySelection } from '../pagos.schema'
 
 export type CheckoutProducer = {
   id: string
-  name: string
-  location: string
   itemCount: number
+  productNames: string[]
 }
 
 type Props = {
@@ -42,16 +42,15 @@ export function CheckoutDeliveryStep({ producers, deliveryModeGroups, selections
         return (
           <section key={producer.id} className="border border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-surface-container-lowest)] p-6 md:p-8">
             <header className="mb-6 border-b border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] pb-4">
-              <h2 className="text-headline-md mb-1 text-[24px] text-[var(--color-on-surface)]">{producer.name}</h2>
-              <p className="text-label-sm flex items-center gap-1 text-[var(--color-on-surface-variant)]"><MapPin size={15} strokeWidth={1.8} />{producer.location || 'Ubicación no disponible'}</p>
-              <p className="text-label-sm mt-2 text-[var(--color-on-surface-variant)]">{producer.itemCount} {producer.itemCount === 1 ? 'producto en tu carrito' : 'productos en tu carrito'}</p>
+              <h2 className="text-headline-md mb-1 text-[24px] text-[var(--color-on-surface)]">Productos de este envío</h2>
+              <p className="text-label-sm mt-2 text-[var(--color-on-surface-variant)]">{producer.itemCount} {producer.itemCount === 1 ? 'producto en tu carrito' : 'productos en tu carrito'}: {producer.productNames.join(', ')}</p>
             </header>
 
             <fieldset>
               <legend className="text-label-md mb-4 text-[var(--color-on-surface)]">Método de entrega</legend>
               {modes.length === 0 ? <p role="alert" className="text-body-md text-[var(--color-error)]">Este productor ya no tiene un modo de entrega disponible. Actualiza el carrito antes de continuar.</p> : (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {modes.map((mode) => <DeliveryModeCard key={mode.id} mode={mode} producerName={producer.name} selected={selectedModeId === mode.id} onSelect={() => onSelectMode(producer.id, mode.id)} />)}
+                  {modes.map((mode) => <DeliveryModeCard key={mode.id} mode={mode} producerId={producer.id} selected={selectedModeId === mode.id} onSelect={() => onSelectMode(producer.id, mode.id)} />)}
                 </div>
               )}
             </fieldset>
@@ -80,14 +79,14 @@ export function CheckoutDeliveryStep({ producers, deliveryModeGroups, selections
   )
 }
 
-function DeliveryModeCard({ mode, producerName, selected, onSelect }: { mode: DeliveryMode; producerName: string; selected: boolean; onSelect: () => void }) {
+function DeliveryModeCard({ mode, producerId, selected, onSelect }: { mode: DeliveryMode; producerId: string; selected: boolean; onSelect: () => void }) {
   const isShipping = mode.type === 'shipping'
   const Icon = isShipping ? Truck : Store
 
   return (
     <label className={`relative cursor-pointer p-4 transition-colors ${selected ? 'border-2 border-[var(--color-primary)] bg-[var(--color-surface-container-low)]' : 'border border-[var(--color-outline-variant)] hover:border-[var(--color-primary)]'}`}>
-      <input className="sr-only" name={`delivery-${producerName}`} type="radio" checked={selected} onChange={onSelect} />
-      <span className="mb-3 flex items-start gap-4"><span className={selected ? 'text-[var(--color-primary)]' : 'text-[var(--color-on-surface-variant)]'}><Icon size={20} strokeWidth={1.8} /></span><span className="text-label-md flex-1 text-[var(--color-on-surface)]">{mode.name}</span><span className={`text-label-md shrink-0 ${mode.price === '0.00' ? 'text-[var(--color-primary)]' : 'text-[var(--color-on-surface)]'}`}>{mode.price} €</span></span>
+      <input className="sr-only" name={`delivery-${producerId}`} type="radio" checked={selected} onChange={onSelect} />
+      <span className="mb-3 flex items-start gap-4"><span className={selected ? 'text-[var(--color-primary)]' : 'text-[var(--color-on-surface-variant)]'}><Icon size={20} strokeWidth={1.8} /></span><span className="text-label-md flex-1 text-[var(--color-on-surface)]">{mode.name}</span><span className={`text-label-md shrink-0 ${mode.price === '0.00' ? 'text-[var(--color-primary)]' : 'text-[var(--color-on-surface)]'}`}>{formatMoney(mode.price)}</span></span>
       <span className="text-label-sm text-[var(--color-on-surface-variant)]">{isShipping ? 'Entrega en la dirección seleccionada.' : 'Recogida sin dirección de envío.'}</span>
     </label>
   )

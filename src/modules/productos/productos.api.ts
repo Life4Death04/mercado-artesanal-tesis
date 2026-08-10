@@ -1,10 +1,15 @@
 import { apiRequest } from '../../lib/api'
-import { publicProductSchema, publicProductsSchema, type PublicProduct, type PublicProductsQuery } from './productos.schema'
+import { publicCategoriesSchema, publicProductSchema, publicProductsSchema, type PublicCategory, type PublicProduct, type PublicProductsQuery } from './productos.schema'
 
 export const publicProductsEndpoints = {
   list: '/products',
   detail: (id: string) => `/products/${encodeURIComponent(id)}`,
+  categories: '/categories',
 } as const
+
+export async function listPublicCategories(signal?: AbortSignal): Promise<PublicCategory[]> {
+  return publicCategoriesSchema.parse(await apiRequest<unknown>(publicProductsEndpoints.categories, { signal }))
+}
 
 export async function listPublicProducts(query: PublicProductsQuery = {}, signal?: AbortSignal): Promise<PublicProduct[]> {
   const searchParams = new URLSearchParams()

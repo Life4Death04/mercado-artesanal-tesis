@@ -11,6 +11,7 @@ import {
 import { resolveErrorMessage } from '../../../lib/errorMessages'
 import { formatMoney } from '../../../lib/formatMoney'
 import { ConsumerProductCard } from '../componentes/ConsumerProductCard'
+import { useCategoriesQuery } from '../hooks/useCategoriesQuery'
 import { useProductos } from '../hooks/useProductos'
 
 type FilterOption = {
@@ -29,11 +30,12 @@ export function CatalogoPage() {
   const [stockOnly, setStockOnly] = useState(false)
   const [sort, setSort] = useState<SortOption>('newest')
   const productsQuery = useProductos({ sort: sort === 'newest' ? undefined : sort })
+  const categoriesQuery = useCategoriesQuery()
   const products = productsQuery.data ?? []
 
-  const categories = Array.from(
-    new Map(products.map((product) => [product.category.id, { label: product.category.name, value: product.category.id }])).values(),
-  ).sort((first, second) => first.label.localeCompare(second.label, 'es'))
+  const categories = (categoriesQuery.data ?? [])
+    .map((category) => ({ label: category.name, value: category.id }))
+    .sort((first, second) => first.label.localeCompare(second.label, 'es'))
   const municipalities = Array.from(new Set(products.map((product) => product.producer.address.city)))
     .sort((first, second) => first.localeCompare(second, 'es'))
     .map((municipality) => ({ label: municipality, value: municipality }))
@@ -74,6 +76,8 @@ export function CatalogoPage() {
       <div className="mx-auto flex w-full max-w-[var(--layout-container-max)] flex-col gap-8 px-[var(--space-margin-mobile)] py-10 md:px-[var(--space-margin-desktop)] min-[1300px]:flex-row min-[1300px]:gap-16">
         <CatalogFilters
           categories={categories}
+          categoriesError={categoriesQuery.isError}
+          categoriesLoading={categoriesQuery.isLoading}
           catalogMaxPrice={catalogMaxPrice}
           filtersOpen={filtersOpen}
           maxPrice={maxPrice}
@@ -87,6 +91,7 @@ export function CatalogoPage() {
           onMaxPriceChange={setMaxPrice}
           onStockOnlyChange={setStockOnly}
           onReset={resetFilters}
+          onRetryCategories={() => categoriesQuery.refetch()}
         />
 
         <main className="min-w-0 flex-1" aria-label="Catálogo de productos artesanales">
@@ -156,6 +161,8 @@ function CatalogHeader() {
 
 type CatalogFiltersProps = {
   categories: FilterOption[]
+  categoriesError: boolean
+  categoriesLoading: boolean
   catalogMaxPrice: number
   filtersOpen: boolean
   maxPrice: number | null
@@ -169,9 +176,10 @@ type CatalogFiltersProps = {
   onMaxPriceChange: (price: number) => void
   onStockOnlyChange: (checked: boolean) => void
   onReset: () => void
+  onRetryCategories: () => void
 }
 
-function CatalogFilters({ categories, catalogMaxPrice, filtersOpen, maxPrice, municipalities, selectedCategories, selectedMunicipalities, stockOnly, onToggleOpen, onToggleCategory, onToggleMunicipality, onMaxPriceChange, onStockOnlyChange, onReset }: CatalogFiltersProps) {
+function CatalogFilters({ categories, categoriesError, categoriesLoading, catalogMaxPrice, filtersOpen, maxPrice, municipalities, selectedCategories, selectedMunicipalities, stockOnly, onToggleOpen, onToggleCategory, onToggleMunicipality, onMaxPriceChange, onStockOnlyChange, onReset, onRetryCategories }: CatalogFiltersProps) {
   return (
     <aside className="border-[color-mix(in_srgb,var(--color-outline-variant)_85%,transparent)] min-[1300px]:sticky min-[1300px]:top-28 min-[1300px]:flex min-[1300px]:h-[calc(100dvh-9rem)] min-[1300px]:w-80 min-[1300px]:shrink-0 min-[1300px]:flex-col min-[1300px]:overflow-y-auto min-[1300px]:border-r min-[1300px]:pr-8">
       <div className="flex items-end justify-between gap-4 border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-4 min-[1300px]:mb-8 min-[1300px]:block min-[1300px]:border-0 min-[1300px]:bg-transparent min-[1300px]:p-0">
@@ -186,7 +194,7 @@ function CatalogFilters({ categories, catalogMaxPrice, filtersOpen, maxPrice, mu
       </div>
 
       <div className={`${filtersOpen ? 'grid' : 'hidden'} mt-4 gap-8 border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-5 md:grid-cols-2 min-[1300px]:mt-0 min-[1300px]:flex min-[1300px]:border-0 min-[1300px]:bg-transparent min-[1300px]:p-0 min-[1300px]:flex-col min-[1300px]:gap-0`}>
-        <FilterGroup icon={Boxes} title="Categorías" options={categories} selectedOptions={selectedCategories} onToggle={onToggleCategory} />
+        {categoriesLoading ? <FilterStatus message="Cargando categorías..." /> : categoriesError ? <FilterStatus message="No se pudieron cargar las categorías." onRetry={onRetryCategories} /> : <FilterGroup icon={Boxes} title="Categorías" options={categories} selectedOptions={selectedCategories} onToggle={onToggleCategory} />}
         <FilterGroup icon={MapPin} title="Municipios" options={municipalities} selectedOptions={selectedMunicipalities} onToggle={onToggleMunicipality} />
 
         <section className="border-b border-[var(--color-outline-variant)] pb-6 min-[1300px]:pt-6">
@@ -212,6 +220,10 @@ function CatalogFilters({ categories, catalogMaxPrice, filtersOpen, maxPrice, mu
       </div>
     </aside>
   )
+}
+
+function FilterStatus({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return <section className="border-b border-[var(--color-outline-variant)] pb-6 min-[1300px]:pt-6 first:min-[1300px]:pt-0"><FilterTitle icon={Boxes} title="Categorías" /><p className="text-body-sm text-[var(--color-on-surface-variant)]">{message}</p>{onRetry ? <button type="button" onClick={onRetry} className="text-label-sm mt-3 text-[var(--color-primary)] underline underline-offset-4">Reintentar</button> : null}</section>
 }
 
 function FilterGroup({ icon, title, options, selectedOptions, onToggle }: { icon: typeof Boxes; title: string; options: FilterOption[]; selectedOptions: string[]; onToggle: (option: string) => void }) {

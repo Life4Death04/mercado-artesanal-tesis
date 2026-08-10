@@ -1,7 +1,7 @@
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
-import type { Stripe } from '@stripe/stripe-js'
+import type { Stripe, StripePaymentElementOptions } from '@stripe/stripe-js'
 import { AlertTriangle, Lock, ShieldCheck } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { hasStripePublishableKey, stripePromise } from '../stripeClient'
 
 type StripeState = Stripe | null | undefined
@@ -29,6 +29,11 @@ const appearance = {
     '.Tab--selected': { borderColor: '#7a2e3a', boxShadow: '0 0 0 1px #7a2e3a' },
   },
 } as const
+
+const paymentElementOptions: StripePaymentElementOptions = {
+  layout: 'tabs',
+  wallets: { link: 'never' },
+}
 
 export function StripePaymentForm({ clientSecret, onRecovery }: Props) {
   const [stripe, setStripe] = useState<StripeState>(() => hasStripePublishableKey && stripePromise !== null ? undefined : null)
@@ -73,7 +78,7 @@ function StripeConfirmationForm({ onRecovery }: Pick<Props, 'onRecovery'>) {
   const [isReady, setIsReady] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
 
-  async function confirmPayment(event: React.FormEvent<HTMLFormElement>) {
+  async function confirmPayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (submittingRef.current) return
 
@@ -123,7 +128,7 @@ function StripeConfirmationForm({ onRecovery }: Pick<Props, 'onRecovery'>) {
     <section className="border border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-surface-container-lowest)] p-6 md:p-8">
       <div className="mb-6 flex items-start gap-4 border-b border-[var(--color-outline-variant)] pb-5"><span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-container)] text-[var(--color-primary)]"><Lock size={19} strokeWidth={1.8} /></span><div><h2 className="text-headline-md text-[24px] text-[var(--color-on-surface)]">Pago con tarjeta</h2><p className="text-body-md mt-1 text-[var(--color-on-surface-variant)]">Los datos de tu tarjeta se gestionan directamente mediante Stripe.</p></div></div>
       <form onSubmit={confirmPayment}>
-        {loadFailed ? <div role="alert" className="text-label-sm rounded-[var(--radius-default)] bg-[var(--color-error-container)] p-4 text-[var(--color-error)]"><p>No pudimos preparar el formulario de pago. No se ha enviado ningún dato de tarjeta.</p><button type="button" onClick={onRecovery} className="mt-3 font-medium underline underline-offset-4">Volver a preparar el pago</button></div> : <PaymentElement options={{ layout: 'tabs' }} onReady={() => setIsReady(true)} onLoadError={() => { setIsReady(false); setLoadFailed(true) }} />}
+        {loadFailed ? <div role="alert" className="text-label-sm rounded-[var(--radius-default)] bg-[var(--color-error-container)] p-4 text-[var(--color-error)]"><p>No pudimos preparar el formulario de pago. No se ha enviado ningún dato de tarjeta.</p><button type="button" onClick={onRecovery} className="mt-3 font-medium underline underline-offset-4">Volver a preparar el pago</button></div> : <PaymentElement options={paymentElementOptions} onReady={() => setIsReady(true)} onLoadError={() => { setIsReady(false); setLoadFailed(true) }} />}
         {error ? <p role="alert" className="text-label-sm mt-5 rounded-[var(--radius-default)] bg-[var(--color-error-container)] p-4 text-[var(--color-error)]">{error}</p> : null}
         <button type="submit" disabled={isSubmitting || loadFailed || !isReady || !stripe || !elements} className="text-label-md mt-6 flex w-full items-center justify-center gap-2 bg-[var(--color-primary)] px-6 py-4 text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary-container)] disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? 'Confirmando pago seguro...' : 'Confirmar pago seguro'}<ShieldCheck size={17} strokeWidth={1.8} /></button>
       </form>

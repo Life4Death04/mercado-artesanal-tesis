@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, ChevronRight, Heart, ImageOff, Minus, Plus, ShoppingBag, Sparkles, Sprout, TriangleAlert, X } from 'lucide-react'
-import { formatMoney } from '../../../lib/formatMoney'
+import { formatMoney, formatMoneyFromCents, moneyToCents } from '../../../lib/formatMoney'
 import { resolveErrorMessage } from '../../../lib/errorMessages'
 import type { Cart } from '../carrito.schema'
 import { useCartQuery, useClearCartMutation, useRemoveCartItemMutation, useUpdateCartItemMutation } from '../hooks/useCart'
@@ -52,6 +52,7 @@ export function CarritoPage() {
   const isMutating = updateMutation.isPending || removeMutation.isPending || clearMutation.isPending
   const mutationError = [updateMutation, removeMutation, clearMutation].find((mutation) => mutation.isError)?.error
   const checkoutBlocked = cartGroups.some((group) => group.items.some((item) => item.warning))
+  const subtotalCents = sumCartItems(cartGroups.flatMap((group) => group.items))
 
   function updateItemQuantity(item: CartItem, delta: number) {
     if (delta < 0 && item.quantity === 1) removeMutation.mutate(item.id)
@@ -88,7 +89,7 @@ export function CarritoPage() {
               <CartActions className="hidden lg:flex" disabled={isMutating} onClearCart={() => clearMutation.mutate()} />
             </div>
 
-            <OrderSummary checkoutBlocked={checkoutBlocked} disabled={isMutating} onClearCart={() => clearMutation.mutate()} />
+            <OrderSummary subtotalCents={subtotalCents} checkoutBlocked={checkoutBlocked} disabled={isMutating} onClearCart={() => clearMutation.mutate()} />
           </div>
         ) : (
           <EmptyCartState />
@@ -102,6 +103,8 @@ export function CarritoPage() {
 }
 
 function ProducerCartGroup({ group, onDecrease, onIncrease, onRemove }: { group: ProducerGroup; onDecrease: (item: CartItem) => void; onIncrease: (item: CartItem) => void; onRemove: (item: CartItem) => void }) {
+  const subtotalCents = sumCartItems(group.items)
+
   return (
     <section className="flex flex-col gap-6">
       <header className="flex items-end justify-between border-b border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] pb-2">
@@ -127,18 +130,16 @@ function ProducerCartGroup({ group, onDecrease, onIncrease, onRemove }: { group:
         />
       ))}
 
-      {/* Group subtotal is backend-computed once a real checkout endpoint exists. */}
       <div className="mt-2 flex items-center justify-between border-t border-[color-mix(in_srgb,var(--color-surface-variant)_85%,transparent)] pt-4">
-        <span className="text-body-md text-[var(--color-on-surface-variant)]">Subtotal {group.name}</span>
-        <span className="text-label-md text-[var(--color-on-surface)]">—</span>
+        <span className="text-body-md text-[var(--color-on-surface-variant)]">Subtotal estimado {group.name}</span>
+        <span className="text-label-md text-[var(--color-on-surface)]">{formatMoneyFromCents(subtotalCents)}</span>
       </div>
     </section>
   )
 }
 
 function CartItemRow({ item, onDecrease, onIncrease, onRemove }: { item: CartItem; onDecrease: () => void; onIncrease: () => void; onRemove: () => void }) {
-  // Line total is backend-computed. Display the unit price for reference only.
-  const itemUnitFormatted = formatMoney(item.unitPriceDecimal)
+  const lineTotalCents = sumCartItems([item])
 
   return (
     <article className="group relative flex flex-col items-start gap-6 sm:flex-row sm:items-center">
@@ -174,7 +175,7 @@ function CartItemRow({ item, onDecrease, onIncrease, onRemove }: { item: CartIte
 
         <div className="mt-4 flex items-end justify-between">
           <QuantitySelector quantity={item.quantity} disableIncrease={item.disableIncrease} onDecrease={onDecrease} onIncrease={onIncrease} />
-          <span className="text-label-md text-[var(--color-on-surface)]">{itemUnitFormatted}</span>
+          <span className="text-label-md text-[var(--color-on-surface)]" aria-label={`Total de ${item.name}: ${formatMoneyFromCents(lineTotalCents)}`}>{formatMoneyFromCents(lineTotalCents)}</span>
         </div>
       </div>
     </article>
@@ -201,17 +202,16 @@ function QuantitySelector({ quantity, disableIncrease = false, onDecrease, onInc
   )
 }
 
-function OrderSummary({ checkoutBlocked, disabled, onClearCart }: { checkoutBlocked: boolean; disabled: boolean; onClearCart: () => void }) {
+function OrderSummary({ subtotalCents, checkoutBlocked, disabled, onClearCart }: { subtotalCents: bigint | null; checkoutBlocked: boolean; disabled: boolean; onClearCart: () => void }) {
   return (
     <aside className="mt-12 w-full lg:mt-0 lg:w-1/3">
       <div className="sticky top-32 flex flex-col gap-6 rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] bg-[var(--color-surface-container-lowest)] p-6 shadow-[0_4px_20px_rgba(26,26,26,0.02)] lg:p-8">
         <h2 className="text-headline-md border-b border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] pb-4 text-[24px] leading-8 text-[var(--color-on-surface)]">Resumen del pedido</h2>
 
         <div className="text-body-md flex flex-col gap-4">
-          {/* Subtotal and total are backend-computed — shown as deferred until checkout endpoint. */}
           <div className="flex items-center justify-between text-[var(--color-on-surface)]">
-            <span>Subtotal productos</span>
-            <span>—</span>
+            <span>Subtotal estimado</span>
+            <span>{formatMoneyFromCents(subtotalCents)}</span>
           </div>
           <div className="flex items-center justify-between text-[var(--color-on-surface-variant)]">
             <span>
@@ -222,12 +222,12 @@ function OrderSummary({ checkoutBlocked, disabled, onClearCart }: { checkoutBloc
         </div>
 
         <div className="mt-2 flex items-end justify-between border-t border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)] pt-6">
-          <span className="text-body-lg text-[var(--color-on-surface)]">Total productos</span>
-          <span className="text-headline-md text-[24px] leading-8 text-[var(--color-on-surface)]">—</span>
+          <span className="text-body-lg text-[var(--color-on-surface)]">Total estimado de productos</span>
+          <span className="text-headline-md text-[24px] leading-8 text-[var(--color-on-surface)]">{formatMoneyFromCents(subtotalCents)}</span>
         </div>
 
         <p className="mt-2 text-center text-xs text-[var(--color-on-surface-variant)] italic">
-          Impuestos incluidos. Los gastos de envío se calcularán en el siguiente paso.
+          Importe orientativo según el carrito actual. El servidor recalculará el cobro junto con los gastos de envío.
         </p>
 
         {checkoutBlocked ? <p role="alert" className="text-label-sm text-center text-[var(--color-error)]">Revisa los productos no disponibles antes de continuar.</p> : <Link to="/checkout" className="text-label-md mt-4 flex w-full items-center justify-center gap-2 rounded-[var(--radius-default)] bg-[var(--color-primary-container)] py-4 text-center uppercase tracking-widest transition-colors duration-300 hover:bg-[var(--color-on-primary-fixed-variant)]">
@@ -239,6 +239,13 @@ function OrderSummary({ checkoutBlocked, disabled, onClearCart }: { checkoutBloc
       </div>
     </aside>
   )
+}
+
+function sumCartItems(items: CartItem[]): bigint | null {
+  return items.reduce<bigint | null>((total, item) => {
+    const unitCents = moneyToCents(item.unitPriceDecimal)
+    return total === null || unitCents === null ? null : total + unitCents * BigInt(item.quantity)
+  }, 0n)
 }
 
 function CartActions({ className, mobile = false, disabled = false, onClearCart }: { className: string; mobile?: boolean; disabled?: boolean; onClearCart: () => void }) {

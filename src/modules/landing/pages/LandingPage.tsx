@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, CheckCircle2, MapPin, PackageCheck, ShieldCheck, ShoppingBasket, Sparkles } from 'lucide-react'
 import bannerImage from '../../../../ReferenciasUI/LandingPage/assets/Banner.png'
 import productImage from '../../../../ReferenciasUI/LandingPage/assets/Producto.png'
-import producerImage from '../../../../ReferenciasUI/LandingPage/assets/Productor.png'
 import { PublicTopbar } from '../../../componentes/layout/PublicTopbar'
 import { APP_NAME } from '../../../lib/branding'
 import { ConsumerFooter } from '../../../componentes/layout/ConsumerFooter'
@@ -11,14 +10,20 @@ const marketCategories = [
   {
     name: 'Despensa mediterránea',
     description: 'Aceites, conservas, mieles y productos de guarda con trazabilidad artesanal.',
+    image: bannerImage,
+    imageAlt: 'Aceite de oliva, pan artesano y aceitunas sobre una mesa',
   },
   {
-    name: 'Fresco de autor',
-    description: 'Quesos, panes y lotes de temporada preparados por pequeños productores.',
+    name: 'Tabla de quesos',
+    description: 'Piezas de distintas curaciones elaboradas por pequeños productores.',
+    image: productImage,
+    imageAlt: 'Tabla con una selección de quesos artesanos',
   },
   {
-    name: 'Regalos gastronómicos',
-    description: 'Cestas curadas para experiencias culinarias, eventos y consumo consciente.',
+    name: 'Maridajes mediterráneos',
+    description: 'Quesos, fruta, panes y conservas para combinar sabores y texturas locales.',
+    image: productImage,
+    imageAlt: 'Variedad de quesos artesanos presentada sobre una tabla',
   },
 ]
 
@@ -28,7 +33,12 @@ const valuePillars = [
   { icon: PackageCheck, title: 'Pedidos claros', text: 'Flujos pensados para consumidor, productor y administración.' },
 ]
 
-const producerHighlights = ['Bodegas familiares', 'Queserías de montaña', 'Conservas de temporada', 'Mieles crudas']
+const producerHighlights = [
+  { title: 'Aceites de origen', image: bannerImage, alt: 'Botella de aceite de oliva artesanal con pan y aceitunas' },
+  { title: 'Pan de obrador', image: bannerImage, alt: 'Hogaza de pan artesano junto a aceite de oliva' },
+  { title: 'Quesos artesanos', image: productImage, alt: 'Selección de quesos artesanos de distintas curaciones' },
+  { title: 'Despensa mediterránea', image: bannerImage, alt: 'Productos de despensa mediterránea dispuestos sobre una mesa' },
+]
 
 export function LandingPage() {
   return (
@@ -61,18 +71,18 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className="relative min-h-[560px]">
-            <div className="absolute top-0 right-0 h-[78%] w-[82%] border border-[color-mix(in_srgb,var(--color-outline)_35%,transparent)] bg-[var(--color-surface-container-lowest)] p-8 shadow-[0_32px_80px_-42px_rgba(28,27,27,0.55)]">
-              <img src={bannerImage} alt="Mesa editorial con aceite, pan y aceitunas artesanales" className="h-full max-h-[390px] w-full object-cover" />
+          <div className="relative min-h-[480px] sm:min-h-[560px]">
+            <div className="absolute top-0 right-0 h-[78%] w-[88%] border border-[color-mix(in_srgb,var(--color-outline)_35%,transparent)] bg-[var(--color-surface-container-lowest)] p-4 shadow-[0_32px_80px_-42px_rgba(28,27,27,0.55)] sm:w-[82%] sm:p-8">
+              <img src={bannerImage} alt="Aceite de oliva, pan artesano y aceitunas sobre una mesa" fetchPriority="high" decoding="async" className="h-full max-h-[390px] w-full object-cover" />
             </div>
             <div className="absolute bottom-0 left-0 w-[72%] border border-[color-mix(in_srgb,var(--color-secondary)_45%,transparent)] bg-[var(--color-primary)] p-6 text-[var(--color-on-primary)]">
               <p className="text-label-sm mb-3 uppercase tracking-[0.18em] text-[var(--color-inverse-primary)]">Selección curada</p>
-              <img src={productImage} alt="Selección de quesos artesanales mediterráneos" className="mb-4 h-32 w-full object-cover opacity-95" />
+              <img src={productImage} alt="Selección de quesos artesanos mediterráneos" decoding="async" className="mb-4 h-32 w-full object-cover opacity-95" />
               <p className="text-body-md">Productos con origen, fotografía cuidada y productores visibles desde la primera visita.</p>
             </div>
             <div className="absolute top-16 left-4 hidden rotate-[-6deg] border border-[var(--color-outline-variant)] bg-[var(--color-background)] px-5 py-4 shadow-[0_18px_50px_-35px_rgba(28,27,27,0.45)] md:block">
-              <p className="font-editorial text-headline-md text-[var(--color-primary)]">128</p>
-              <p className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">productos curados</p>
+              <p className="font-editorial text-headline-md text-[var(--color-primary)]">Origen local</p>
+              <p className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">selección artesanal</p>
             </div>
           </div>
         </section>
@@ -82,7 +92,7 @@ export function LandingPage() {
             {marketCategories.map((category, index) => (
               <article key={category.name} className="group border border-[color-mix(in_srgb,var(--color-outline-variant)_70%,transparent)] bg-[var(--color-background)] p-6 transition-transform hover:-translate-y-1">
                 <div className="mb-6 flex h-48 items-center justify-center bg-[var(--color-surface-container)]">
-                  <img src={index === 1 ? producerImage : index === 2 ? productImage : bannerImage} alt={`Foto representativa para ${category.name}`} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                  <img src={category.image} alt={category.imageAlt} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                 </div>
                 <p className="text-label-sm mb-3 uppercase tracking-[0.2em] text-[var(--color-outline)]">Colección 0{index + 1}</p>
                 <h2 className="text-headline-md mb-3 text-[var(--color-on-surface)]">{category.name}</h2>
@@ -103,9 +113,9 @@ export function LandingPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             {producerHighlights.map((highlight) => (
-              <article key={highlight} className="min-h-52 border border-[color-mix(in_srgb,var(--color-outline-variant)_60%,transparent)] bg-[var(--color-surface-container-lowest)] p-5">
-                <img src={highlight === 'Queserías de montaña' ? productImage : producerImage} alt={`Foto representativa para ${highlight}`} className="mb-5 h-24 w-full object-cover" />
-                <h3 className="text-headline-md text-[var(--color-on-surface)]">{highlight}</h3>
+              <article key={highlight.title} className="min-h-52 border border-[color-mix(in_srgb,var(--color-outline-variant)_60%,transparent)] bg-[var(--color-surface-container-lowest)] p-5">
+                <img src={highlight.image} alt={highlight.alt} loading="lazy" decoding="async" className="mb-5 h-24 w-full object-cover" />
+                <h3 className="text-headline-md text-[var(--color-on-surface)]">{highlight.title}</h3>
               </article>
             ))}
           </div>
@@ -125,7 +135,7 @@ export function LandingPage() {
 
         <section id="impacto" className="mx-auto grid max-w-[1440px] grid-cols-1 gap-8 px-[var(--space-margin-mobile)] py-20 md:px-[var(--space-margin-desktop)] lg:grid-cols-[1fr_1fr] lg:items-center">
           <div className="relative border border-[color-mix(in_srgb,var(--color-outline)_35%,transparent)] bg-[var(--color-surface-container-low)] p-10">
-            <img src={producerImage} alt="Productora artesanal trabajando en su taller" className="mx-auto h-72 w-full object-cover" />
+            <img src={bannerImage} alt="Productos artesanos preparados para llegar al consumidor" loading="lazy" decoding="async" className="mx-auto h-72 w-full object-cover" />
             <div className="absolute right-8 bottom-8 bg-[var(--color-background)] px-5 py-4 shadow-[0_20px_55px_-36px_rgba(28,27,27,0.5)]">
               <p className="text-label-sm uppercase tracking-widest text-[var(--color-secondary)]">Producción local</p>
               <p className="text-body-md text-[var(--color-on-surface)]">Oficio y trazabilidad visibles</p>

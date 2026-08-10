@@ -10,21 +10,6 @@ export const ModerationStatusSchema = z.enum(['OK', 'REPORTED', 'REMOVED'])
 export type ModerationStatus = z.infer<typeof ModerationStatusSchema>
 
 // ---------------------------------------------------------------------------
-// Category DTO — GET /api/v1/categories (public, no auth)
-// [source: mercado-artesanal-backend/openspec/specs/product-taxonomy/spec.md]
-// ---------------------------------------------------------------------------
-
-export type CategoryDTO = {
-  id: string
-  slug: string
-  name: string
-  description: string | null
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-// ---------------------------------------------------------------------------
 // ProductImage DTOs — embedded in product responses
 // [source: mercado-artesanal-backend/openspec/specs/product-images/spec.md]
 //

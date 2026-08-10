@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowRight, ChevronRight, ImageOff, Info, Minus, Plus, ShoppingBag } from 'lucide-react'
+import { ArrowRight, ChevronRight, ImageOff, Info, MessageSquareText, Minus, Plus, ShoppingBag } from 'lucide-react'
 import { ApiError } from '../../../lib/api'
 import { resolveErrorMessage } from '../../../lib/errorMessages'
 import { formatMoney } from '../../../lib/formatMoney'
@@ -68,8 +68,29 @@ export function DetalleProductoPage() {
             error={addCartItem.isError ? resolveErrorMessage(addCartItem.error) : null}
           />
         </section>
+        <EmptyReviews />
       </main>
     </div>
+  )
+}
+
+function EmptyReviews() {
+  return (
+    <section aria-labelledby="reviews-title" className="mb-16 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_55%,transparent)] pt-12 md:pt-16">
+      <div className="grid gap-8 md:grid-cols-[0.75fr_1.25fr] md:items-start">
+        <div>
+          <p className="text-label-sm mb-3 uppercase tracking-[0.18em] text-[var(--color-primary)]">Experiencia de compra</p>
+          <h2 id="reviews-title" className="text-headline-lg text-[var(--color-on-surface)]">Valoraciones</h2>
+        </div>
+        <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] px-6 py-10 text-center md:px-10">
+          <span className="mx-auto mb-5 flex size-12 items-center justify-center rounded-full bg-[var(--color-secondary-container)] text-[var(--color-on-secondary-container)]" aria-hidden="true">
+            <MessageSquareText size={23} strokeWidth={1.6} />
+          </span>
+          <h3 className="text-headline-md text-[var(--color-on-surface)]">Este producto aún no tiene valoraciones</h3>
+          <p className="text-body-md mx-auto mt-3 max-w-lg text-[var(--color-on-surface-variant)]">Cuando consumidores verificados compartan su experiencia, sus opiniones aparecerán aquí.</p>
+        </div>
+      </div>
+    </section>
   )
 }
 
