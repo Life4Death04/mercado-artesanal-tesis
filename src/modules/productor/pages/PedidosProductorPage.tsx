@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Filter, Loader2, Search, SlidersHorizontal, Truck, Warehouse } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Filter, Loader2, MapPin, Search, SlidersHorizontal, Truck, Warehouse } from 'lucide-react'
 import { CancelarPedidoModal, DetallePedidoModal } from '../componentes/PedidosProductorModals'
 import { usePedidosQuery } from '../pedidos/hooks/usePedidosQuery'
 import { useUpdateSubOrderStatusMutation } from '../pedidos/hooks/useUpdateSubOrderStatusMutation'
@@ -115,7 +115,7 @@ export function PedidosProductorPage() {
     setCurrentPage(1)
   }
 
-  function handleAdvanceStatus(subOrderId: string) {
+  function handleAdvanceStatus(subOrderId: string, trackingNumber?: string) {
     const pedido = pedidos.find((p) => p.id === subOrderId)
     if (!pedido) return
 
@@ -123,8 +123,16 @@ export function PedidosProductorPage() {
     if (!nextStatus) return
 
     setMutationError(null)
+    const requiresTracking =
+      pedido.status === 'preparing' &&
+      pedido.deliveryType === 'SHIPPING_FLAT_RATE'
+
     advanceMutation.mutate(
-      { subOrderId, targetStatus: nextStatus },
+      {
+        subOrderId,
+        targetStatus: nextStatus,
+        ...(requiresTracking && trackingNumber !== undefined ? { trackingNumber } : {}),
+      },
       {
         onError: (err) => {
           setMutationError(resolveErrorMessage(err))
@@ -355,9 +363,13 @@ export function PedidosProductorPage() {
         <DetallePedidoModal
           pedido={selectedPedido}
           isPending={advanceMutation.isPending || cancelMutation.isPending}
-          onClose={() => setSelectedPedidoId(null)}
+          mutationError={mutationError}
+          onClose={() => {
+            setMutationError(null)
+            setSelectedPedidoId(null)
+          }}
           onCancel={() => setCancelingPedidoId(selectedPedido.id)}
-          onAdvanceStatus={() => handleAdvanceStatus(selectedPedido.id)}
+          onAdvanceStatus={(trackingNumber) => handleAdvanceStatus(selectedPedido.id, trackingNumber)}
         />
       ) : null}
 
@@ -438,11 +450,17 @@ function OrderCard({ pedido, onView }: OrderCardProps) {
                 <div className="flex items-center gap-2 text-[var(--color-on-surface)]">
                   {pedido.deliveryType === 'SHIPPING_FLAT_RATE' ? (
                     <Truck size={16} strokeWidth={1.8} className="text-[var(--color-secondary)]" />
+                  ) : pedido.deliveryType === 'PERSONAL_DELIVERY' ? (
+                    <MapPin size={16} strokeWidth={1.8} className="text-[var(--color-secondary)]" />
                   ) : (
                     <Warehouse size={16} strokeWidth={1.8} className="text-[var(--color-secondary)]" />
                   )}
                   <span className="text-body-md">
-                    {pedido.deliveryType === 'SHIPPING_FLAT_RATE' ? 'Mensajería' : 'Punto de recogida'}
+                    {pedido.deliveryType === 'SHIPPING_FLAT_RATE'
+                      ? 'Mensajería'
+                      : pedido.deliveryType === 'PERSONAL_DELIVERY'
+                        ? 'Entrega personal'
+                        : 'Punto de recogida'}
                   </span>
                 </div>
               </div>

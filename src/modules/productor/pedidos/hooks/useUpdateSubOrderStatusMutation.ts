@@ -7,6 +7,7 @@ import type { SubOrderStatus } from '../pedidos.schema'
 type UpdateStatusArgs = {
   subOrderId: string
   targetStatus: SubOrderStatus
+  trackingNumber?: string
 }
 
 /**
@@ -26,8 +27,11 @@ export function useUpdateSubOrderStatusMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ subOrderId, targetStatus }: UpdateStatusArgs) =>
-      updatePedidoStatus(apiCaller, subOrderId, { status: targetStatus }),
+    mutationFn: ({ subOrderId, targetStatus, trackingNumber }: UpdateStatusArgs) =>
+      updatePedidoStatus(apiCaller, subOrderId, {
+        status: targetStatus,
+        ...(trackingNumber !== undefined ? { trackingNumber } : {}),
+      }),
     onSuccess: () => {
       // Invalidate all sub-order queries (covers unfiltered + any status-filtered views).
       void queryClient.invalidateQueries({ queryKey: PEDIDOS_QUERY_KEY_BASE })

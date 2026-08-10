@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Check, CircleAlert, Info, Loader2, MapPin, Truck, X } from 'lucide-react'
 import { formatMoney } from '../../../lib/formatMoney'
 import type { SubOrderListItemDTO, SubOrderStatus } from '../pedidos/pedidos.schema'
@@ -86,24 +87,39 @@ function ctaLabel(status: SubOrderStatus): string {
 type DetallePedidoModalProps = {
   pedido: SubOrderListItemDTO
   isPending: boolean
+  mutationError: string | null
   onClose: () => void
   onCancel: () => void
-  onAdvanceStatus: () => void
+  onAdvanceStatus: (trackingNumber?: string) => void
 }
 
 export function DetallePedidoModal({
   pedido,
   isPending,
+  mutationError,
   onClose,
   onCancel,
   onAdvanceStatus,
 }: DetallePedidoModalProps) {
-  // Tracking block: only when courier + sent (trackingNumber always null in Cycle 2)
+  const [trackingNumber, setTrackingNumber] = useState('')
+  const requiresTracking =
+    pedido.status === 'preparing' &&
+    pedido.deliveryType === 'SHIPPING_FLAT_RATE'
   const showTracking =
     pedido.status === 'sent' &&
     pedido.deliveryType === 'SHIPPING_FLAT_RATE'
-
+  const hasValidTracking = trackingNumber.trim().length > 0
   const cta = ctaLabel(pedido.status)
+
+  function handleAdvance() {
+    if (requiresTracking) {
+      if (!hasValidTracking) return
+      onAdvanceStatus(trackingNumber)
+      return
+    }
+
+    onAdvanceStatus()
+  }
 
   return (
     <div
@@ -128,7 +144,8 @@ export function DetallePedidoModal({
             type="button"
             aria-label="Cerrar modal"
             onClick={onClose}
-            className="p-2 text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)]"
+            disabled={isPending}
+            className="p-2 text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-surface-container-high)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X size={22} strokeWidth={1.8} />
           </button>
@@ -184,7 +201,11 @@ export function DetallePedidoModal({
                   )}
                   <div>
                     <p className="text-label-md text-[var(--color-on-surface)]">
-                      {pedido.deliveryType === 'SHIPPING_FLAT_RATE' ? 'Mensajería' : 'Punto de recogida'}
+                      {pedido.deliveryType === 'SHIPPING_FLAT_RATE'
+                        ? 'Mensajería'
+                        : pedido.deliveryType === 'PERSONAL_DELIVERY'
+                          ? 'Entrega personal'
+                          : 'Punto de recogida'}
                     </p>
                     {pedido.deliveryAddress ? (
                       <p className="mt-1 text-sm leading-relaxed text-[var(--color-secondary)]">
@@ -263,24 +284,51 @@ export function DetallePedidoModal({
 
         {/* Footer */}
         <footer className="flex flex-col items-center gap-6 border-t border-[var(--color-outline-variant)] bg-white px-8 py-6">
-          {/* Tracking number — always null in Cycle 2 (spec: trackingNumber deferred) */}
+          {requiresTracking ? (
+            <div className="w-full space-y-3">
+              <label
+                htmlFor="tracking-number"
+                className="text-label-md block font-bold text-[var(--color-on-surface)]"
+              >
+                Número de seguimiento
+              </label>
+              <input
+                id="tracking-number"
+                type="text"
+                required
+                autoFocus
+                value={trackingNumber}
+                onChange={(event) => setTrackingNumber(event.target.value)}
+                disabled={isPending}
+                aria-describedby={mutationError ? 'tracking-number-help advance-status-error' : 'tracking-number-help'}
+                className="text-body-md w-full border border-[var(--color-outline-variant)] bg-[#FAF7F0] px-4 py-3 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+              />
+              <p id="tracking-number-help" className="text-sm text-[var(--color-secondary)]">
+                Es obligatorio para marcar este envío como enviado.
+              </p>
+            </div>
+          ) : null}
+
           {showTracking ? (
             <div className="w-full space-y-4 rounded-[var(--radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-6">
               <div className="flex items-center gap-2">
                 <Info size={18} strokeWidth={1.8} className="text-[var(--color-secondary)]" />
                 <h4 className="text-label-md font-bold text-[var(--color-on-surface)]">Número de seguimiento</h4>
               </div>
-              <div className="flex items-center gap-2 text-[var(--color-secondary)]">
-                <CircleAlert size={16} strokeWidth={1.8} className="text-[var(--color-primary)]" />
-                <p className="text-sm italic">
-                  Pendiente de anexar — el cliente aún no puede seguir el envío.
-                </p>
-              </div>
-              {/* Tracking number entry is deferred (RF-21 / Cycle 3) — field exists but is not settable via API in Cycle 2 */}
-              <p className="text-label-sm text-[var(--color-outline)]">
-                La funcionalidad de número de seguimiento se activará en una próxima versión.
+              <p className="text-body-md break-all font-semibold text-[var(--color-primary)]">
+                {pedido.trackingNumber ?? 'No disponible'}
               </p>
             </div>
+          ) : null}
+
+          {mutationError ? (
+            <p
+              id="advance-status-error"
+              role="alert"
+              className="w-full border border-[var(--color-error)] bg-[var(--color-error-container)] px-4 py-3 text-sm text-[var(--color-on-error-container)]"
+            >
+              {mutationError}
+            </p>
           ) : null}
 
           <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -300,8 +348,8 @@ export function DetallePedidoModal({
             {cta ? (
               <button
                 type="button"
-                onClick={onAdvanceStatus}
-                disabled={isPending}
+                onClick={handleAdvance}
+                disabled={isPending || (requiresTracking && !hasValidTracking)}
                 className="text-label-md inline-flex items-center gap-2 rounded-[var(--radius-default)] bg-[#7A2E3A] px-10 py-4 text-white shadow-lg transition-all duration-150 hover:bg-[var(--color-primary)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isPending ? <Loader2 size={16} strokeWidth={2} className="animate-spin" /> : null}
@@ -310,10 +358,6 @@ export function DetallePedidoModal({
             ) : null}
           </div>
 
-          <p className="flex items-center gap-2 text-xs text-[var(--color-secondary)]">
-            <Info size={14} strokeWidth={1.8} />
-            El cliente recibirá una notificación automática al cambiar el estado.
-          </p>
         </footer>
       </div>
     </div>

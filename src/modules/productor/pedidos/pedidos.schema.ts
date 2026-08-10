@@ -58,7 +58,6 @@ export type SubOrderDTO = {
   status: SubOrderStatus
   /** Decimal string — display via formatMoney; NEVER parse for math. */
   shippingCostSnapshot: string
-  /** Tracking number (always null in Cycle 2 — field exists for schema stability). */
   trackingNumber: string | null
   orderLines: OrderLineDTO[]
   createdAt: string
@@ -83,6 +82,7 @@ export type SubOrderListItemDTO = {
   status: SubOrderStatus
   /** Decimal string from Prisma. */
   shippingCostSnapshot: string
+  trackingNumber: string | null
   orderLines: OrderLineDTO[]
   createdAt: string
   updatedAt: string
@@ -102,6 +102,7 @@ export type SubOrderListItemDTO = {
 export const updateSubOrderStatusSchema = z
   .object({
     status: SubOrderStatusSchema,
+    trackingNumber: z.string().min(1).optional(),
   })
   .strict()
 

@@ -19,7 +19,7 @@ export const pedidosEndpoints = {
   detail: (id: string) => `/producers/me/sub-orders/${id}`,
   /**
    * PATCH /producers/me/sub-orders/:id — state machine transition.
-   * Body: { status: <target> }
+   * Body: { status: <target>, trackingNumber?: string }
    * Invalid transitions → 409 INVALID_ORDER_TRANSITION.
    * Idempotent: sending the current status returns 200 (no DB write).
    */
@@ -92,6 +92,7 @@ function mapRawToSubOrder(raw: RawSubOrder): SubOrderListItemDTO {
     producerId: raw.producerId,
     status: parseSubOrderStatus(raw.status),
     shippingCostSnapshot: raw.shippingCostSnapshot,
+    trackingNumber: raw.trackingNumber,
     orderLines: (raw.orderLines ?? []).map((line) => ({
       id: line.id,
       subOrderId: line.subOrderId,
