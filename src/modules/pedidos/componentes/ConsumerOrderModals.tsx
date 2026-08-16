@@ -96,14 +96,19 @@ function SubOrderPanel({ subOrder, onReport }: { subOrder: ConsumerSubOrder; onR
           <TrackingField value={subOrder.tracking || null} />
           {subOrder.deliveryAddress ? <DetailField label="Dirección" value={subOrder.deliveryAddress} preserveLineBreaks /> : null}
         </div>
-        <button
-          type="button"
-          onClick={() => onReport(subOrder)}
-          className="text-label-md inline-flex items-center justify-center gap-2 border border-[#7A2E3A] px-5 py-3 uppercase tracking-wider text-[#7A2E3A] transition-colors hover:bg-[#7A2E3A] hover:text-white"
-        >
-          <Flag size={16} strokeWidth={1.8} />
-          Reportar
-        </button>
+        <div className="flex max-w-xs flex-col gap-2 md:items-end">
+          <button
+            type="button"
+            disabled={!subOrder.canReportIncident}
+            onClick={() => onReport(subOrder)}
+            title={subOrder.reportIncidentUnavailableReason ?? 'Reportar una incidencia sobre esta entrega'}
+            className="text-label-md inline-flex items-center justify-center gap-2 border border-[#7A2E3A] px-5 py-3 uppercase tracking-wider text-[#7A2E3A] transition-colors hover:bg-[#7A2E3A] hover:text-white disabled:cursor-not-allowed disabled:border-[var(--color-outline-variant)] disabled:text-[var(--color-outline)] disabled:hover:bg-transparent"
+          >
+            <Flag size={16} strokeWidth={1.8} />
+            Reportar
+          </button>
+          {subOrder.reportIncidentUnavailableReason ? <p className="text-label-sm text-[var(--color-outline)] md:text-right">{subOrder.reportIncidentUnavailableReason}</p> : null}
+        </div>
       </div>
 
       <div className="mt-5 flex justify-end gap-5 text-body-md text-[var(--color-on-surface-variant)]">
