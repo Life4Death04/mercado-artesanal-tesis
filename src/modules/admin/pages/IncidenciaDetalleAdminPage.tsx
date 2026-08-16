@@ -1,354 +1,53 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ArrowLeft, ChevronRight, FileText } from 'lucide-react'
+import { Link, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
+import { formatMoney, formatMoneyFromCents } from '../../../lib/formatMoney'
+import { resolveErrorMessage } from '../../../lib/errorMessages'
+import { useAdminIncidentQuery } from '../../incidencias/hooks'
+import { getIncidentLineTotalCents } from '../../incidencias/incidencias.money'
+import type { AdminIncidentDetail } from '../../incidencias/incidencias.schema'
 import { IncidentResolutionModal } from '../componentes/IncidentResolutionModal'
-import { DeactivateProducerModal } from '../componentes/ContentModerationModals'
-
-type IncidentStatus = 'Pendiente' | 'En revisión' | 'Resuelta'
-
-type HistoryEntry = {
-  date: string
-  event: string
-  detail: string
-  active: boolean
-}
-
-// ---------------------------------------------------------------------------
-// Mock data
-// ---------------------------------------------------------------------------
-
-const INITIAL_STATUS: IncidentStatus = 'En revisión'
-
-const INITIAL_HISTORY: HistoryEntry[] = [
-  {
-    date: '14 Nov 2023, 10:30 AM',
-    event: 'Estado cambiado a En revisión',
-    detail: 'Por Admin Moderación',
-    active: true,
-  },
-  {
-    date: '13 Nov 2023, 04:15 PM',
-    event: 'Evidencia fotográfica añadida',
-    detail: 'Por Elena Rossi',
-    active: false,
-  },
-  {
-    date: '13 Nov 2023, 04:10 PM',
-    event: 'Incidencia creada',
-    detail: 'Motivo: Problema de envío/calidad',
-    active: false,
-  },
-]
-
-const incident = {
-  id: '#INC-2841',
-  type: 'Reclamación',
-  description:
-    'El cliente reporta que el pedido de trufas blancas frescas llegó en mal estado debido a un retraso en la cadena de frío durante el transporte. El embalaje térmico estaba dañado y el producto presenta un olor inusual. Se solicita un reembolso completo o un reemplazo inmediato, ya que era para un evento corporativo de alto nivel programado para mañana.',
-  relatedCase: {
-    order: 'Pedido #ORD-992A',
-    product: 'Selección de Trufas Blancas Frescas (250g)',
-    details: 'Valor: €450.00 • Entregado: 12 Nov 2023',
-    imageUrl:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuC8nSsKTfu26CRaZfMTwZN5T0dkyL4NuqeZSfySd1jgALfUoU0EcPuhNELyBSz2fPqavCmEl8QrGe6xHuuqyEGa3sL1Q62lBXvSM_BAlJ-iimd9QuK38e-jBNomvsDGLhCgKEJ-_9M28dW7jj57bq6uT42RBRMWRDuHJjRvkheCY5zZU7xJbjNrBopItzS6UQR4mjendm3tLfIbuJDZHY2QFKAI2C4OjGooCYUxJMTcPZlwy5Xfex4Y-2FTj8WZBxpQdSv4mlmC0yzd',
-  },
-  evidence: [
-    {
-      alt: 'Caja térmica dañada durante el envío',
-      url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC2rnXWP6xTeTIc0UuUwv3QptAcQA-sra2ZY-Fx2Eo_m28pdiQOXKQ8l1EhsSIeUgZnpDXciwPt8tkFA6rpMbNk_yj4zjStPKt0878UZ1HVZAx4jV9nD-4mKEuRstow1dCnTKTrjB9oP54AY1ZBorTrFC3H-tskfijy5UHt0KMJiTdLJiohqDl8uZX1VMl9txDEDGTKyZE4d2vIzHaJ5tuGWJNaXgpv6GRUn-lXymdPHGl2aPXoJRPMTLzlVAvbV-mQ1VkKy9LXnrdk',
-    },
-    {
-      alt: 'Trufas blancas con evidencia de deterioro',
-      url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAenDnh6Vn3GRXUGeXnOvY38MZPjMpCtIut9-TogySslwRBSjFvVE7g-ZeAXeZwRJYv6T52eLKlj2HSdpg7RsLESNbXiy1YacuCMGpOVfZqj8x4HV9zlc96LYdzHDFX3t5CrKdVuDIOG1chtZlYsFgqu7rVglDlws3LrElTRJUUdvWeS1UCyBXdfr-WVz8o7pS-fpDoJLuaA3lm2tMyfo0Bbkqe0UIuP8nXIY83kjBICQGQya3Hs-Mia52b_VFSZTnRVKbmMmbsEExt',
-    },
-  ],
-  users: [
-    {
-      role: 'Reportante (Comprador)',
-      initials: 'EL',
-      name: 'Elena Rossi',
-      email: 'elena.rossi@example.com',
-      action: 'Ver detalle de cliente',
-    },
-    {
-      role: 'Reportado (Artesano)',
-      initials: 'FT',
-      name: 'Finca Tartufi',
-      email: 'contacto@fincatartufi.it',
-      action: 'Ver perfil de vendedor',
-    },
-  ],
-}
-
-// ---------------------------------------------------------------------------
-// Status badge
-// ---------------------------------------------------------------------------
-
-function StatusBadge({ status }: { status: IncidentStatus }) {
-  const cls = {
-    Pendiente:
-      'bg-[color-mix(in_srgb,var(--color-error-container)_40%,transparent)] text-[var(--color-primary-container)]',
-    'En revisión':
-      'bg-[var(--color-secondary-container)] text-[var(--color-on-secondary-container)]',
-    Resuelta:
-      'bg-[var(--color-surface-variant)] text-[var(--color-on-surface-variant)]',
-  }[status]
-
-  return (
-    <span
-      className={`text-label-sm w-fit rounded-full px-4 py-1.5 uppercase tracking-wide ${cls}`}
-    >
-      {status}
-    </span>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
 
 export function IncidenciaDetalleAdminPage() {
-  const [status, setStatus] = useState<IncidentStatus>(INITIAL_STATUS)
-  const [history, setHistory] = useState<HistoryEntry[]>(INITIAL_HISTORY)
-  const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false)
-  const [isDeactivarModalOpen, setIsDeactivarModalOpen] = useState(false)
-
-  const isResolved = status === 'Resuelta'
-
-  function addHistoryEntry(event: string, detail: string) {
-    const now = new Date()
-    const dateStr = now.toLocaleString('es-ES', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-    setHistory((prev) => [
-      { date: dateStr, event, detail, active: true },
-      ...prev.map((h) => ({ ...h, active: false })),
-    ])
-  }
-
-  function handleResolutionConfirm(resolution: 'resuelta' | 'sin-accion') {
-    setStatus('Resuelta')
-    const label =
-      resolution === 'resuelta'
-        ? 'Incidencia marcada como Resuelta'
-        : 'Incidencia cerrada — Sin acción requerida'
-    addHistoryEntry(label, 'Por Admin Moderación')
-  }
-
-  function handleCloseWithoutAction() {
-    setStatus('Resuelta')
-    addHistoryEntry('Incidencia cerrada sin acción', 'Por Admin Moderación')
-  }
+  const { incidenciaId } = useParams()
+  const incidentId = incidenciaId?.trim() || null
+  const incidentQuery = useAdminIncidentQuery(incidentId)
+  const [resolutionOpen, setResolutionOpen] = useState(false)
+  const incident = incidentQuery.data
 
   return (
     <>
       <div className="mx-[var(--space-margin-mobile)] max-w-[var(--layout-container-max)] md:mx-0">
-        {/* Header */}
-        <header className="mb-12">
-          <Link
-            to="/admin/incidencias"
-            className="text-label-md mb-6 inline-flex items-center gap-2 uppercase text-[var(--color-secondary)] transition-colors hover:text-[var(--color-on-surface)]"
-          >
-            <ArrowLeft size={18} strokeWidth={1.8} />
-            Volver al listado
-          </Link>
-
-          <div className="flex flex-col gap-6 border-b border-[color-mix(in_srgb,var(--color-secondary)_40%,transparent)] pb-6 md:flex-row md:items-end md:justify-between">
-            <div>
-              <span className="text-label-sm mb-2 block uppercase tracking-widest text-[var(--color-outline)]">
-                {incident.type}
-              </span>
-              <h1 className="text-display-lg text-[var(--color-primary)]">{incident.id}</h1>
-            </div>
-            <StatusBadge status={status} />
-          </div>
-        </header>
-
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-6">
-          {/* ── Main column ── */}
-          <main className="flex flex-col gap-12 lg:col-span-8">
-            {/* Description */}
-            <section>
-              <h2 className="text-headline-md mb-4 text-[var(--color-on-surface)]">
-                Descripción del problema
-              </h2>
-              <p className="text-body-lg max-w-4xl leading-relaxed text-[var(--color-on-surface-variant)]">
-                {incident.description}
-              </p>
-            </section>
-
-            {/* Related case */}
-            <section>
-              <h2 className="text-headline-md mb-4 text-[var(--color-on-surface)]">
-                Caso Relacionado
-              </h2>
-              <Link
-                to={`/admin/moderacion?q=${encodeURIComponent(incident.relatedCase.product)}`}
-                className="group flex flex-col gap-5 border border-[color-mix(in_srgb,var(--color-secondary)_45%,transparent)] bg-[var(--color-surface-bright)] p-4 transition-colors hover:border-[var(--color-on-surface)] sm:flex-row sm:items-center"
-              >
-                <img
-                  src={incident.relatedCase.imageUrl}
-                  alt="Trufas blancas frescas en una caja gourmet"
-                  className="size-24 shrink-0 object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <span className="text-label-sm mb-1 block uppercase tracking-widest text-[var(--color-outline)]">
-                    {incident.relatedCase.order}
-                  </span>
-                  <h3 className="text-body-md font-semibold text-[var(--color-on-surface)] transition-colors group-hover:text-[var(--color-primary-container)]">
-                    {incident.relatedCase.product}
-                  </h3>
-                  <p className="text-body-md mt-1 text-[var(--color-secondary)]">
-                    {incident.relatedCase.details}
-                  </p>
-                </div>
-                <ChevronRight
-                  size={22}
-                  strokeWidth={1.8}
-                  className="hidden text-[var(--color-secondary)] transition-colors group-hover:text-[var(--color-on-surface)] sm:block"
-                />
-              </Link>
-            </section>
-
-            {/* Evidence */}
-            <section>
-              <h2 className="text-headline-md mb-4 text-[var(--color-on-surface)]">
-                Evidencia Adjunta
-              </h2>
-              <div className="flex gap-4 overflow-x-auto pb-4">
-                {incident.evidence.map((item) => (
-                  <button key={item.url} type="button" className="group relative shrink-0 cursor-pointer">
-                    <img
-                      src={item.url}
-                      alt={item.alt}
-                      className="size-48 border border-[color-mix(in_srgb,var(--color-secondary)_45%,transparent)] object-cover"
-                    />
-                    <span className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-on-surface)_10%,transparent)] transition-colors group-hover:bg-transparent" />
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="flex size-48 shrink-0 flex-col items-center justify-center border border-[color-mix(in_srgb,var(--color-secondary)_45%,transparent)] bg-[var(--color-surface-container-low)] text-[var(--color-secondary)] transition-colors hover:border-[var(--color-on-surface)] hover:text-[var(--color-on-surface)]"
-                >
-                  <FileText size={34} strokeWidth={1.7} className="mb-2" />
-                  <span className="text-label-sm uppercase tracking-wide">Recibo_PDF</span>
-                </button>
-              </div>
-            </section>
-          </main>
-
-          {/* ── Aside ── */}
-          <aside className="flex flex-col gap-10 lg:col-span-4">
-            {/* Users */}
-            <section className="border border-[color-mix(in_srgb,var(--color-secondary)_45%,transparent)] bg-[var(--color-surface-bright)] p-6">
-              <h2 className="text-headline-md mb-6 text-[var(--color-on-surface)]">
-                Usuarios Implicados
-              </h2>
-              <div className="divide-y divide-[color-mix(in_srgb,var(--color-secondary)_35%,transparent)]">
-                {incident.users.map((user) => (
-                  <article key={user.email} className="py-6 first:pt-0 last:pb-0">
-                    <span className="text-label-sm mb-3 block uppercase tracking-widest text-[var(--color-outline)]">
-                      {user.role}
-                    </span>
-                    <div className="flex items-start gap-4">
-                      <div className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-xl)] bg-[var(--color-surface-container)] font-bold text-[var(--color-primary)]">
-                        {user.initials}
-                      </div>
-                      <div>
-                        <h3 className="text-body-md font-semibold text-[var(--color-on-surface)]">
-                          {user.name}
-                        </h3>
-                        <p className="text-body-md text-[var(--color-secondary)]">{user.email}</p>
-                        <Link
-                          to={`/admin/usuarios?q=${encodeURIComponent(user.name)}`}
-                          className="text-label-sm mt-2 inline-block uppercase tracking-wide text-[var(--color-primary-container)] hover:underline"
-                        >
-                          {user.action}
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            {/* History */}
-            <section className="border border-[color-mix(in_srgb,var(--color-secondary)_45%,transparent)] bg-[var(--color-surface-bright)] p-6">
-              <h2 className="text-headline-md mb-6 text-[var(--color-on-surface)]">Historial</h2>
-              <div className="relative ml-3 space-y-6 border-l border-[color-mix(in_srgb,var(--color-outline-variant)_80%,transparent)]">
-                {history.map((item, i) => (
-                  <article key={i} className="relative pl-6">
-                    <span
-                      className={`absolute top-1 -left-[5px] size-2.5 rounded-full ring-4 ring-[var(--color-surface-bright)] ${
-                        item.active
-                          ? 'bg-[var(--color-primary-container)]'
-                          : 'bg-[var(--color-outline)]'
-                      }`}
-                    />
-                    <span className="text-label-sm mb-1 block text-[var(--color-outline)]">
-                      {item.date}
-                    </span>
-                    <p className="text-body-md text-[var(--color-on-surface)]">{item.event}</p>
-                    <p className="text-body-md mt-1 text-[var(--color-secondary)]">{item.detail}</p>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            {/* Actions */}
-            <section className="flex flex-col gap-3 pt-4">
-              {/* Registrar solución */}
-              <button
-                type="button"
-                disabled={isResolved}
-                onClick={() => setIsResolutionModalOpen(true)}
-                className="text-label-md w-full bg-[var(--color-primary-container)] px-6 py-4 text-center uppercase tracking-widest text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isResolved ? 'Incidencia resuelta' : 'Registrar solución'}
-              </button>
-
-              {/* Cerrar sin acción */}
-              <button
-                type="button"
-                disabled={isResolved}
-                onClick={handleCloseWithoutAction}
-                className="text-label-md w-full border border-[var(--color-on-surface)] bg-transparent px-6 py-4 text-center uppercase tracking-widest text-[var(--color-on-surface)] transition-colors hover:bg-[var(--color-surface-container)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Cerrar sin acción
-              </button>
-
-              {/* Desactivar cuenta del reportado */}
-              <button
-                type="button"
-                onClick={() => setIsDeactivarModalOpen(true)}
-                className="text-label-md mt-4 w-full px-6 py-4 text-center uppercase tracking-widest text-[var(--color-error)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-error-container)_35%,transparent)]"
-              >
-                Desactivar cuenta del reportado
-              </button>
-            </section>
-          </aside>
-        </div>
+        <Link to="/admin/incidencias" className="text-label-md mb-8 inline-flex items-center gap-2 uppercase text-[var(--color-secondary)] hover:text-[var(--color-on-surface)]"><ArrowLeft size={18} />Volver al listado</Link>
+        {!incidentId ? <StatePanel error message="La referencia de incidencia no es válida." /> : null}
+        {incidentQuery.isLoading ? <StatePanel message="Cargando detalle de la incidencia..." /> : null}
+        {incidentQuery.isError ? <StatePanel error message={resolveErrorMessage(incidentQuery.error)} /> : null}
+        {incident ? <IncidentContent incident={incident} onResolve={() => setResolutionOpen(true)} /> : null}
       </div>
-
-      {/* Modals */}
-      {isResolutionModalOpen && (
-        <IncidentResolutionModal
-          onClose={() => setIsResolutionModalOpen(false)}
-          onConfirm={handleResolutionConfirm}
-        />
-      )}
-
-      {isDeactivarModalOpen && (
-        <DeactivateProducerModal
-          producerName={incident.users[1].name}
-          onClose={() => setIsDeactivarModalOpen(false)}
-          onConfirm={() => { /* feedback visual futuro */ }}
-        />
-      )}
+      {incident && resolutionOpen && incident.status === 'OPEN' ? <IncidentResolutionModal incidentId={incident.id} onClose={() => setResolutionOpen(false)} onResolved={() => setResolutionOpen(false)} /> : null}
     </>
   )
 }
+
+function IncidentContent({ incident, onResolve }: { incident: AdminIncidentDetail; onResolve: () => void }) {
+  return <>
+    <header className="mb-10 flex flex-col gap-5 border-b border-[color-mix(in_srgb,var(--color-secondary)_40%,transparent)] pb-6 md:flex-row md:items-end md:justify-between"><div><span className="text-label-sm mb-2 block uppercase tracking-widest text-[var(--color-outline)]">Incidencia</span><h1 className="text-display-lg break-all text-[var(--color-primary)]">{incident.id}</h1><p className="text-body-md mt-2 text-[var(--color-outline)]">Creada el {formatDateTime(incident.createdAt)} · Actualizada el {formatDateTime(incident.updatedAt)}</p></div><StatusBadge status={incident.status} /></header>
+    <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-8">
+      <main className="flex flex-col gap-10 lg:col-span-8">
+        <section><h2 className="text-headline-md mb-4">Motivo reportado</h2><p className="text-body-lg whitespace-pre-wrap leading-relaxed text-[var(--color-on-surface-variant)]">{incident.reportReason}</p></section>
+        <section><h2 className="text-headline-md mb-4">Entrega afectada</h2><div className="grid gap-5 border border-[var(--color-outline-variant)] bg-[var(--color-surface-bright)] p-6 sm:grid-cols-2 lg:grid-cols-3"><Detail label="Productor" value={incident.target.producerBusinessName} /><Detail label="Subpedido" value={shortReference(incident.target.subOrderId)} /><Detail label="Estado actual" value={fulfillmentLabel(incident.target.fulfillmentStatus)} /><Detail label="Subtotal" value={formatMoney(incident.target.subtotal)} /><Detail label="Envío" value={formatMoney(incident.target.shippingCost)} /><Detail label="Modalidad" value={deliveryModeLabel(incident.target.deliveryModeType)} /><Detail label="Seguimiento" value={incident.target.trackingNumber ?? 'Aún no disponible'} /></div></section>
+        <section><h2 className="text-headline-md mb-4">Líneas registradas</h2><div className="divide-y divide-[var(--color-outline-variant)] border-y border-[var(--color-outline-variant)]">{incident.target.lines.map((line) => <div key={line.productId} className="grid gap-2 py-5 sm:grid-cols-[1fr_auto_auto] sm:items-center sm:gap-8"><div><p className="text-body-md font-semibold">Producto ref. {shortReference(line.productId)}</p><p className="text-label-sm text-[var(--color-outline)]">Cantidad: {line.quantity}</p></div><span>{formatMoney(line.unitPrice)} / ud.</span><strong>{formatMoneyFromCents(getIncidentLineTotalCents(line))}</strong></div>)}</div></section>
+        {incident.resolution ? <section className="border-l-4 border-green-700 bg-green-50 p-6"><h2 className="text-headline-md mb-4 text-green-900">Resolución registrada</h2><p className="text-body-md whitespace-pre-wrap leading-relaxed">{incident.resolution.reason}</p><dl className="mt-5 grid gap-3 sm:grid-cols-2"><Detail label="Fecha" value={formatDateTime(incident.resolution.resolvedAt)} /><Detail label="Administrador" value={shortReference(incident.resolution.resolvedById)} /></dl></section> : null}
+      </main>
+      <aside className="flex flex-col gap-6 lg:col-span-4"><section className="border border-[var(--color-outline-variant)] bg-[var(--color-surface-bright)] p-6"><h2 className="text-headline-md mb-5">Reportante</h2><Detail label="Nombre" value={incident.reporter.name ?? 'Sin nombre'} /><div className="mt-4"><Detail label="Correo" value={incident.reporter.email} /></div></section>{incident.status === 'OPEN' ? <button type="button" onClick={onResolve} className="text-label-md w-full bg-[var(--color-primary-container)] px-6 py-4 uppercase tracking-widest text-[var(--color-on-primary)] hover:bg-[var(--color-primary)]">Registrar resolución</button> : <p className="border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5 text-body-md text-[var(--color-on-surface-variant)]">Esta incidencia está resuelta y es de solo lectura.</p>}</aside>
+    </div>
+  </>
+}
+
+function StatusBadge({ status }: { status: 'OPEN' | 'RESOLVED' }) { return <span className={`text-label-sm w-fit rounded-full px-4 py-1.5 uppercase tracking-wide ${status === 'OPEN' ? 'bg-amber-100 text-amber-900' : 'bg-green-100 text-green-900'}`}>{status === 'OPEN' ? 'Abierta' : 'Resuelta'}</span> }
+function Detail({ label, value }: { label: string; value: string }) { return <div><p className="text-label-sm mb-1 uppercase tracking-wider text-[var(--color-outline)]">{label}</p><p className="text-body-md break-words text-[var(--color-on-surface)]">{value}</p></div> }
+function StatePanel({ message, error = false }: { message: string; error?: boolean }) { return <div role={error ? 'alert' : 'status'} className={`border p-10 text-center ${error ? 'border-[var(--color-error)] text-[var(--color-error)]' : 'border-dashed border-[var(--color-outline-variant)] text-[var(--color-outline)]'}`}>{message}</div> }
+function shortReference(value: string) { return value.length > 20 ? `${value.slice(0, 9)}...${value.slice(-7)}` : value }
+function formatDateTime(value: string) { return new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
+function fulfillmentLabel(value: string) { return ({ pending: 'Pendiente', preparing: 'En preparación', sent: 'En camino', delivered: 'Entregada', cancelled: 'Cancelada' } as Record<string, string>)[value] ?? value }
+function deliveryModeLabel(value: AdminIncidentDetail['target']['deliveryModeType']) { return ({ PERSONAL_DELIVERY: 'Entrega personal', PICKUP: 'Recogida', SHIPPING_FLAT_RATE: 'Envío' } as const)[value] }

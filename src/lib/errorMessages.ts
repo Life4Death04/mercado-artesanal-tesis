@@ -22,6 +22,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   // --- Validation / conflict ---
   VALIDATION_FAILED: 'Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo.',
   CONFLICT: 'Esta operación entra en conflicto con el estado actual. Recarga e inténtalo de nuevo.',
+  INCIDENT_ALREADY_RESOLVED: 'Esta incidencia ya fue resuelta. Se ha actualizado la información mostrada.',
   ROLE_ALREADY_SET: 'El rol de esta cuenta ya está asignado y no puede cambiarse.',
   NIF_ALREADY_REGISTERED: 'Este NIF ya está registrado en otro productor.',
   UNKNOWN_CATEGORY: 'Una o más categorías indicadas no existen.',
