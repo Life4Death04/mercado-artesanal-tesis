@@ -5,8 +5,11 @@ import { CancelarPedidoModal, DetallePedidoModal } from '../componentes/PedidosP
 import { usePedidosQuery } from '../pedidos/hooks/usePedidosQuery'
 import { useUpdateSubOrderStatusMutation } from '../pedidos/hooks/useUpdateSubOrderStatusMutation'
 import { useCancelSubOrderMutation } from '../pedidos/hooks/useCancelSubOrderMutation'
+import { useProductosQuery } from '../productos/hooks/useProductosQuery'
+import { resolveOrderProduct, type OrderProductCatalog } from '../pedidos/orderProductCatalog'
 import { resolveErrorMessage } from '../../../lib/errorMessages'
-import { formatMoney } from '../../../lib/formatMoney'
+import { formatMoneyFromCents } from '../../../lib/formatMoney'
+import { getSubOrderTotalCents } from '../pedidos/pedidos.money'
 import type { SubOrderListItemDTO, SubOrderStatus } from '../pedidos/pedidos.schema'
 
 // ---------------------------------------------------------------------------
@@ -55,8 +58,18 @@ export function PedidosProductorPage() {
 
   // Data layer — hooks only (no direct .api.ts imports in pages: spec R5)
   const { data: pedidos = [], isLoading, isError, error } = usePedidosQuery()
+  const {
+    data: productos,
+    isLoading: isCatalogLoading,
+    isError: isCatalogError,
+  } = useProductosQuery()
   const advanceMutation = useUpdateSubOrderStatusMutation()
   const cancelMutation = useCancelSubOrderMutation()
+  const productCatalog: OrderProductCatalog = isCatalogLoading
+    ? { status: 'loading' }
+    : isCatalogError || productos === undefined
+      ? { status: 'unavailable' }
+      : { status: 'ready', products: productos }
 
   // ---------------------------------------------------------------------------
   // Filtering (client-side for snappiness; backend filtering available via hook
@@ -69,7 +82,7 @@ export function PedidosProductorPage() {
     if (!normalizedSearch) return true
 
     const productSummary = pedido.orderLines
-      .map((line) => line.productName ?? '')
+      .map((line) => resolveOrderProduct(line.productId, productCatalog).name)
       .filter(Boolean)
       .join(', ')
 
@@ -307,6 +320,7 @@ export function PedidosProductorPage() {
             <OrderCard
               key={pedido.id}
               pedido={pedido}
+              productCatalog={productCatalog}
               onView={() => setSelectedPedidoId(pedido.id)}
             />
           ))}
@@ -362,6 +376,7 @@ export function PedidosProductorPage() {
       {selectedPedido && !cancelingPedido ? (
         <DetallePedidoModal
           pedido={selectedPedido}
+          productCatalog={productCatalog}
           isPending={advanceMutation.isPending || cancelMutation.isPending}
           mutationError={mutationError}
           onClose={() => {
@@ -391,24 +406,21 @@ export function PedidosProductorPage() {
 
 type OrderCardProps = {
   pedido: SubOrderListItemDTO
+  productCatalog: OrderProductCatalog
   onView: () => void
 }
 
-function OrderCard({ pedido, onView }: OrderCardProps) {
+function OrderCard({ pedido, productCatalog, onView }: OrderCardProps) {
   const isCancelled = pedido.status === 'cancelled'
 
   const productSummary = pedido.orderLines
     .map((line) => {
-      const name = line.productName ?? `Producto ${line.productId.slice(0, 6)}`
-      return `${name} (${line.quantity})`
+      const product = resolveOrderProduct(line.productId, productCatalog)
+      return `${product.name} (${line.quantity})`
     })
     .join(', ')
 
-  // money-typing R2-R4: total not computed client-side. The backend does not return
-  // a pre-computed total per SubOrder in the list endpoint; show shippingCostSnapshot
-  // as the only backend-provided money value. A backend-computed subtotal + total would
-  // require a detail fetch or a backend projection change (deferred).
-  const displayTotal = formatMoney(pedido.shippingCostSnapshot)
+  const displayTotal = formatMoneyFromCents(getSubOrderTotalCents(pedido))
 
   return (
     <article
@@ -478,10 +490,10 @@ function OrderCard({ pedido, onView }: OrderCardProps) {
         <div className="flex flex-row items-end justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] pt-5 lg:min-w-[152px] lg:flex-col lg:items-end lg:border-t-0 lg:pt-0">
           <div className="text-right">
             <p className={`text-headline-md ${isCancelled ? 'text-[var(--color-secondary)] line-through' : 'text-[var(--color-primary)]'}`}>
-              {displayTotal !== '—' ? `Envío: ${displayTotal}` : '—'}
+              {displayTotal}
             </p>
             <p className="text-label-sm mt-1 text-[var(--color-outline)]">
-              {pedido.orderLines.length} línea{pedido.orderLines.length !== 1 ? 's' : ''}
+              Total de este envío · {pedido.orderLines.length} línea{pedido.orderLines.length !== 1 ? 's' : ''}
             </p>
           </div>
           <span

@@ -4,6 +4,8 @@ import { useRevenueStatsQuery } from '../estadisticas/hooks/useRevenueStatsQuery
 import { useOrderCountStatsQuery } from '../estadisticas/hooks/useOrderCountStatsQuery'
 import { useLowStockStatsQuery } from '../estadisticas/hooks/useLowStockStatsQuery'
 import { usePedidosQuery } from '../pedidos/hooks/usePedidosQuery'
+import { useProductosQuery } from '../productos/hooks/useProductosQuery'
+import { resolveOrderProduct, type OrderProductCatalog } from '../pedidos/orderProductCatalog'
 import { formatMoney } from '../../../lib/formatMoney'
 import { resolveErrorMessage } from '../../../lib/errorMessages'
 
@@ -27,6 +29,16 @@ export function ProductorDashboardPage() {
     isError: pedidosError,
     error: pedidosErr,
   } = usePedidosQuery('pending')
+  const {
+    data: productos,
+    isLoading: isCatalogLoading,
+    isError: isCatalogError,
+  } = useProductosQuery()
+  const productCatalog: OrderProductCatalog = isCatalogLoading
+    ? { status: 'loading' }
+    : isCatalogError || productos === undefined
+      ? { status: 'unavailable' }
+      : { status: 'ready', products: productos }
 
   const isLoading = revLoading || countLoading || stockLoading || pedidosLoading
 
@@ -153,8 +165,8 @@ export function ProductorDashboardPage() {
               {pedidosPending.slice(0, 5).map((pedido) => {
                 const productSummary = pedido.orderLines
                   .map((line) => {
-                    const name = line.productName ?? `Producto ${line.productId.slice(0, 6)}`
-                    return `${name} (${line.quantity})`
+                    const product = resolveOrderProduct(line.productId, productCatalog)
+                    return `${product.name} (${line.quantity})`
                   })
                   .join(', ')
 
