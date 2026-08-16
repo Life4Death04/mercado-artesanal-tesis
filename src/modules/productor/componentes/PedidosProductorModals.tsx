@@ -1,7 +1,9 @@
-import { useState } from 'react'
-import { Check, CircleAlert, Info, Loader2, MapPin, Truck, X } from 'lucide-react'
-import { formatMoney } from '../../../lib/formatMoney'
+import { useState, type ReactNode } from 'react'
+import { Check, CircleAlert, Info, Loader2, MapPin, PackageOpen, Truck, X } from 'lucide-react'
+import { formatMoney, formatMoneyFromCents } from '../../../lib/formatMoney'
 import type { SubOrderListItemDTO, SubOrderStatus } from '../pedidos/pedidos.schema'
+import { resolveOrderProduct, type OrderProductCatalog } from '../pedidos/orderProductCatalog'
+import { getLinesSubtotalCents, getLineTotalCents, getSubOrderTotalCents } from '../pedidos/pedidos.money'
 
 // ---------------------------------------------------------------------------
 // Status display helpers
@@ -86,6 +88,7 @@ function ctaLabel(status: SubOrderStatus): string {
 
 type DetallePedidoModalProps = {
   pedido: SubOrderListItemDTO
+  productCatalog: OrderProductCatalog
   isPending: boolean
   mutationError: string | null
   onClose: () => void
@@ -95,6 +98,7 @@ type DetallePedidoModalProps = {
 
 export function DetallePedidoModal({
   pedido,
+  productCatalog,
   isPending,
   mutationError,
   onClose,
@@ -110,6 +114,8 @@ export function DetallePedidoModal({
     pedido.deliveryType === 'SHIPPING_FLAT_RATE'
   const hasValidTracking = trackingNumber.trim().length > 0
   const cta = ctaLabel(pedido.status)
+  const linesSubtotal = getLinesSubtotalCents(pedido.orderLines)
+  const shipmentTotal = getSubOrderTotalCents(pedido)
 
   function handleAdvance() {
     if (requiresTracking) {
@@ -221,62 +227,66 @@ export function DetallePedidoModal({
           {/* Product table */}
           <section className="space-y-4">
             <SectionTitle>Resumen de Productos</SectionTitle>
-            <div className="overflow-hidden border border-[var(--color-outline-variant)] bg-white/30">
-              <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto border border-[var(--color-outline-variant)] bg-white/30">
+              <table className="w-full min-w-[620px] text-left text-sm">
                 <thead className="bg-[var(--color-surface-container-low)] text-[11px] font-bold uppercase tracking-wider text-[var(--color-secondary)]">
                   <tr>
                     <th className="px-4 py-3">Producto</th>
                     <th className="px-4 py-3 text-center">Cant.</th>
                     <th className="px-4 py-3 text-right">Precio Un.</th>
+                    <th className="px-4 py-3 text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-outline-variant)]">
-                  {pedido.orderLines.map((line) => (
-                    <tr
-                      key={line.id}
-                      className="transition-colors hover:bg-[var(--color-surface-container-lowest)]"
-                    >
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          {line.productImageUrl ? (
-                            <div
-                              className="size-10 flex-shrink-0 rounded-sm bg-cover bg-center bg-[var(--color-surface-container-high)]"
-                              style={{ backgroundImage: `url('${line.productImageUrl}')` }}
-                            />
-                          ) : (
-                            <div className="size-10 flex-shrink-0 rounded-sm bg-[var(--color-surface-container-high)]" />
-                          )}
-                          <span className="font-medium text-[var(--color-on-surface)]">
-                            {line.productName ?? `Producto ${line.productId.slice(0, 8)}`}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-center">{line.quantity}</td>
-                      {/* money-typing R2-R4: display backend decimal string via formatMoney */}
-                      <td className="px-4 py-4 text-right">{formatMoney(line.unitPriceSnapshot)}</td>
-                    </tr>
-                  ))}
+                  {pedido.orderLines.map((line, index) => {
+                    const product = resolveOrderProduct(line.productId, productCatalog)
+
+                    return (
+                      <tr
+                        key={`${line.productId}-${index}`}
+                        className="transition-colors hover:bg-[var(--color-surface-container-lowest)]"
+                      >
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            {product.imageUrl ? (
+                              <img src={product.imageUrl} alt="" className="size-10 flex-shrink-0 rounded-sm object-cover" />
+                            ) : (
+                              <span role="img" aria-label="Imagen de producto no disponible" className="flex size-10 flex-shrink-0 items-center justify-center rounded-sm bg-[var(--color-surface-container-high)] text-[var(--color-outline)]">
+                                <PackageOpen size={18} strokeWidth={1.5} />
+                              </span>
+                            )}
+                            <span aria-live="polite" className="font-medium text-[var(--color-on-surface)]">
+                              {product.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-center">{line.quantity}</td>
+                        {/* money-typing R2-R4: display backend decimal string via formatMoney */}
+                        <td className="px-4 py-4 text-right">{formatMoney(line.unitPriceSnapshot)}</td>
+                        <td className="px-4 py-4 text-right font-semibold">{formatMoneyFromCents(getLineTotalCents(line))}</td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
           </section>
 
-          {/* Totals — only backend-provided money values shown */}
+          {/* Totals for this producer-owned shipment only. */}
           <section className="flex justify-end">
             <div className="w-full max-w-64 space-y-3">
+              <div className="flex justify-between text-sm text-[var(--color-secondary)]">
+                <span>Total de líneas</span>
+                <span>{formatMoneyFromCents(linesSubtotal)}</span>
+              </div>
               <div className="flex justify-between text-sm text-[var(--color-secondary)]">
                 <span>Gastos de envío</span>
                 {/* money-typing R2-R4: shippingCostSnapshot is Decimal string from backend */}
                 <span>{formatMoney(pedido.shippingCostSnapshot)}</span>
               </div>
               <div className="flex items-baseline justify-between border-t border-[var(--color-outline)] pt-3">
-                <span className="font-bold text-[var(--color-on-surface)]">Total de líneas</span>
-                {/*
-                  money-typing R2: client MUST NOT compute totals by summing unit prices.
-                  The backend does not return a per-SubOrder total in Cycle 2; show '—' until
-                  the backend projects a computed total field.
-                */}
-                <span className="text-headline-md text-2xl font-bold text-[var(--color-primary)]">—</span>
+                <span className="font-bold text-[var(--color-on-surface)]">Total de este envío</span>
+                <span className="text-headline-md text-2xl font-bold text-[var(--color-primary)]">{formatMoneyFromCents(shipmentTotal)}</span>
               </div>
             </div>
           </section>
@@ -455,7 +465,7 @@ export function CancelarPedidoModal({ pedido, isPending, onClose, onConfirm }: C
 // Shared sub-components
 // ---------------------------------------------------------------------------
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({ children }: { children: ReactNode }) {
   return (
     <h3 className="text-label-md border-b border-[var(--color-outline-variant)] pb-2 text-[11px] uppercase tracking-widest text-[var(--color-secondary)]">
       {children}
