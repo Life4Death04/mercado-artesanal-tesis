@@ -130,14 +130,48 @@ function mapRawToSubOrderDetail(raw: RawSubOrder): SubOrderDTO {
  * Endpoint: GET /api/v1/producers/me/sub-orders[?status=<value>]
  * Edge-parses SubOrderStatus on every item to guard control-flow branches (spec R6).
  */
+export async function listPedidosPage(
+  apiCaller: ApiCaller,
+  filter?: { status?: SubOrderStatus; page?: number; limit?: number },
+): Promise<SubOrderListItemDTO[]> {
+  const params = new URLSearchParams()
+  if (filter?.status) params.set('status', filter.status)
+  if (filter?.page) params.set('page', String(filter.page))
+  if (filter?.limit) params.set('limit', String(filter.limit))
+  const qs = params.size > 0 ? `?${params.toString()}` : ''
+  const raw = await apiCaller<RawSubOrder[]>(`${pedidosEndpoints.list}${qs}`)
+
+  return raw.map(mapRawToSubOrder)
+}
+
+const ALL_PEDIDOS_PAGE_SIZE = 20
+const ALL_PEDIDOS_MAX_PAGES = 100
+
 export async function listPedidos(
   apiCaller: ApiCaller,
   filter?: { status?: SubOrderStatus },
 ): Promise<SubOrderListItemDTO[]> {
-  const qs = filter?.status ? `?status=${encodeURIComponent(filter.status)}` : ''
-  const raw = await apiCaller<RawSubOrder[]>(`${pedidosEndpoints.list}${qs}`)
+  const byId = new Map<string, SubOrderListItemDTO>()
+  let completed = false
 
-  return raw.map(mapRawToSubOrder)
+  for (let page = 1; page <= ALL_PEDIDOS_MAX_PAGES; page += 1) {
+    const items = await listPedidosPage(apiCaller, {
+      ...filter,
+      page,
+      limit: ALL_PEDIDOS_PAGE_SIZE,
+    })
+    const previousSize = byId.size
+    items.forEach((item) => byId.set(item.id, item))
+
+    if (items.length < ALL_PEDIDOS_PAGE_SIZE) {
+      completed = true
+      break
+    }
+    if (byId.size === previousSize) throw new Error('La paginación de pedidos devolvió una página repetida.')
+  }
+
+  if (!completed) throw new Error('La lista de pedidos superó el límite seguro de paginación.')
+  return [...byId.values()]
 }
 
 /**
