@@ -11,6 +11,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
   UNAUTHORIZED: 'Tu sesión ha expirado. Inicia sesión de nuevo para continuar.',
   FORBIDDEN: 'No tienes permiso para realizar esta acción.',
   ONBOARDING_REQUIRED: 'Debes completar el registro antes de continuar.',
+  ACCOUNT_INACTIVE: 'Esta cuenta está desactivada. Actívala para restablecer su acceso.',
+  ACCOUNT_DELETED: 'Esta cuenta ha sido eliminada y ya no admite cambios.',
 
   // --- Resource not found ---
   NOT_FOUND: 'No encontramos el recurso solicitado.',
@@ -22,6 +24,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   // --- Validation / conflict ---
   VALIDATION_FAILED: 'Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo.',
   CONFLICT: 'Esta operación entra en conflicto con el estado actual. Recarga e inténtalo de nuevo.',
+  INCIDENT_ALREADY_RESOLVED: 'Esta incidencia ya fue resuelta. Se ha actualizado la información mostrada.',
   ROLE_ALREADY_SET: 'El rol de esta cuenta ya está asignado y no puede cambiarse.',
   NIF_ALREADY_REGISTERED: 'Este NIF ya está registrado en otro productor.',
   UNKNOWN_CATEGORY: 'Una o más categorías indicadas no existen.',
@@ -37,6 +40,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   PAYMENT_INTENT_CREATION_FAILED: 'No se pudo preparar el pago. Revisa tu carrito e inténtalo de nuevo.',
   PRODUCT_HAS_ACTIVE_ORDERS: 'Este producto tiene pedidos activos y no puede modificarse ahora.',
   PRODUCER_HAS_ACTIVE_ORDERS: 'Tu cuenta tiene pedidos activos. Resuélvelos antes de continuar.',
+  USER_HAS_ACTIVE_ORDERS: 'No puedes eliminar esta cuenta mientras tenga pedidos activos.',
 
   // --- Upload / media ---
   IMAGE_UPLOAD_INVALID: 'El archivo de imagen no es válido. Usa JPG, PNG o WebP de menos de 5 MB.',

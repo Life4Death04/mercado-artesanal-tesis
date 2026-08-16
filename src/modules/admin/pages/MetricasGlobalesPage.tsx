@@ -1,336 +1,195 @@
-import { useState } from 'react'
-import { AlertTriangle, CheckCircle, ChevronDown, TrendingUp, Users } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+import { AlertTriangle, CalendarDays, CheckCircle, ChevronDown, Clock3, Loader2 } from 'lucide-react'
+import { resolveErrorMessage } from '../../../lib/errorMessages'
 import { SeleccionPeriodoModal } from '../../productor/componentes/SeleccionPeriodoModal'
+import { useAdminCategoriesQuery } from '../catalogo/hooks/useAdminCategories'
+import { useAdminMetricsIncidentsQuery } from '../metricas/hooks/useAdminMetricsIncidentsQuery'
 
-type Periodo = 'Semana' | 'Mes' | 'Trimestre' | 'Rango personalizado'
+type Period = '7d' | '30d' | '90d' | 'custom'
 
-type Kpi = {
-  label: string
-  value: string
-  detail: string
+const PERIODS: Array<{ value: Period; label: string }> = [
+  { value: '7d', label: '7 días' },
+  { value: '30d', label: '30 días' },
+  { value: '90d', label: '90 días' },
+  { value: 'custom', label: 'Rango personalizado' },
+]
+
+const PERIOD_DAYS: Record<Exclude<Period, 'custom'>, number> = {
+  '7d': 7,
+  '30d': 30,
+  '90d': 90,
 }
 
-type CategoryMetric = {
-  name: string
-  percent: number
+function startOfDay(date: Date) {
+  const value = new Date(date)
+  value.setHours(0, 0, 0, 0)
+  return value
 }
 
-type ProducerMetric = {
-  name: string
-  orders: number
-  volume: string
-  status: 'Activo' | 'Observación'
+function endOfDay(date: Date) {
+  const value = new Date(date)
+  value.setHours(23, 59, 59, 999)
+  return value
 }
 
-type MetricsDataset = {
-  subtitle: string
-  kpis: Kpi[]
-  categories: CategoryMetric[]
-  incidents: {
-    registered: number
-    resolved: number
-    pending: number
-  }
-  producers: ProducerMetric[]
+function rollingStart(days: number, end: Date) {
+  const start = new Date(end)
+  start.setDate(start.getDate() - days)
+  return start
 }
 
-const periods: Periodo[] = ['Semana', 'Mes', 'Trimestre', 'Rango personalizado']
-
-const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
-
-function formatRangeDate(date: Date) {
-  return `${date.getDate()} ${MESES_CORTOS[date.getMonth()]} ${date.getFullYear()}`
-}
-
-const datasets: Record<Periodo, MetricsDataset> = {
-  Semana: {
-    subtitle: 'Semana actual: 25–31 Mayo 2026',
-    kpis: [
-      { label: 'Usuarios registrados', value: '124', detail: '82 Clientes / 42 Productores' },
-      { label: 'Productores activos', value: '58', detail: 'Con actividad entre el 25 y 31 de mayo' },
-      { label: 'Pedidos procesados', value: '96', detail: 'Pedidos cerrados durante la semana' },
-      { label: 'Volumen de transacciones', value: '€ 6.480', detail: 'Ventas totales brutas' },
-      { label: 'Nuevos registros', value: '27', detail: '+9% frente a la semana anterior' },
-      { label: 'Tasa de resolución', value: '76%', detail: 'Incidencias resueltas en el período' },
-    ],
-    categories: [
-      { name: 'Aceites', percent: 38 },
-      { name: 'Quesos', percent: 26 },
-      { name: 'Vinos', percent: 18 },
-      { name: 'Dulces', percent: 11 },
-      { name: 'Mieles', percent: 7 },
-    ],
-    incidents: { registered: 7, resolved: 5, pending: 2 },
-    producers: [
-      { name: 'Finca El Olivar', orders: 18, volume: '€ 1.240', status: 'Activo' },
-      { name: 'Bodegas del Sol', orders: 14, volume: '€ 980', status: 'Activo' },
-      { name: 'Quesos de Montaña', orders: 11, volume: '€ 740', status: 'Activo' },
-      { name: 'Miel de Guadalest', orders: 8, volume: '€ 430', status: 'Observación' },
-    ],
-  },
-  Mes: {
-    subtitle: 'Mes actual: Mayo 2026',
-    kpis: [
-      { label: 'Usuarios registrados', value: '1.482', detail: '1.026 Clientes / 456 Productores' },
-      { label: 'Productores activos', value: '112', detail: 'Con al menos un producto publicado' },
-      { label: 'Pedidos procesados', value: '538', detail: 'En el periodo seleccionado' },
-      { label: 'Volumen de transacciones', value: '€ 31.850', detail: 'Ventas totales brutas' },
-      { label: 'Nuevos registros', value: '168', detail: '+10% respecto a abril de 2026' },
-      { label: 'Tasa de resolución', value: '71%', detail: 'Incidencias resueltas este mes' },
-    ],
-    categories: [
-      { name: 'Aceites', percent: 45 },
-      { name: 'Quesos', percent: 30 },
-      { name: 'Vinos', percent: 15 },
-      { name: 'Embutidos', percent: 10 },
-      { name: 'Dulces', percent: 8 },
-    ],
-    incidents: { registered: 12, resolved: 8, pending: 4 },
-    producers: [
-      { name: 'Finca El Olivar', orders: 82, volume: '€ 5.420', status: 'Activo' },
-      { name: 'Bodegas del Sol', orders: 71, volume: '€ 4.980', status: 'Activo' },
-      { name: 'Aceites Benitatxell', orders: 54, volume: '€ 3.610', status: 'Activo' },
-      { name: 'Dulces Artesanos', orders: 37, volume: '€ 2.150', status: 'Observación' },
-    ],
-  },
-  Trimestre: {
-    subtitle: 'Trimestre actual: Marzo–Mayo 2026',
-    kpis: [
-      { label: 'Usuarios registrados', value: '4.260', detail: '3.040 Clientes / 1.220 Productores' },
-      { label: 'Productores activos', value: '246', detail: 'Con ventas o catálogo activo' },
-      { label: 'Pedidos procesados', value: '1.534', detail: 'Pedidos cerrados entre marzo y mayo' },
-      { label: 'Volumen de transacciones', value: '€ 96.400', detail: 'Ventas totales brutas' },
-      { label: 'Nuevos registros', value: '512', detail: '+16% frente al trimestre anterior' },
-      { label: 'Tasa de resolución', value: '78%', detail: 'Incidencias resueltas en menos de 72h' },
-    ],
-    categories: [
-      { name: 'Aceites', percent: 41 },
-      { name: 'Vinos', percent: 25 },
-      { name: 'Quesos', percent: 21 },
-      { name: 'Conservas', percent: 9 },
-      { name: 'Frutos Secos', percent: 4 },
-    ],
-    incidents: { registered: 48, resolved: 36, pending: 12 },
-    producers: [
-      { name: 'Bodegas del Sol', orders: 248, volume: '€ 18.200', status: 'Activo' },
-      { name: 'Finca El Olivar', orders: 221, volume: '€ 15.780', status: 'Activo' },
-      { name: 'Vinos El Mediterráneo', orders: 196, volume: '€ 13.450', status: 'Activo' },
-      { name: 'Quesos de Montaña', orders: 143, volume: '€ 8.310', status: 'Observación' },
-    ],
-  },
-  'Rango personalizado': {
-    subtitle: 'Rango personalizado: 01 Marzo–31 Mayo 2026',
-    kpis: [
-      { label: 'Usuarios registrados', value: '2.040', detail: '1.436 Clientes / 604 Productores' },
-      { label: 'Productores activos', value: '154', detail: 'Actividad detectada en el rango' },
-      { label: 'Pedidos procesados', value: '742', detail: 'Pedidos cerrados en el rango' },
-      { label: 'Volumen de transacciones', value: '€ 46.950', detail: 'Ventas totales brutas' },
-      { label: 'Nuevos registros', value: '286', detail: 'Altas registradas durante el rango' },
-      { label: 'Tasa de resolución', value: '73%', detail: 'Incidencias resueltas en el rango' },
-    ],
-    categories: [
-      { name: 'Aceites', percent: 43 },
-      { name: 'Quesos', percent: 27 },
-      { name: 'Vinos', percent: 19 },
-      { name: 'Dulces', percent: 7 },
-      { name: 'Embutidos', percent: 4 },
-    ],
-    incidents: { registered: 21, resolved: 14, pending: 7 },
-    producers: [
-      { name: 'Finca El Olivar', orders: 126, volume: '€ 8.750', status: 'Activo' },
-      { name: 'Bodegas del Sol', orders: 118, volume: '€ 8.100', status: 'Activo' },
-      { name: 'Aceites Benitatxell', orders: 73, volume: '€ 4.930', status: 'Activo' },
-      { name: 'Miel de Guadalest', orders: 44, volume: '€ 2.490', status: 'Observación' },
-    ],
-  },
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).format(date)
 }
 
 export function MetricasGlobalesPage() {
-  const [periodo, setPeriodo] = useState<Periodo>('Mes')
-  const [showPeriodoModal, setShowPeriodoModal] = useState(false)
-  const [customStart, setCustomStart] = useState(new Date(2026, 2, 1))
-  const [customEnd, setCustomEnd] = useState(new Date(2026, 4, 31))
+  const [referenceNow] = useState(() => new Date())
+  const [period, setPeriod] = useState<Period>('30d')
+  const [showPeriodModal, setShowPeriodModal] = useState(false)
+  const [customStart, setCustomStart] = useState(() => startOfDay(rollingStart(30, referenceNow)))
+  const [customEnd, setCustomEnd] = useState(() => endOfDay(referenceNow))
+  const incidentsQuery = useAdminMetricsIncidentsQuery()
+  const categoriesQuery = useAdminCategoriesQuery()
 
-  const data = periodo === 'Rango personalizado'
-    ? {
-        ...datasets[periodo],
-        subtitle: `Rango personalizado: ${formatRangeDate(customStart)} — ${formatRangeDate(customEnd)}`,
-      }
-    : datasets[periodo]
+  const rangeEnd = period === 'custom' ? endOfDay(customEnd) : referenceNow
+  const rangeStart = period === 'custom' ? startOfDay(customStart) : rollingStart(PERIOD_DAYS[period], rangeEnd)
+  const incidents = (incidentsQuery.data ?? []).filter((incident) => {
+    const createdAt = new Date(incident.createdAt).getTime()
+    return Number.isFinite(createdAt) && createdAt >= rangeStart.getTime() && createdAt <= rangeEnd.getTime()
+  })
+  const resolved = incidents.filter((incident) => incident.status === 'RESOLVED')
+  const open = incidents.filter((incident) => incident.status === 'OPEN')
+  const resolutionRate = incidents.length > 0 ? Math.round((resolved.length * 100) / incidents.length) : null
+
+  const categories = [...(categoriesQuery.data ?? [])]
+    .filter((category) => category.productCount > 0)
+    .sort((a, b) => b.productCount - a.productCount || a.name.localeCompare(b.name))
+  const catalogTotal = categories.reduce((total, category) => total + category.productCount, 0)
 
   return (
     <div className="mx-[var(--space-margin-mobile)] max-w-[var(--layout-container-max)] md:mx-0">
       <header className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-display-lg mb-2 max-w-2xl text-[var(--color-on-surface)]">
-            Métricas globales del sistema
-          </h2>
-          <p className="text-body-lg text-[var(--color-secondary)]">{data.subtitle}</p>
+          <h2 className="text-display-lg mb-2 max-w-2xl text-[var(--color-on-surface)]">Métricas globales del sistema</h2>
+          <p className="text-body-lg text-[var(--color-secondary)]">
+            Incidencias creadas entre {formatDate(rangeStart)} y {formatDate(rangeEnd)}, límites incluidos.
+          </p>
         </div>
-
         <div className="inline-flex w-full max-w-full flex-wrap border border-[color-mix(in_srgb,var(--color-outline-variant)_55%,transparent)] bg-[var(--color-surface-container-low)] p-1 sm:w-auto">
-          {periods.map((period) => (
+          {PERIODS.map(({ value, label }) => (
             <button
-              key={period}
+              key={value}
               type="button"
               onClick={() => {
-                if (period === 'Rango personalizado') {
-                  setShowPeriodoModal(true)
+                if (value === 'custom') {
+                  setShowPeriodModal(true)
                   return
                 }
-                setPeriodo(period)
+                setPeriod(value)
               }}
-              className={`text-label-md flex items-center gap-1 px-4 py-3 transition-colors ${
-                period === periodo
-                  ? 'bg-[var(--color-primary-container)] text-[var(--color-on-primary)] shadow-sm'
-                  : 'text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)]'
-              }`}
+              className={`text-label-md flex items-center gap-1 px-4 py-3 transition-colors ${period === value ? 'bg-[var(--color-primary-container)] text-[var(--color-on-primary)] shadow-sm' : 'text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)]'}`}
             >
-              {period}
-              {period === 'Rango personalizado' && <ChevronDown size={16} strokeWidth={1.8} />}
+              {label}
+              {value === 'custom' ? <ChevronDown size={16} strokeWidth={1.8} /> : null}
             </button>
           ))}
         </div>
       </header>
 
-      <section className="mb-20 grid grid-cols-1 gap-[var(--space-gutter)] md:grid-cols-2 xl:grid-cols-3">
-        {data.kpis.map((kpi) => (
-          <article
-            key={kpi.label}
-            className="flex min-h-40 flex-col justify-between rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] bg-[var(--color-surface-container-low)] p-6"
-          >
-            <div>
-              <p className="text-label-md mb-3 text-[var(--color-secondary)]">{kpi.label}</p>
-              <p className="text-headline-md text-[var(--color-on-surface)]">{kpi.value}</p>
-            </div>
-            <p className="text-label-sm mt-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] pt-4 text-[var(--color-on-surface-variant)]">
-              {kpi.detail}
-            </p>
-          </article>
-        ))}
-      </section>
-
-      <section className="grid grid-cols-1 gap-[var(--space-gutter)] xl:grid-cols-12">
-        <article className="rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] bg-[var(--color-surface-container-low)] p-8 xl:col-span-8">
-          <h3 className="text-headline-lg mb-8 border-b border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] pb-4 text-[var(--color-primary)]">
-            Categorías más vendidas
-          </h3>
-          <div className="space-y-8">
-            {data.categories.map((category) => (
-              <div key={category.name} className="grid grid-cols-[7rem_1fr_3rem] items-center gap-4 sm:grid-cols-[8rem_1fr_4rem]">
-                <span className="text-label-md truncate text-[var(--color-on-surface)]">{category.name}</span>
-                <span className="h-2 overflow-hidden rounded-full bg-[var(--color-surface-container-highest)]">
-                  <span
-                    className="block h-full rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_70%,var(--color-on-surface))]"
-                    style={{ width: `${category.percent}%` }}
-                  />
-                </span>
-                <span className="text-body-md text-right text-[var(--color-secondary)]">{category.percent}%</span>
-              </div>
-            ))}
+      <section className="mb-12" aria-labelledby="incidents-heading">
+        <div className="mb-6 flex items-center gap-3">
+          <CalendarDays size={22} strokeWidth={1.8} className="text-[var(--color-primary)]" />
+          <div>
+            <h3 id="incidents-heading" className="text-headline-lg text-[var(--color-primary)]">Incidencias del período</h3>
+            <p className="text-body-md mt-1 text-[var(--color-secondary)]">Estado actual de las incidencias creadas dentro del rango seleccionado.</p>
           </div>
-        </article>
-
-        <article className="flex flex-col rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] bg-[var(--color-surface-container-low)] p-8 xl:col-span-4">
-          <h3 className="text-headline-lg mb-8 border-b border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] pb-4 text-[var(--color-primary)]">
-            Incidencias del período
-          </h3>
-          <div className="flex flex-1 flex-col justify-center gap-6">
-            <MetricRow icon={<AlertTriangle size={22} strokeWidth={1.8} />} label="Registradas" value={data.incidents.registered} tone="primary" />
-            <MetricRow icon={<CheckCircle size={22} strokeWidth={1.8} />} label="Resueltas" value={data.incidents.resolved} />
-            <MetricRow icon={<TrendingUp size={22} strokeWidth={1.8} />} label="Pendientes" value={data.incidents.pending} tone="secondary" />
+        </div>
+        {incidentsQuery.isLoading ? (
+          <LoadingState label="Cargando incidencias..." />
+        ) : incidentsQuery.isError ? (
+          <ErrorState message={resolveErrorMessage(incidentsQuery.error)} />
+        ) : incidents.length === 0 ? (
+          <EmptyState message="No se registraron incidencias en este período." />
+        ) : (
+          <div className="grid grid-cols-1 gap-[var(--space-gutter)] sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard icon={<AlertTriangle size={22} strokeWidth={1.8} />} label="Registradas" value={String(incidents.length)} detail="Creadas dentro del período" />
+            <MetricCard icon={<Clock3 size={22} strokeWidth={1.8} />} label="Abiertas" value={String(open.length)} detail="Estado actual: OPEN" />
+            <MetricCard icon={<CheckCircle size={22} strokeWidth={1.8} />} label="Resueltas" value={String(resolved.length)} detail="Estado actual: RESOLVED" />
+            <MetricCard icon={<CheckCircle size={22} strokeWidth={1.8} />} label="Tasa de resolución" value={resolutionRate === null ? '—' : `${resolutionRate}%`} detail="Resueltas / registradas en el período" />
           </div>
-        </article>
+        )}
       </section>
 
-      <section className="mt-[var(--space-gutter)] rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] bg-[var(--color-surface-container-low)] p-8">
-        <div className="mb-8 flex items-center justify-between gap-4 border-b border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] pb-4">
-          <h3 className="text-headline-lg text-[var(--color-primary)]">Productores destacados</h3>
-          <Users size={22} strokeWidth={1.8} className="text-[var(--color-secondary)]" />
+      <section className="rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] bg-[var(--color-surface-container-low)] p-6 md:p-8" aria-labelledby="catalog-heading">
+        <div className="mb-8 border-b border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] pb-4">
+          <h3 id="catalog-heading" className="text-headline-lg text-[var(--color-primary)]">Distribución del catálogo</h3>
+          <p className="text-body-md mt-2 text-[var(--color-secondary)]">Productos activos actuales por categoría. Esta distribución no representa ventas.</p>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)]">
-                <TableHead>Productor</TableHead>
-                <TableHead>Pedidos</TableHead>
-                <TableHead>Volumen</TableHead>
-                <TableHead>Estado</TableHead>
-              </tr>
-            </thead>
-            <tbody>
-              {data.producers.map((producer) => (
-                <tr key={producer.name} className="border-b border-[color-mix(in_srgb,var(--color-on-surface)_10%,transparent)] last:border-b-0">
-                  <td className="px-4 py-5 text-body-md font-medium text-[var(--color-on-surface)]">{producer.name}</td>
-                  <td className="px-4 py-5 text-body-md text-[var(--color-secondary)]">{producer.orders}</td>
-                  <td className="px-4 py-5 text-body-md font-semibold text-[var(--color-on-surface)]">{producer.volume}</td>
-                  <td className="px-4 py-5">
-                    <span
-                      className={`text-label-sm rounded-full px-3 py-1 ${
-                        producer.status === 'Activo'
-                          ? 'bg-[#e8f5e9] text-[#2e7d32]'
-                          : 'bg-[var(--color-error-container)] text-[var(--color-on-error-container)]'
-                      }`}
-                    >
-                      {producer.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {categoriesQuery.isLoading ? (
+          <LoadingState label="Cargando categorías..." />
+        ) : categoriesQuery.isError ? (
+          <ErrorState message={resolveErrorMessage(categoriesQuery.error)} />
+        ) : categories.length === 0 || catalogTotal === 0 ? (
+          <EmptyState message="No hay productos activos distribuidos por categoría." />
+        ) : (
+          <div className="space-y-7">
+            {categories.map((category) => {
+              const percent = Math.round((category.productCount * 100) / catalogTotal)
+              return (
+                <div key={category.id} className="grid grid-cols-[minmax(6rem,10rem)_1fr_5.5rem] items-center gap-4">
+                  <span className="text-label-md truncate text-[var(--color-on-surface)]">{category.name}</span>
+                  <span className="h-2 overflow-hidden rounded-full bg-[var(--color-surface-container-highest)]">
+                    <span className="block h-full rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_70%,var(--color-on-surface))]" style={{ width: `${percent}%` }} />
+                  </span>
+                  <span className="text-body-md text-right text-[var(--color-secondary)]">{category.productCount} prod.</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </section>
 
-      {showPeriodoModal && (
+      {/* <aside className="text-body-md mt-[var(--space-gutter)] border-l-4 border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5 text-[var(--color-on-surface-variant)]">
+        Las métricas de usuarios, productores activos, pedidos globales, volumen de transacciones y rankings comerciales no están disponibles porque el backend no expone contratos estables para esos datos.
+      </aside> */}
+
+      {showPeriodModal ? (
         <SeleccionPeriodoModal
           initialStart={customStart}
           initialEnd={customEnd}
-          onClose={() => setShowPeriodoModal(false)}
+          onClose={() => setShowPeriodModal(false)}
           onApply={(start, end) => {
-            setCustomStart(start)
-            setCustomEnd(end)
-            setPeriodo('Rango personalizado')
+            setCustomStart(startOfDay(start))
+            setCustomEnd(endOfDay(end))
+            setPeriod('custom')
+            setShowPeriodModal(false)
           }}
         />
-      )}
+      ) : null}
     </div>
   )
 }
 
-function MetricRow({
-  icon,
-  label,
-  value,
-  tone = 'default',
-}: {
-  icon: React.ReactNode
-  label: string
-  value: number
-  tone?: 'default' | 'primary' | 'secondary'
-}) {
-  const valueClass = {
-    default: 'text-[var(--color-on-surface)]',
-    primary: 'text-[var(--color-primary)]',
-    secondary: 'text-[var(--color-secondary)]',
-  }[tone]
-
+function MetricCard({ icon, label, value, detail }: { icon: ReactNode; label: string; value: string; detail: string }) {
   return (
-    <div className="flex items-center justify-between bg-[var(--color-surface-bright)] p-4">
-      <div className="flex items-center gap-3 text-[var(--color-secondary)]">
-        {icon}
-        <span className="text-body-md text-[var(--color-on-surface)]">{label}</span>
+    <article className="flex min-h-40 flex-col justify-between rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-outline-variant)_35%,transparent)] bg-[var(--color-surface-container-low)] p-6">
+      <div>
+        <div className="mb-3 flex items-center justify-between gap-3 text-[var(--color-secondary)]"><p className="text-label-md">{label}</p>{icon}</div>
+        <p className="text-headline-md text-[var(--color-on-surface)]">{value}</p>
       </div>
-      <span className={`text-headline-md ${valueClass}`}>{value}</span>
-    </div>
+      <p className="text-label-sm mt-4 border-t border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] pt-4 text-[var(--color-on-surface-variant)]">{detail}</p>
+    </article>
   )
 }
 
-function TableHead({ children }: { children: string }) {
-  return (
-    <th className="text-label-md px-4 py-4 uppercase tracking-wider text-[var(--color-secondary)]">
-      {children}
-    </th>
-  )
+function LoadingState({ label }: { label: string }) {
+  return <div className="flex min-h-36 items-center justify-center gap-3 border border-[var(--color-outline-variant)] text-[var(--color-secondary)]"><Loader2 className="animate-spin" size={22} /><span>{label}</span></div>
+}
+
+function ErrorState({ message }: { message: string }) {
+  return <div role="alert" className="border border-[var(--color-error)] bg-[var(--color-error-container)] p-6 text-[var(--color-on-error-container)]">{message}</div>
+}
+
+function EmptyState({ message }: { message: string }) {
+  return <div className="border border-dashed border-[var(--color-outline-variant)] p-10 text-center text-[var(--color-on-surface-variant)]">{message}</div>
 }

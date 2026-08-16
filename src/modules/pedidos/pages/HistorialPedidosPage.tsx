@@ -32,6 +32,8 @@ export type ConsumerSubOrder = {
   shipping: string
   total: string
   incidentId?: string
+  canReportIncident: boolean
+  reportIncidentUnavailableReason: string | null
   products: ConsumerOrderProduct[]
 }
 
@@ -74,7 +76,8 @@ export function HistorialPedidosPage() {
   const requestedOrderId = searchParams.get('orderId')
   const selectedOrderId = requestedOrderId && orderIdSchema.safeParse(requestedOrderId).success ? requestedOrderId : null
   const hasMalformedOrderId = requestedOrderId !== null && selectedOrderId === null
-  const [reportPedidoLabel, setReportPedidoLabel] = useState<string | null>(null)
+  const [reportSubOrder, setReportSubOrder] = useState<ConsumerSubOrder | null>(null)
+  const [incidentSuccess, setIncidentSuccess] = useState<string | null>(null)
 
   const ordersQuery = useConsumerOrdersQuery()
   const detailQuery = useConsumerOrderQuery(selectedOrderId)
@@ -235,7 +238,10 @@ export function HistorialPedidosPage() {
         <OrderDetailModal
           order={selectedOrder}
           onClose={() => selectOrder(null)}
-          onReport={(subOrder) => setReportPedidoLabel(`Pedido ${selectedOrder.id} · ${subOrder.producer}`)}
+           onReport={(subOrder) => {
+             setIncidentSuccess(null)
+             setReportSubOrder(subOrder)
+           }}
           onCancel={selectedOrder.status === 'Pendiente' ? () => cancelOrder(selectedOrder.id) : undefined}
           isCancelling={cancelMutation.variables === selectedOrder.id && cancelMutation.isPending}
           cancelError={cancelMutation.variables === selectedOrder.id && cancelMutation.isError ? resolveErrorMessage(cancelMutation.error) : null}
@@ -245,7 +251,14 @@ export function HistorialPedidosPage() {
       {selectedOrderId && detailQuery.isLoading ? <p className="sr-only" aria-live="polite">Cargando detalle del pedido...</p> : null}
       {hasMalformedOrderId || (selectedOrderId !== null && detailQuery.isError) ? <div role="alert" className="fixed inset-x-4 bottom-6 z-50 mx-auto max-w-xl border border-[var(--color-error)] bg-white p-4 text-[var(--color-error)]">No pudimos abrir este pedido. Vuelve al historial para continuar de forma segura.</div> : null}
 
-      {reportPedidoLabel ? <ReportarIncidenciaModal initialPedidoLabel={reportPedidoLabel} onClose={() => setReportPedidoLabel(null)} /> : null}
+      {reportSubOrder ? (
+        <ReportarIncidenciaModal
+          subOrderId={reportSubOrder.id}
+          onClose={() => setReportSubOrder(null)}
+          onCreated={(incidentId) => setIncidentSuccess(`La incidencia ${incidentId} se creó correctamente.`)}
+        />
+      ) : null}
+      {incidentSuccess ? <div role="status" aria-live="polite" className="fixed inset-x-4 bottom-6 z-[60] mx-auto flex max-w-xl items-center justify-between gap-4 border border-green-700 bg-green-50 p-4 text-green-900 shadow-lg"><span>{incidentSuccess}</span><button type="button" onClick={() => setIncidentSuccess(null)} className="text-label-sm underline">Cerrar</button></div> : null}
     </div>
   )
 }
@@ -274,6 +287,12 @@ function toOrderDetailView(order: ConsumerOrderResponse): ConsumerOrder {
       subtotal: '',
       shipping: formatAmount(subOrder.shippingCostSnapshot),
       total: '',
+      canReportIncident: order.payment.status === 'SUCCEEDED' && subOrder.status !== 'cancelled',
+      reportIncidentUnavailableReason: order.payment.status !== 'SUCCEEDED'
+        ? 'La entrega requiere un pago confirmado.'
+        : subOrder.status === 'cancelled'
+          ? 'No se pueden reportar incidencias sobre entregas canceladas.'
+          : null,
       products: subOrder.orderLines.map((line) => ({ name: '', detail: '', quantity: `${line.quantity}x`, unitPrice: formatAmount(line.unitPriceSnapshot), total: '', image: '' })),
     })),
   }

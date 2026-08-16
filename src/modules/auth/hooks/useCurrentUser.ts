@@ -4,12 +4,14 @@ import { authConfig } from '../../../lib/authConfig'
 import { getCurrentUser, syncAuthenticatedUser } from '../auth.api'
 import { clearAuthenticatedCache, requiresAuthenticatedCacheIsolation } from '../authSessionCache'
 
+export const CURRENT_USER_QUERY_KEY = ['auth', 'current-user'] as const
+
 export function useCurrentUser() {
   const { getAccessTokenSilently, isAuthenticated, isLoading } = useAuth0()
   const queryClient = useQueryClient()
 
   return useQuery({
-    queryKey: ['auth', 'current-user'],
+    queryKey: CURRENT_USER_QUERY_KEY,
     enabled: isAuthenticated && !isLoading,
     retry: false,
     refetchOnWindowFocus: false,

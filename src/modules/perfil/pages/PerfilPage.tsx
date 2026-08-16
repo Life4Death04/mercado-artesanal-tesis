@@ -1,53 +1,78 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { ChevronRight, ExternalLink, LogOut, MapPin, Plus } from 'lucide-react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { ChevronRight, MapPin, Plus } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
+import { Link } from 'react-router-dom'
 import { resolveErrorMessage } from '../../../lib/errorMessages'
+import type { CurrentUser } from '../../auth/auth.types'
+import { useCurrentUser } from '../../auth/hooks/useCurrentUser'
 import { AgregarDireccionModal, EditarDireccionModal } from '../componentes/ProfileModals'
 import type { Address, CreateAddressInput, UpdateAddressInput } from '../direcciones.schema'
 import { useAddressesQuery } from '../hooks/useAddressesQuery'
 import { useCreateAddressMutation } from '../hooks/useCreateAddressMutation'
 import { useDeleteAddressMutation } from '../hooks/useDeleteAddressMutation'
 import { useUpdateAddressMutation } from '../hooks/useUpdateAddressMutation'
-
-type ProfileFormState = {
-  name: string
-  phone: string
-}
-
-const initialProfile: ProfileFormState = {
-  name: 'Alejandro Valls',
-  phone: '+34 600 000 000',
-}
-
-const consumerProfilePreview = {
-  banner:
-    'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=1600&q=80',
-  avatar:
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
-  location: 'Alicante, España',
-}
+import { useUpdateProfileMutation } from '../hooks/useUpdateProfileMutation'
+import { profileFormSchema, type ProfileFormValues } from '../perfil.schema'
 
 export function PerfilPage() {
-  const navigate = useNavigate()
   const [isEditing, setIsEditing] = useState(false)
-  const [profile, setProfile] = useState(initialProfile)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingAddress, setEditingAddress] = useState<Address | null>(null)
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
+  const currentUserQuery = useCurrentUser()
+  const updateProfileMutation = useUpdateProfileMutation()
   const addressesQuery = useAddressesQuery()
   const createAddressMutation = useCreateAddressMutation()
   const editAddressMutation = useUpdateAddressMutation()
   const markDefaultMutation = useUpdateAddressMutation()
   const deleteAddressMutation = useDeleteAddressMutation()
 
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: { firstName: '', lastName: '' },
+  })
+
+  const currentUser = currentUserQuery.data
+  const [draftFirstName, draftLastName] = useWatch({
+    control,
+    name: ['firstName', 'lastName'],
+  })
+
+  useEffect(() => {
+    if (currentUser && !isEditing) reset(toProfileFormValues(currentUser))
+  }, [currentUser, isEditing, reset])
+
   const addresses = addressesQuery.data ?? []
   const addressListError = addressesQuery.isError ? resolveErrorMessage(addressesQuery.error) : null
   const addressActionError = [markDefaultMutation, deleteAddressMutation].find((mutation) => mutation.isError)?.error
 
-  function handleToggleEdit() {
-    setIsEditing((editing) => !editing)
+  function handleStartEditing() {
+    if (!currentUser) return
+    reset(toProfileFormValues(currentUser))
+    updateProfileMutation.reset()
+    setIsEditing(true)
+  }
+
+  function handleCancelEditing() {
+    if (currentUser) reset(toProfileFormValues(currentUser))
+    updateProfileMutation.reset()
+    setIsEditing(false)
+  }
+
+  function handleSaveProfile(values: ProfileFormValues) {
+    updateProfileMutation.mutate(values, {
+      onSuccess: (updatedUser) => {
+        reset(toProfileFormValues(updatedUser))
+        setIsEditing(false)
+      },
+    })
   }
 
   function handleCloseAddModal() {
@@ -81,6 +106,14 @@ export function PerfilPage() {
     markDefaultMutation.mutate({ addressId, input: { isDefault: true } })
   }
 
+  const previewUser = currentUser
+    ? isEditing
+      ? { ...currentUser, firstName: draftFirstName, lastName: draftLastName }
+      : currentUser
+    : undefined
+  const previewName = getDisplayName(previewUser)
+  const initials = getInitials(previewName)
+
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
       <main className="mx-auto max-w-[800px] px-[var(--space-margin-mobile)] py-16 md:px-0">
@@ -103,24 +136,42 @@ export function PerfilPage() {
             <h2 className="text-headline-md text-[var(--color-on-surface)]">Datos personales</h2>
           </div>
 
-          <div className="space-y-10">
+          {currentUserQuery.isLoading && !currentUser ? (
+            <p className="text-body-md rounded-[var(--radius-default)] border border-[var(--color-outline-variant)] p-8 text-center text-[var(--color-on-surface-variant)]">
+              Cargando datos del perfil...
+            </p>
+          ) : currentUserQuery.isError && !currentUser ? (
+            <div className="rounded-[var(--radius-default)] bg-[var(--color-error-container)] p-6">
+              <p role="alert" className="text-body-md text-[var(--color-error)]">
+                {resolveErrorMessage(currentUserQuery.error)}
+              </p>
+              <button
+                type="button"
+                onClick={() => currentUserQuery.refetch()}
+                className="text-label-md mt-4 text-[#7A2E3A] underline underline-offset-4"
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : currentUser ? (
+            <form className="space-y-10" onSubmit={handleSubmit(handleSaveProfile)} noValidate>
             <article className="rounded-[var(--radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] shadow-[0_18px_50px_-35px_rgba(122,46,58,0.18)]">
               <div className="relative h-48 md:h-56">
-                <div className="h-full overflow-hidden rounded-t-[var(--radius-xl)]">
-                  <img
-                    src={consumerProfilePreview.banner}
-                    alt="Banner de previsualización del perfil"
-                    className="h-full w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+                <div
+                  aria-hidden="true"
+                  className="h-full overflow-hidden rounded-t-[var(--radius-xl)] bg-[radial-gradient(circle_at_18%_25%,rgba(255,255,255,0.34),transparent_24%),linear-gradient(125deg,#7A2E3A_0%,#B87357_48%,#D9B88F_100%)]"
+                >
+                  <div className="h-full bg-[linear-gradient(105deg,transparent_48%,rgba(255,255,255,0.12)_48%,rgba(255,255,255,0.12)_50%,transparent_50%)] bg-[length:32px_32px]" />
                 </div>
 
-                <div className="absolute -bottom-12 left-5 z-10 size-24 overflow-hidden rounded-full border-4 border-white bg-[var(--color-surface-container-low)] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.35)] md:left-8 md:size-28">
-                  <img
-                    src={consumerProfilePreview.avatar}
-                    alt="Foto de perfil de Alejandro Valls"
-                    className="h-full w-full object-cover"
-                  />
+                <div className="absolute -bottom-12 left-5 z-10 flex size-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-[#F1E4D3] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.35)] md:left-8 md:size-28">
+                  {currentUser.avatar ? (
+                    <img src={currentUser.avatar} alt={`Foto de perfil de ${previewName}`} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-headline-md text-[#7A2E3A]" aria-label={`Iniciales de ${previewName}`}>
+                      {initials}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -130,22 +181,42 @@ export function PerfilPage() {
                     <p className="text-label-sm mb-2 uppercase tracking-[0.18em] text-[var(--color-outline)]">
                       Previsualización del perfil
                     </p>
-                    <h3 className="text-headline-md text-[var(--color-on-surface)]">{profile.name}</h3>
+                    <h3 className="text-headline-md text-[var(--color-on-surface)]">{previewName}</h3>
                     <p className="text-body-md mt-2 text-[var(--color-on-surface-variant)]">
-                      Así se verá tu cabecera de perfil dentro del área de consumidor.
+                      Tu identidad dentro del área de consumidor.
                     </p>
-                  </div>
-                  <div className="inline-flex items-center gap-2 text-[var(--color-on-surface-variant)]">
-                    <MapPin size={16} strokeWidth={1.8} className="text-[var(--color-outline)]" />
-                    <span className="text-label-md">{consumerProfilePreview.location}</span>
                   </div>
                 </div>
               </div>
             </article>
 
             <div className="grid grid-cols-1 gap-[var(--space-gutter)] md:grid-cols-2">
-              <EditorialField id="nombre" label="Nombre" value={profile.name} onChange={(value) => setProfile((current) => ({ ...current, name: value }))} type="text" disabled={!isEditing} />
-              <EditorialField id="telefono" label="Teléfono (opcional)" value={profile.phone} onChange={(value) => setProfile((current) => ({ ...current, phone: value }))} placeholder="+34 600 000 000" type="tel" disabled={!isEditing} />
+              <div className="flex flex-col gap-2">
+                <label htmlFor="firstName" className="text-label-md uppercase tracking-wider text-[var(--color-outline)]">Nombre</label>
+                <input
+                  id="firstName"
+                  type="text"
+                  disabled={!isEditing || updateProfileMutation.isPending}
+                  aria-invalid={errors.firstName ? 'true' : 'false'}
+                  aria-describedby={errors.firstName ? 'firstName-error' : undefined}
+                  {...register('firstName')}
+                  className="text-body-md border-b border-[var(--color-outline-variant)] bg-transparent py-2 transition-colors focus:border-[#7A2E3A] focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+                />
+                {errors.firstName ? <p id="firstName-error" className="text-label-sm text-[var(--color-error)]">{errors.firstName.message}</p> : null}
+              </div>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="lastName" className="text-label-md uppercase tracking-wider text-[var(--color-outline)]">Apellido</label>
+                <input
+                  id="lastName"
+                  type="text"
+                  disabled={!isEditing || updateProfileMutation.isPending}
+                  aria-invalid={errors.lastName ? 'true' : 'false'}
+                  aria-describedby={errors.lastName ? 'lastName-error' : undefined}
+                  {...register('lastName')}
+                  className="text-body-md border-b border-[var(--color-outline-variant)] bg-transparent py-2 transition-colors focus:border-[#7A2E3A] focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+                />
+                {errors.lastName ? <p id="lastName-error" className="text-label-sm text-[var(--color-error)]">{errors.lastName.message}</p> : null}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 items-center gap-[var(--space-gutter)] md:grid-cols-2">
@@ -154,38 +225,38 @@ export function PerfilPage() {
                   Correo electrónico
                 </span>
                 <div className="flex items-center gap-3 py-2">
-                  <span className="text-body-md text-[var(--color-on-surface-variant)]">alejandro.valls@example.com</span>
-                  <span className="rounded-full bg-[var(--color-secondary-container)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter text-[var(--color-on-secondary-container)]">
-                    Verificado
-                  </span>
-                </div>
-              </div>
+                   <span className="text-body-md break-all text-[var(--color-on-surface-variant)]">{currentUser.email}</span>
+                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter ${currentUser.emailVerified ? 'bg-[var(--color-secondary-container)] text-[var(--color-on-secondary-container)]' : 'bg-[var(--color-surface-container-low)] text-[var(--color-outline)]'}`}>
+                     {currentUser.emailVerified ? 'Verificado' : 'Sin verificar'}
+                   </span>
+                 </div>
+                 <p className="text-label-sm text-[var(--color-outline)] italic">El correo se gestiona desde tu cuenta de acceso.</p>
+               </div>
+             </div>
 
-              <div className="flex flex-col gap-2">
-                <span className="text-label-md uppercase tracking-wider text-[var(--color-outline)]">Contraseña</span>
-                <a
-                  href="#"
-                  className="text-label-md flex items-center gap-2 py-2 text-[#7A2E3A] transition-all hover:underline"
-                >
-                  Cambiar contraseña
-                  <ExternalLink size={16} strokeWidth={1.8} />
-                </a>
-                <p className="text-label-sm text-[var(--color-outline)] italic">
-                  Serás redirigido a nuestro portal de seguridad Auth0.
-                </p>
-              </div>
+            <div aria-live="polite" aria-atomic="true" className="min-h-6">
+              {updateProfileMutation.isSuccess && !isEditing ? <p className="text-body-sm text-[#7A2E3A]">Los cambios se guardaron correctamente.</p> : null}
+              {updateProfileMutation.isError ? <p role="alert" className="text-body-sm text-[var(--color-error)]">{resolveErrorMessage(updateProfileMutation.error)}</p> : null}
             </div>
 
-            <div className="pt-6">
-              <button
-                type="button"
-                onClick={handleToggleEdit}
-                className="text-label-md bg-[#7A2E3A] px-10 py-4 uppercase tracking-widest text-white shadow-[0_10px_30px_-15px_rgba(122,46,58,0.08)] transition-opacity hover:opacity-90"
-              >
-                {isEditing ? 'Guardar cambios' : 'Editar perfil'}
-              </button>
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+              {isEditing ? (
+                <>
+                  <button type="submit" disabled={updateProfileMutation.isPending} className="text-label-md bg-[#7A2E3A] px-10 py-4 uppercase tracking-widest text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+                    {updateProfileMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                  <button type="button" onClick={handleCancelEditing} disabled={updateProfileMutation.isPending} className="text-label-md border border-[var(--color-outline-variant)] px-10 py-4 uppercase tracking-widest text-[var(--color-on-surface-variant)] disabled:cursor-not-allowed disabled:opacity-50">
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+                <button type="button" onClick={handleStartEditing} className="text-label-md bg-[#7A2E3A] px-10 py-4 uppercase tracking-widest text-white transition-opacity hover:opacity-90">
+                  Editar perfil
+                </button>
+              )}
             </div>
-          </div>
+            </form>
+          ) : null}
         </section>
 
         <Divider />
@@ -234,29 +305,7 @@ export function PerfilPage() {
             </p>
           ) : null}
         </section>
-
-        <Divider />
-
-        <section className="flex flex-col items-center justify-between gap-6 pb-20 md:flex-row">
-          <button
-            type="button"
-            onClick={() => setShowLogoutConfirm(true)}
-            className="text-label-md flex items-center gap-2 text-[var(--color-on-surface-variant)] transition-colors hover:text-[#7A2E3A]"
-          >
-            <LogOut size={20} strokeWidth={1.8} />
-            Cerrar sesión
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowDeleteConfirm(true)}
-            className="text-label-md text-[var(--color-error)]/60 underline decoration-dotted underline-offset-4 transition-colors hover:text-[var(--color-error)]"
-          >
-            Eliminar cuenta permanentemente
-          </button>
-        </section>
       </main>
-
-
       {showAddModal ? (
         <AgregarDireccionModal
           onClose={handleCloseAddModal}
@@ -274,27 +323,28 @@ export function PerfilPage() {
           isSaving={editAddressMutation.isPending}
         />
       ) : null}
-      {showLogoutConfirm ? (
-        <ConfirmationModal
-          title="Cerrar sesión"
-          description="¿Deseas cerrar tu sesión actual y volver al acceso principal?"
-          confirmLabel="Cerrar sesión"
-          onCancel={() => setShowLogoutConfirm(false)}
-          onConfirm={() => navigate('/login')}
-        />
-      ) : null}
-      {showDeleteConfirm ? (
-        <ConfirmationModal
-          title="Eliminar cuenta"
-          description="Esta acción es solo demostrativa para la tesis. Se cerrará la sesión y volverás al acceso principal."
-          confirmLabel="Eliminar cuenta"
-          danger
-          onCancel={() => setShowDeleteConfirm(false)}
-          onConfirm={() => navigate('/login')}
-        />
-      ) : null}
     </div>
   )
+}
+
+function toProfileFormValues(user: CurrentUser): ProfileFormValues {
+  return { firstName: user.firstName ?? '', lastName: user.lastName ?? '' }
+}
+
+function getDisplayName(user: Pick<CurrentUser, 'firstName' | 'lastName' | 'name' | 'email'> | undefined): string {
+  if (!user) return 'Perfil'
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim()
+  return fullName || user.name || user.email
+}
+
+function getInitials(displayName: string): string {
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+  return initials || 'P'
 }
 
 function AddressCard({
@@ -371,63 +421,6 @@ function AddressCard({
   )
 }
 
-function EditorialField({
-  id,
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = 'text',
-  disabled = false,
-}: {
-  id: string
-  label: string
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-  type?: string
-  disabled?: boolean
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <label
-        htmlFor={id}
-        className="text-label-md uppercase tracking-wider text-[var(--color-outline)]"
-      >
-        {label}
-      </label>
-      <input
-        id={id}
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        disabled={disabled}
-        className={`text-body-md border-b border-[var(--color-outline-variant)] bg-transparent py-2 transition-colors focus:border-[#7A2E3A] focus:outline-none ${disabled ? 'cursor-not-allowed opacity-70' : ''}`}
-      />
-    </div>
-  )
-}
-
 function Divider() {
   return <hr className="mb-20 h-px border-0 bg-[var(--color-outline-variant)] opacity-50" />
-}
-
-function ConfirmationModal({ title, description, confirmLabel, danger = false, onCancel, onConfirm }: { title: string; description: string; confirmLabel: string; danger?: boolean; onCancel: () => void; onConfirm: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-on-surface)]/40 p-4 backdrop-blur-[1px]" role="dialog" aria-modal="true" aria-labelledby="profile-confirmation-title">
-      <div className="w-full max-w-md bg-[#FAF7F0] p-8 shadow-2xl">
-        <h2 id="profile-confirmation-title" className="text-headline-md text-[var(--color-on-surface)]">{title}</h2>
-        <p className="text-body-md mt-3 text-[var(--color-on-surface-variant)]">{description}</p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <button type="button" onClick={onCancel} className="text-label-md border border-[var(--color-outline-variant)] px-6 py-3 text-[var(--color-on-surface-variant)] transition-colors hover:bg-[var(--color-surface-container-low)]">
-            Cancelar
-          </button>
-          <button type="button" onClick={onConfirm} className={`text-label-md px-6 py-3 text-white transition-colors ${danger ? 'bg-[var(--color-error)] hover:brightness-110' : 'bg-[#7A2E3A] hover:bg-[#63222d]'}`}>
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
 }

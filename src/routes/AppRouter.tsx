@@ -50,6 +50,10 @@ export function AppRouter() {
             <Route path="productos/:productoId" element={<DetalleProductoPage />} />
             <Route path="productores/:productorId" element={<PerfilProductorPublicoPage />} />
             <Route path="perfil" element={<PerfilPage />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoutes allowedRoles={['CONSUMER', 'PRODUCER']} />}>
+          <Route element={<ConsumerLayout />}>
             <Route path="incidencias" element={<MisIncidenciasPage />} />
           </Route>
         </Route>
