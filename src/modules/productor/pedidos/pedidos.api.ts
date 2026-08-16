@@ -38,12 +38,9 @@ type ApiCaller = <TResponse>(path: string, options?: { method?: string; body?: u
 // ---------------------------------------------------------------------------
 
 type RawOrderLine = {
-  id: string
-  subOrderId: string
   productId: string
   unitPriceSnapshot: string
   quantity: number
-  product?: { name?: string; images?: Array<{ s3Key?: string; position?: number }> }
 }
 
 type RawSubOrder = {
@@ -94,13 +91,9 @@ function mapRawToSubOrder(raw: RawSubOrder): SubOrderListItemDTO {
     shippingCostSnapshot: raw.shippingCostSnapshot,
     trackingNumber: raw.trackingNumber,
     orderLines: (raw.orderLines ?? []).map((line) => ({
-      id: line.id,
-      subOrderId: line.subOrderId,
       productId: line.productId,
       unitPriceSnapshot: line.unitPriceSnapshot,
       quantity: line.quantity,
-      productName: line.product?.name,
-      productImageUrl: null, // Image presigning is a separate step; not included in list
     })),
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,

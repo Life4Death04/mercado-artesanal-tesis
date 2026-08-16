@@ -30,16 +30,10 @@ export type SubOrderStatus = z.infer<typeof SubOrderStatusSchema>
 // ---------------------------------------------------------------------------
 
 export type OrderLineDTO = {
-  id: string
-  subOrderId: string
   productId: string
   /** Immutable historical unit price at order time — Decimal string from Prisma. */
   unitPriceSnapshot: string
   quantity: number
-  /** Product name for display (denormalized by backend for convenience). */
-  productName?: string
-  /** Product image URL for display (may be null). */
-  productImageUrl?: string | null
 }
 
 // ---------------------------------------------------------------------------
