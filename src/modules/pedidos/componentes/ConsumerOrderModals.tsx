@@ -24,13 +24,14 @@ export function OrderDetailModal({ order, onClose, onReport, onCancel, isCancell
           <header className="mb-8 pr-12">
             <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-baseline sm:justify-between">
               <h2 className="text-display-lg text-[48px] tracking-tight text-[#1A1A1A]" id="order-detail-title">
-                {order.id}
+                Pedido #{order.orderNumber}
               </h2>
               <StatusPill status={order.status} />
             </div>
             <p className="text-body-lg text-[var(--color-on-surface-variant)]">
               Compra del {order.date} · {order.subOrders.length} entrega{order.subOrders.length === 1 ? '' : 's'}
             </p>
+            <p className="text-label-sm mt-2 max-w-full break-all font-mono text-[var(--color-outline)]">ID técnico: {order.id}</p>
             <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2"><p className="text-headline-md text-[28px] text-[#7A2E3A]">Total: {order.total}</p>{order.paymentStatus ? <p className="text-label-sm uppercase tracking-wider text-[var(--color-outline)]">Pago: {order.paymentStatus}</p> : null}</div>
           </header>
 
@@ -61,7 +62,7 @@ function SubOrderPanel({ subOrder, onReport }: { subOrder: ConsumerSubOrder; onR
             <h3 className="text-headline-md text-[26px] text-[#1A1A1A]">{subOrder.producer}</h3>
             <StatusPill status={subOrder.status} />
           </div>
-           <p className="text-label-sm text-[var(--color-outline)]">{subOrder.id}</p>
+            <p className="text-label-sm max-w-full break-all font-mono text-[var(--color-outline)]">ID técnico: {subOrder.id}</p>
          </div>
         {subOrder.total ? <div className="text-left lg:text-right">
            <p className="text-label-sm uppercase tracking-wider text-[var(--color-outline)]">Total subpedido</p>

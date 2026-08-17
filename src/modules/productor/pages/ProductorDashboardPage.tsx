@@ -176,9 +176,9 @@ export function ProductorDashboardPage() {
                     className="flex items-center justify-between gap-4 border border-[color-mix(in_srgb,var(--color-outline-variant)_45%,transparent)] bg-[var(--color-surface-container-lowest)] px-5 py-4"
                   >
                     <div className="min-w-0">
-                      <p className="text-label-sm text-[var(--color-primary)]">
-                        #{pedido.id.slice(0, 8)}
-                      </p>
+                      <p className="text-body-md font-semibold text-[var(--color-primary)]">Entrega #{pedido.subOrderNumber}</p>
+                      <p className="text-label-sm text-[var(--color-secondary)]">Pedido #{pedido.order.orderNumber}</p>
+                      <p className="text-label-sm max-w-full break-all font-mono text-[var(--color-outline)]">ID técnico: {pedido.id}</p>
                       {pedido.consumerName ? (
                         <p className="text-body-md font-medium text-[var(--color-on-surface)]">
                           {pedido.consumerName}

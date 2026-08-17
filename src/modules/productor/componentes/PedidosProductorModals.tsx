@@ -137,13 +137,17 @@ export function DetallePedidoModal({
       <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden border border-[var(--color-outline-variant)] bg-[#FAF7F0] shadow-2xl">
         {/* Header */}
         <header className="flex flex-col gap-4 border-b border-[var(--color-outline-variant)] bg-white/50 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-8 md:py-6">
-          <div className="flex flex-wrap items-center gap-3 md:gap-4">
-            <h2
-              className="text-headline-md text-[24px] text-[var(--color-on-surface)]"
-              id="detalle-pedido-title"
-            >
-              Pedido #{pedido.id.slice(0, 8)}
-            </h2>
+          <div className="flex min-w-0 flex-wrap items-start gap-3 md:gap-4">
+            <div className="min-w-0">
+              <h2
+                className="text-headline-md text-[24px] text-[var(--color-on-surface)]"
+                id="detalle-pedido-title"
+              >
+                Entrega #{pedido.subOrderNumber}
+              </h2>
+              <p className="text-label-sm mt-1 text-[var(--color-secondary)]">Pedido #{pedido.order.orderNumber}</p>
+              <p className="text-label-sm mt-1 max-w-full break-all font-mono text-[var(--color-outline)]">ID técnico: {pedido.id}</p>
+            </div>
             <StatusBadge status={pedido.status} />
           </div>
           <button
@@ -349,7 +353,7 @@ export function DetallePedidoModal({
                 disabled={isPending}
                 className="text-label-md text-left text-sm text-[var(--color-error)] transition-all hover:underline disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Cancelar pedido
+                Cancelar entrega
               </button>
             ) : (
               <span />
@@ -412,14 +416,14 @@ export function CancelarPedidoModal({ pedido, isPending, onClose, onConfirm }: C
             className="text-headline-md mb-4 text-[var(--color-primary)]"
             id="cancelar-pedido-title"
           >
-            Cancelar pedido
+            Cancelar entrega
           </h2>
           <p className="text-body-lg mb-4 text-[var(--color-on-surface-variant)]">
-            ¿Seguro que deseas cancelar este pedido? Esta acción no se puede deshacer.
+            ¿Seguro que deseas cancelar esta entrega? Esta acción no se puede deshacer.
           </p>
-          <p className="text-label-md mb-4 text-[var(--color-primary)]">
-            Pedido #{pedido.id.slice(0, 8)}
-          </p>
+          <p className="text-headline-md text-[var(--color-primary)]">Entrega #{pedido.subOrderNumber}</p>
+          <p className="text-label-md mt-1 text-[var(--color-secondary)]">Pedido #{pedido.order.orderNumber}</p>
+          <p className="text-label-sm mx-auto mt-1 mb-4 max-w-full break-all font-mono text-[var(--color-outline)]">ID técnico: {pedido.id}</p>
           <div className="rounded-[var(--radius-default)] border-l-4 border-[var(--color-primary)] bg-[var(--color-surface-container)] p-4 text-left">
             <p className="text-body-md text-sm italic text-[var(--color-on-surface-variant)]">
               El pago ya fue procesado; deberás gestionar la devolución conforme a la política de la plataforma.
@@ -435,7 +439,7 @@ export function CancelarPedidoModal({ pedido, isPending, onClose, onConfirm }: C
             className="text-label-md inline-flex w-full items-center justify-center gap-2 bg-[var(--color-primary)] py-4 uppercase tracking-widest text-white transition-all hover:bg-[var(--color-primary-container)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isPending ? <Loader2 size={16} strokeWidth={2} className="animate-spin" /> : null}
-            Sí, cancelar pedido
+            Sí, cancelar entrega
           </button>
           <button
             type="button"
