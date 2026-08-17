@@ -264,8 +264,10 @@ export function EstadisticasProductorPage() {
               <div className="divide-y divide-[var(--color-outline-variant)] border-y border-[var(--color-outline-variant)]">
                 {periodOrders.slice(0, 5).map((order) => (
                   <article key={order.id} className="flex items-center justify-between gap-4 py-5">
-                    <div>
-                      <p className="text-body-md font-semibold text-[var(--color-on-surface)]">Pedido #{order.id.slice(0, 8)}</p>
+                    <div className="min-w-0">
+                      <p className="text-body-md font-semibold text-[var(--color-on-surface)]">Entrega #{order.subOrderNumber}</p>
+                      <p className="text-label-sm text-[var(--color-secondary)]">Pedido #{order.order.orderNumber}</p>
+                      <p className="text-label-sm max-w-full break-all font-mono text-[var(--color-outline)]">ID técnico: {order.id}</p>
                       <p className="text-label-sm mt-1 text-[var(--color-secondary)]">{formatDate(new Date(order.createdAt))} · {STATUS_LABEL[order.status]}</p>
                     </div>
                     <span className="text-right">

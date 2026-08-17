@@ -38,26 +38,31 @@ export const paymentStatusSchema = z.discriminatedUnion('state', [
   z.object({
     state: z.literal('PROCESSING'),
     orderId: z.null(),
+    orderNumber: z.null(),
     code: z.literal('PAYMENT_PROCESSING'),
   }).strict(),
   z.object({
     state: z.literal('SUCCEEDED'),
     orderId: z.string().min(1),
+    orderNumber: z.number().int().positive(),
     code: z.literal('PAYMENT_SUCCEEDED'),
   }).strict(),
   z.object({
     state: z.literal('FAILED'),
     orderId: z.null(),
+    orderNumber: z.null(),
     code: z.literal('PAYMENT_FAILED'),
   }).strict(),
   z.object({
     state: z.literal('PENDING'),
     orderId: z.null(),
+    orderNumber: z.null(),
     code: z.literal('PAYMENT_NEEDS_REVIEW'),
   }).strict(),
   z.object({
     state: z.literal('CANCELED'),
     orderId: z.null(),
+    orderNumber: z.null(),
     code: z.literal('PAYMENT_CANCELED'),
   }).strict(),
 ])

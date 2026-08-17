@@ -45,7 +45,11 @@ export type OrderLineDTO = {
 
 export type SubOrderDTO = {
   id: string
+  subOrderNumber: number
   orderId: string
+  order: {
+    orderNumber: number
+  }
   producerId: string
   deliveryModeId: string | null
   /** Edge-parsed at hook boundary via SubOrderStatusSchema. */
@@ -71,7 +75,11 @@ export type SubOrderDTO = {
 
 export type SubOrderListItemDTO = {
   id: string
+  subOrderNumber: number
   orderId: string
+  order: {
+    orderNumber: number
+  }
   producerId: string
   status: SubOrderStatus
   /** Decimal string from Prisma. */

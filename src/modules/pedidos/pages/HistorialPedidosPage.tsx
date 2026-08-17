@@ -4,7 +4,7 @@ import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Filter, Search, Sl
 import { OrderDetailModal } from '../componentes/ConsumerOrderModals'
 import { ReportarIncidenciaModal } from '../../perfil/componentes/IncidenciaModals'
 import { resolveErrorMessage } from '../../../lib/errorMessages'
-import { orderIdSchema, type ConsumerOrder as ConsumerOrderResponse } from '../pedidos.schema'
+import { orderIdSchema, type ConsumerOrder as ConsumerOrderResponse, type OrderSummary } from '../pedidos.schema'
 import { useCancelConsumerOrderMutation } from '../hooks/useCancelConsumerOrderMutation'
 import { useConsumerOrderQuery } from '../hooks/useConsumerOrderQuery'
 import { useConsumerOrdersQuery } from '../hooks/useConsumerOrdersQuery'
@@ -39,6 +39,7 @@ export type ConsumerSubOrder = {
 
 export type ConsumerOrder = {
   id: string
+  orderNumber: number
   date: string
   dateISO: string
   status: ConsumerOrderStatus
@@ -90,7 +91,7 @@ export function HistorialPedidosPage() {
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       !normalizedSearch ||
-      [order.id, order.address, order.status, ...order.subOrders.flatMap((subOrder) => [
+      [String(order.orderNumber), order.id, order.address, order.status, ...order.subOrders.flatMap((subOrder) => [
         subOrder.id,
         subOrder.producer,
         subOrder.location,
@@ -219,7 +220,7 @@ export function HistorialPedidosPage() {
          {ordersQuery.isError ? <p role="alert" className="text-body-md border border-[var(--color-error)] p-5 text-[var(--color-error)]">{resolveErrorMessage(ordersQuery.error)}</p> : null}
          <div className="flex flex-col gap-4">
            {visibleOrders.map((order) => (
-             <OrderRow key={order.id} order={order} highlighted={normalizedSearch.length > 0 && order.id.toLowerCase().includes(normalizedSearch)} onView={() => selectOrder(order.id)} />
+              <OrderRow key={order.id} order={order} highlighted={normalizedSearch.length > 0 && (String(order.orderNumber).includes(normalizedSearch) || order.id.toLowerCase().includes(normalizedSearch))} onView={() => selectOrder(order.id)} />
            ))}
         </div>
 
@@ -263,22 +264,23 @@ export function HistorialPedidosPage() {
   )
 }
 
-function toOrderSummaryView(order: { id: string; createdAt: string; totalAmount: string; status: 'PENDING' | 'PARTIAL' | 'FULFILLED' | 'CANCELLED' }): ConsumerOrder {
-  return { id: order.id, date: formatDate(order.createdAt), dateISO: order.createdAt.slice(0, 10), status: toDisplayStatus(order.status), total: formatAmount(order.totalAmount), address: '', subOrders: [] }
+function toOrderSummaryView(order: OrderSummary): ConsumerOrder {
+  return { id: order.id, orderNumber: order.orderNumber, date: formatDate(order.createdAt), dateISO: order.createdAt.slice(0, 10), status: toDisplayStatus(order.status), total: formatAmount(order.totalAmount), address: '', subOrders: [] }
 }
 
 function toOrderDetailView(order: ConsumerOrderResponse): ConsumerOrder {
   return {
     id: order.id,
+    orderNumber: order.orderNumber,
     date: formatDate(order.createdAt),
     dateISO: order.createdAt.slice(0, 10),
     status: toDisplayStatus(order.status),
     total: formatAmount(order.totalAmount),
     address: '',
     paymentStatus: toPaymentStatusLabel(order.payment.status),
-    subOrders: order.subOrders.map((subOrder, subOrderIndex) => ({
+    subOrders: order.subOrders.map((subOrder) => ({
       id: subOrder.id,
-      producer: `Entrega ${subOrderIndex + 1}`,
+      producer: 'Entrega',
       location: '',
       status: toDisplaySubOrderStatus(subOrder.status),
       deliveryMethod: { PERSONAL_DELIVERY: 'Entrega personal', PICKUP: 'Recogida', SHIPPING_FLAT_RATE: 'Envío' }[subOrder.deliveryMode.type],
@@ -345,7 +347,7 @@ function OrderRow({ order, highlighted, onView }: { order: ConsumerOrder; highli
       }`}
     >
       <div className="flex flex-grow flex-col gap-4 md:flex-row md:items-center md:gap-8">
-        <OrderMeta label="Nº de pedido" value={order.id} />
+        <OrderMeta label="Nº de pedido" value={`#${order.orderNumber}`} technicalId={order.id} />
         <OrderMeta label="Fecha" value={order.date} />
         <OrderMeta label="Total del pedido" value={order.total} grow />
       </div>
@@ -361,11 +363,12 @@ function OrderRow({ order, highlighted, onView }: { order: ConsumerOrder; highli
   )
 }
 
-function OrderMeta({ label, value, grow = false }: { label: string; value: string; grow?: boolean }) {
+function OrderMeta({ label, value, technicalId, grow = false }: { label: string; value: string; technicalId?: string; grow?: boolean }) {
   return (
     <div className={grow ? 'flex-grow' : 'min-w-[100px]'}>
       <span className="text-label-sm mb-1 block text-[var(--color-on-surface-variant)]">{label}</span>
       <span className="text-body-md font-medium text-[#1A1A1A]">{value}</span>
+      {technicalId ? <span className="text-label-sm mt-1 block max-w-64 break-all font-mono text-[var(--color-outline)]">ID técnico: {technicalId}</span> : null}
     </div>
   )
 }

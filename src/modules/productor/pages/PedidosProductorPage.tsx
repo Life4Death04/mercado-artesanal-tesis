@@ -87,7 +87,10 @@ export function PedidosProductorPage() {
       .join(', ')
 
     return [
+      String(pedido.subOrderNumber),
+      String(pedido.order.orderNumber),
       pedido.id,
+      pedido.orderId,
       pedido.consumerName ?? '',
       pedido.consumerEmail ?? '',
       STATUS_DISPLAY_MAP[pedido.status],
@@ -437,10 +440,14 @@ function OrderCard({ pedido, productCatalog, onView }: OrderCardProps) {
     >
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1 space-y-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-headline-md text-[var(--color-primary)]">#{pedido.id.slice(0, 8)}</span>
-              <OrderStatusBadge status={pedido.status} />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-headline-md text-[var(--color-primary)]">Entrega #{pedido.subOrderNumber}</span>
+                <OrderStatusBadge status={pedido.status} />
+              </div>
+              <p className="text-label-sm mt-1 text-[var(--color-secondary)]">Pedido #{pedido.order.orderNumber}</p>
+              <p className="text-label-sm mt-1 max-w-full break-all font-mono text-[var(--color-outline)]">ID técnico: {pedido.id}</p>
             </div>
             <span className="text-label-sm text-[var(--color-secondary)]">
               {new Date(pedido.createdAt).toLocaleDateString('es-ES', {

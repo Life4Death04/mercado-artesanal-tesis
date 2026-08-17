@@ -10,6 +10,7 @@ export const orderIdSchema = z.string().min(1).max(256).refine((value) => ![...v
 
 export const orderSummarySchema = z.object({
   id: orderIdSchema,
+  orderNumber: z.number().int().positive(),
   createdAt: z.iso.datetime(),
   totalAmount: decimalSchema,
   status: orderStatusSchema,
@@ -20,6 +21,7 @@ export const orderSummariesSchema = z.array(orderSummarySchema)
 
 export const consumerOrderSchema = z.object({
   id: orderIdSchema,
+  orderNumber: z.number().int().positive(),
   createdAt: z.iso.datetime(),
   totalAmount: decimalSchema,
   status: orderStatusSchema,

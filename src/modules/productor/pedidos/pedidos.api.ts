@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { SubOrderStatusSchema } from './pedidos.schema'
 import type { SubOrderListItemDTO, SubOrderDTO, UpdateSubOrderStatusPayload, SubOrderStatus } from './pedidos.schema'
 
@@ -45,6 +46,7 @@ type RawOrderLine = {
 
 type RawSubOrder = {
   id: string
+  subOrderNumber: number
   orderId: string
   producerId: string
   deliveryModeId: string | null
@@ -55,7 +57,8 @@ type RawSubOrder = {
   createdAt: string
   updatedAt: string
   // Optional embedded consumer/order info (if backend eager-loads):
-  order?: {
+  order: {
+    orderNumber: number
     user?: {
       name?: string | null
       email?: string
@@ -78,6 +81,8 @@ function parseSubOrderStatus(raw: string): SubOrderStatus {
   return SubOrderStatusSchema.parse(raw)
 }
 
+const publicNumberSchema = z.number().int().positive()
+
 // ---------------------------------------------------------------------------
 // Map raw response to typed DTO
 // ---------------------------------------------------------------------------
@@ -85,7 +90,9 @@ function parseSubOrderStatus(raw: string): SubOrderStatus {
 function mapRawToSubOrder(raw: RawSubOrder): SubOrderListItemDTO {
   return {
     id: raw.id,
+    subOrderNumber: publicNumberSchema.parse(raw.subOrderNumber),
     orderId: raw.orderId,
+    order: { orderNumber: publicNumberSchema.parse(raw.order.orderNumber) },
     producerId: raw.producerId,
     status: parseSubOrderStatus(raw.status),
     shippingCostSnapshot: raw.shippingCostSnapshot,
