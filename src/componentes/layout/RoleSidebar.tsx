@@ -6,6 +6,7 @@ import {
   BarChart2,
   BarChart3,
   BookOpen,
+  DatabaseBackup,
   ExternalLink,
   Gavel,
   LayoutDashboard,
@@ -38,6 +39,7 @@ const adminItems: SidebarItem[] = [
   { label: 'Incidencias', to: '/admin/incidencias', icon: AlertTriangle },
   { label: 'Categorías', to: '/admin/categorias', icon: Shapes },
   { label: 'Métricas globales', to: '/admin/metricas-globales', icon: BarChart3 },
+  { label: 'Backups', to: '/admin/backups', icon: DatabaseBackup },
 ]
 
 const consumerItems: SidebarItem[] = [

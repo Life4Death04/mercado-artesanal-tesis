@@ -9,6 +9,7 @@ import { LoginPage } from '../modules/auth/pages/LoginPage'
 import { RegistroWizardPage } from '../modules/auth/pages/RegistroWizardPage'
 import { CarritoPage } from '../modules/carrito/pages/CarritoPage'
 import { AdminDashboardPage } from '../modules/admin/pages/AdminDashboardPage'
+import { BackupsAdminPage } from '../modules/admin/pages/BackupsAdminPage'
 import { CategoriasAdminPage } from '../modules/admin/pages/CategoriasAdminPage'
 import { ConfiguracionAdminPage } from '../modules/admin/pages/ConfiguracionAdminPage'
 import { IncidenciaDetalleAdminPage } from '../modules/admin/pages/IncidenciaDetalleAdminPage'
@@ -86,6 +87,7 @@ export function AppRouter() {
             <Route path="admin/incidencias/:incidenciaId" element={<IncidenciaDetalleAdminPage />} />
             <Route path="admin/categorias" element={<CategoriasAdminPage />} />
             <Route path="admin/metricas-globales" element={<MetricasGlobalesPage />} />
+            <Route path="admin/backups" element={<BackupsAdminPage />} />
             <Route path="admin/configuracion" element={<ConfiguracionAdminPage />} />
             <Route path="admin/productos" element={<ProductosAdminPage />} />
             <Route path="admin/pedidos" element={<PedidosAdminPage />} />

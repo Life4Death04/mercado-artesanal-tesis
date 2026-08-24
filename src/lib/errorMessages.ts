@@ -30,6 +30,14 @@ export const ERROR_MESSAGES: Record<string, string> = {
   UNKNOWN_CATEGORY: 'Una o más categorías indicadas no existen.',
   CATEGORY_SLUG_CONFLICT: 'Ya existe una categoría con un nombre equivalente. Elige otro nombre.',
   ADDRESS_DEFAULT_CONFLICT: 'Solo puede haber una dirección predeterminada. Revisa tu configuración de entregas.',
+  BACKUP_OPERATION_CONFLICT: 'Ya hay una operación de copia incompatible en curso. Espera a que finalice e inténtalo de nuevo.',
+
+  // --- Database backups ---
+  BACKUP_OPERATION_NOT_FOUND: 'No encontramos la operación de copia solicitada. Puedes quitar esta entrada del navegador.',
+  BACKUP_RUNTIME_UNAVAILABLE: 'El servicio de copias de seguridad no está disponible en este momento. Inténtalo más tarde.',
+  BACKUP_OPERATION_FAILED: 'La operación de copia de seguridad no pudo completarse. Revisa su estado e inténtalo de nuevo.',
+  BACKUP_NOT_FOUND: 'No encontramos la copia de seguridad solicitada.',
+  BACKUP_NOT_RESTORABLE: 'Esta copia de seguridad no se puede restaurar en su estado actual.',
 
   // --- Business rule violations ---
   INVALID_DEFAULT_TRANSITION: 'Esta transición de estado no está permitida.',
