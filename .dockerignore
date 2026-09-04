@@ -1,0 +1,48 @@
+.git
+.gitignore
+.gitattributes
+
+# Local and deployment environment values; retain the public placeholder template.
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+
+node_modules/
+dist/
+dist-ssr/
+coverage/
+.nyc_output/
+.cache/
+.vite/
+.eslintcache
+playwright-report/
+test-results/
+cypress/screenshots/
+cypress/videos/
+
+# Editor and operating-system files.
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Local design references and handoff notes are not build inputs.
+ReferenciasUI/
+SESSION_HANDOFF.md
+*HANDOFF*.md
+
+# Deployment credentials and private key material must never enter the context.
+secrets/
+**/secrets/
+deploy/**/*.env
+deploy/**/*secret*
+*.key
+*.pem
+*.p12
+*.pfx
+credentials*.json
