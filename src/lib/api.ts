@@ -7,6 +7,7 @@ export type ApiRequestOptions = {
   accessToken?: string
   body?: unknown
   headers?: HeadersInit
+  signal?: AbortSignal
 }
 
 export class ApiError extends Error {
@@ -43,6 +44,7 @@ export async function apiRequest<TResponse>(
     method: options.method ?? 'GET',
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    signal: options.signal,
   })
 
   if (!response.ok) {
@@ -62,11 +64,18 @@ export async function apiRequest<TResponse>(
 async function readResponsePayload(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type')
 
-  if (contentType?.includes('application/json')) {
+  if (isJsonMediaType(contentType)) {
     return response.json()
   }
 
   return response.text()
+}
+
+function isJsonMediaType(contentType: string | null): boolean {
+  if (!contentType) return false
+
+  const mediaType = contentType.split(';', 1)[0].trim().toLowerCase()
+  return mediaType === 'application/json' || /^application\/[^;\s/]+\+json$/.test(mediaType)
 }
 
 function getErrorMessage(payload: unknown): string | undefined {

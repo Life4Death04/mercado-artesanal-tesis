@@ -1,7 +1,5 @@
-import { apiRequest } from '../../../lib/api'
 import { ModerationStatusSchema } from './productos.schema'
 import type {
-  CategoryDTO,
   ConfirmImageFormValues,
   CreateProductoFormValues,
   PresignImageFormValues,
@@ -27,11 +25,6 @@ export const productosEndpoints = {
   report: (id: string) => `/products/${id}/report`,
   presignImage: (id: string) => `/producers/me/products/${id}/images/presign`,
   confirmImage: (id: string) => `/producers/me/products/${id}/images/confirm`,
-} as const
-
-export const categoriesEndpoints = {
-  list: '/categories',
-  getBySlug: (slug: string) => `/categories/${slug}`,
 } as const
 
 // ---------------------------------------------------------------------------
@@ -170,19 +163,4 @@ export async function confirmProductoImage(
     method: 'POST',
     body,
   })
-}
-
-// ---------------------------------------------------------------------------
-// Category API functions — public (no auth required)
-// ---------------------------------------------------------------------------
-
-/**
- * Lists all active product categories.
- * Endpoint: GET /api/v1/categories (public — no authentication)
- *
- * Uses plain apiRequest (not authenticated) per spec product-taxonomy:
- * "Both endpoints MUST be public (no authentication)."
- */
-export async function listCategorias(): Promise<CategoryDTO[]> {
-  return apiRequest<CategoryDTO[]>(categoriesEndpoints.list)
 }

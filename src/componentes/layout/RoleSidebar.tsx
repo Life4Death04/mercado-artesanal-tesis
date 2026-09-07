@@ -6,6 +6,7 @@ import {
   BarChart2,
   BarChart3,
   BookOpen,
+  DatabaseBackup,
   ExternalLink,
   Gavel,
   LayoutDashboard,
@@ -38,6 +39,7 @@ const adminItems: SidebarItem[] = [
   { label: 'Incidencias', to: '/admin/incidencias', icon: AlertTriangle },
   { label: 'Categorías', to: '/admin/categorias', icon: Shapes },
   { label: 'Métricas globales', to: '/admin/metricas-globales', icon: BarChart3 },
+  { label: 'Backups', to: '/admin/backups', icon: DatabaseBackup },
 ]
 
 const consumerItems: SidebarItem[] = [
@@ -104,7 +106,7 @@ export function RoleSidebar({
     : 'text-[var(--color-secondary)] hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]'
   const navActiveClassName = useProducerTheme
     ? 'scale-[0.98] bg-white/14 font-bold text-[var(--color-on-primary)]'
-    : 'scale-[0.98] bg-[var(--color-surface-container-low)] font-bold text-[var(--color-primary-container)]'
+    : 'scale-[0.98] bg-[#7A2E3A] font-bold !text-white'
 
   const content = (
     <>

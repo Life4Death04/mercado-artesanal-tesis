@@ -9,12 +9,14 @@ import App from './App.tsx'
 import { queryClient } from './lib/queryClient'
 import { store } from './store'
 import { AuthProvider } from './modules/auth/componentes/AuthProvider'
+import { AuthSessionCacheGuard } from './modules/auth/componentes/AuthSessionCacheGuard'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
+          <AuthSessionCacheGuard />
           <BrowserRouter>
             <App />
           </BrowserRouter>

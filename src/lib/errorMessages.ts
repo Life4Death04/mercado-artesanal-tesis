@@ -11,6 +11,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
   UNAUTHORIZED: 'Tu sesión ha expirado. Inicia sesión de nuevo para continuar.',
   FORBIDDEN: 'No tienes permiso para realizar esta acción.',
   ONBOARDING_REQUIRED: 'Debes completar el registro antes de continuar.',
+  ACCOUNT_INACTIVE: 'Esta cuenta está desactivada. Actívala para restablecer su acceso.',
+  ACCOUNT_DELETED: 'Esta cuenta ha sido eliminada y ya no admite cambios.',
 
   // --- Resource not found ---
   NOT_FOUND: 'No encontramos el recurso solicitado.',
@@ -22,17 +24,31 @@ export const ERROR_MESSAGES: Record<string, string> = {
   // --- Validation / conflict ---
   VALIDATION_FAILED: 'Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo.',
   CONFLICT: 'Esta operación entra en conflicto con el estado actual. Recarga e inténtalo de nuevo.',
+  INCIDENT_ALREADY_RESOLVED: 'Esta incidencia ya fue resuelta. Se ha actualizado la información mostrada.',
   ROLE_ALREADY_SET: 'El rol de esta cuenta ya está asignado y no puede cambiarse.',
   NIF_ALREADY_REGISTERED: 'Este NIF ya está registrado en otro productor.',
   UNKNOWN_CATEGORY: 'Una o más categorías indicadas no existen.',
+  CATEGORY_SLUG_CONFLICT: 'Ya existe una categoría con un nombre equivalente. Elige otro nombre.',
   ADDRESS_DEFAULT_CONFLICT: 'Solo puede haber una dirección predeterminada. Revisa tu configuración de entregas.',
+  BACKUP_OPERATION_CONFLICT: 'Ya hay una operación de copia incompatible en curso. Espera a que finalice e inténtalo de nuevo.',
+
+  // --- Database backups ---
+  BACKUP_OPERATION_NOT_FOUND: 'No encontramos la operación de copia solicitada. Puedes quitar esta entrada del navegador.',
+  BACKUP_RUNTIME_UNAVAILABLE: 'El servicio de copias de seguridad no está disponible en este momento. Inténtalo más tarde.',
+  BACKUP_OPERATION_FAILED: 'La operación de copia de seguridad no pudo completarse. Revisa su estado e inténtalo de nuevo.',
+  BACKUP_NOT_FOUND: 'No encontramos la copia de seguridad solicitada.',
+  BACKUP_NOT_RESTORABLE: 'Esta copia de seguridad no se puede restaurar en su estado actual.',
 
   // --- Business rule violations ---
   INVALID_DEFAULT_TRANSITION: 'Esta transición de estado no está permitida.',
   INVALID_ORDER_TRANSITION: 'El estado del pedido no puede cambiar a la opción seleccionada.',
+  EMPTY_CART_CHECKOUT: 'Tu carrito está vacío. Añade productos antes de continuar con el pago.',
+  CART_ITEM_NOT_AVAILABLE: 'Uno o más productos del carrito ya no están disponibles. Revisa el carrito antes de continuar.',
   INSUFFICIENT_STOCK: 'No hay stock suficiente para completar esta operación.',
+  PAYMENT_INTENT_CREATION_FAILED: 'No se pudo preparar el pago. Revisa tu carrito e inténtalo de nuevo.',
   PRODUCT_HAS_ACTIVE_ORDERS: 'Este producto tiene pedidos activos y no puede modificarse ahora.',
   PRODUCER_HAS_ACTIVE_ORDERS: 'Tu cuenta tiene pedidos activos. Resuélvelos antes de continuar.',
+  USER_HAS_ACTIVE_ORDERS: 'No puedes eliminar esta cuenta mientras tenga pedidos activos.',
 
   // --- Upload / media ---
   IMAGE_UPLOAD_INVALID: 'El archivo de imagen no es válido. Usa JPG, PNG o WebP de menos de 5 MB.',

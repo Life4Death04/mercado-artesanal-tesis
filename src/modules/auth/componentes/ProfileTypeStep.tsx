@@ -1,6 +1,6 @@
 import { CheckCircle } from 'lucide-react'
-import consumidorLogo from '../../../../ReferenciasUI/WizardRegistroUsuario (Consumidor y Productor)/LogoConsumidor.png'
-import productorLogo from '../../../../ReferenciasUI/WizardRegistroUsuario (Consumidor y Productor)/LogoProductor.png'
+import consumidorLogo from '../../../assets/registration-consumer-role.png'
+import productorLogo from '../../../assets/registration-producer-role.png'
 import type { RegistrationRole } from './registrationWizard.types'
 
 type ProfileTypeStepProps = {

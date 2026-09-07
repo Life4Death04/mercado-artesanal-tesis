@@ -9,6 +9,7 @@ import { LoginPage } from '../modules/auth/pages/LoginPage'
 import { RegistroWizardPage } from '../modules/auth/pages/RegistroWizardPage'
 import { CarritoPage } from '../modules/carrito/pages/CarritoPage'
 import { AdminDashboardPage } from '../modules/admin/pages/AdminDashboardPage'
+import { BackupsAdminPage } from '../modules/admin/pages/BackupsAdminPage'
 import { CategoriasAdminPage } from '../modules/admin/pages/CategoriasAdminPage'
 import { ConfiguracionAdminPage } from '../modules/admin/pages/ConfiguracionAdminPage'
 import { IncidenciaDetalleAdminPage } from '../modules/admin/pages/IncidenciaDetalleAdminPage'
@@ -20,6 +21,7 @@ import { PedidosAdminPage } from '../modules/admin/pages/PedidosAdminPage'
 import { ProductosAdminPage } from '../modules/admin/pages/ProductosAdminPage'
 import { UsuariosAdminPage } from '../modules/admin/pages/UsuariosAdminPage'
 import { CheckoutPage } from '../modules/pedidos/pages/CheckoutPage'
+import { PagoProcesandoPage } from '../modules/pedidos/pages/PagoProcesandoPage'
 import { HistorialPedidosPage } from '../modules/pedidos/pages/HistorialPedidosPage'
 import { PerfilPage } from '../modules/perfil/pages/PerfilPage'
 import { MisIncidenciasPage } from '../modules/perfil/pages/MisIncidenciasPage'
@@ -48,11 +50,20 @@ export function AppRouter() {
             <Route path="productos" element={<CatalogoPage />} />
             <Route path="productos/:productoId" element={<DetalleProductoPage />} />
             <Route path="productores/:productorId" element={<PerfilProductorPublicoPage />} />
+            <Route path="perfil" element={<PerfilPage />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoutes allowedRoles={['CONSUMER', 'PRODUCER']} />}>
+          <Route element={<ConsumerLayout />}>
+            <Route path="incidencias" element={<MisIncidenciasPage />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoutes allowedRoles={['CONSUMER', 'PRODUCER']} />}>
+          <Route element={<ConsumerLayout />}>
             <Route path="carrito" element={<CarritoPage />} />
             <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="checkout/procesando" element={<PagoProcesandoPage />} />
             <Route path="pedidos" element={<HistorialPedidosPage />} />
-            <Route path="perfil" element={<PerfilPage />} />
-            <Route path="incidencias" element={<MisIncidenciasPage />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoutes allowedRoles={['PRODUCER']} />}>
@@ -76,6 +87,7 @@ export function AppRouter() {
             <Route path="admin/incidencias/:incidenciaId" element={<IncidenciaDetalleAdminPage />} />
             <Route path="admin/categorias" element={<CategoriasAdminPage />} />
             <Route path="admin/metricas-globales" element={<MetricasGlobalesPage />} />
+            <Route path="admin/backups" element={<BackupsAdminPage />} />
             <Route path="admin/configuracion" element={<ConfiguracionAdminPage />} />
             <Route path="admin/productos" element={<ProductosAdminPage />} />
             <Route path="admin/pedidos" element={<PedidosAdminPage />} />

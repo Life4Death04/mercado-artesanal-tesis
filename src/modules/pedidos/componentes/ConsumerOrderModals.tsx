@@ -1,23 +1,18 @@
-import { useState } from 'react'
-import { Download, Flag, Star, Truck, X } from 'lucide-react'
-import type { ConsumerOrder, ConsumerOrderProduct, ConsumerOrderStatus, ConsumerSubOrder } from '../pages/HistorialPedidosPage'
+import { Flag, Truck, X } from 'lucide-react'
+import type { ConsumerOrder, ConsumerOrderStatus, ConsumerSubOrder } from '../pages/HistorialPedidosPage'
 
 type OrderDetailModalProps = {
   order: ConsumerOrder
   onClose: () => void
   onReport: (subOrder: ConsumerSubOrder) => void
-  onReview: (subOrderId: string, product: ConsumerOrderProduct) => void
-}
-
-type ProductReviewModalProps = {
-  product: ConsumerOrderProduct
-  onClose: () => void
-  onSubmit: () => void
+  onCancel?: () => void
+  isCancelling: boolean
+  cancelError: string | null
 }
 
 const statusSteps: ConsumerOrderStatus[] = ['Pendiente', 'Confirmado', 'En preparación', 'En camino', 'Entregado']
 
-export function OrderDetailModal({ order, onClose, onReport, onReview }: OrderDetailModalProps) {
+export function OrderDetailModal({ order, onClose, onReport, onCancel, isCancelling, cancelError }: OrderDetailModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#1A1A1A]/60 p-4 backdrop-blur-sm sm:p-[var(--space-margin-mobile)] md:p-[var(--space-margin-desktop)]" role="dialog" aria-modal="true" aria-labelledby="order-detail-title">
       <div className="relative flex max-h-full w-full max-w-5xl flex-col border border-[color-mix(in_srgb,var(--color-outline)_20%,transparent)] bg-[#FAF7F0] shadow-2xl">
@@ -29,29 +24,28 @@ export function OrderDetailModal({ order, onClose, onReport, onReview }: OrderDe
           <header className="mb-8 pr-12">
             <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-baseline sm:justify-between">
               <h2 className="text-display-lg text-[48px] tracking-tight text-[#1A1A1A]" id="order-detail-title">
-                {order.id}
+                Pedido #{order.orderNumber}
               </h2>
               <StatusPill status={order.status} />
             </div>
             <p className="text-body-lg text-[var(--color-on-surface-variant)]">
-              Compra del {order.date} · {order.subOrders.length} envío{order.subOrders.length === 1 ? '' : 's'} · {order.address}
+              Compra del {order.date} · {order.subOrders.length} entrega{order.subOrders.length === 1 ? '' : 's'}
             </p>
+            <p className="text-label-sm mt-2 max-w-full break-all font-mono text-[var(--color-outline)]">ID técnico: {order.id}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2"><p className="text-headline-md text-[28px] text-[#7A2E3A]">Total: {order.total}</p>{order.paymentStatus ? <p className="text-label-sm uppercase tracking-wider text-[var(--color-outline)]">Pago: {order.paymentStatus}</p> : null}</div>
           </header>
 
           <div className="grid gap-5">
             {order.subOrders.map((subOrder) => (
-              <SubOrderPanel key={subOrder.id} subOrder={subOrder} onReport={onReport} onReview={onReview} />
+              <SubOrderPanel key={subOrder.id} subOrder={subOrder} onReport={onReport} />
             ))}
           </div>
 
-          <footer className="mt-8 flex flex-col items-center justify-between gap-6 border-t border-[color-mix(in_srgb,var(--color-outline)_20%,transparent)] pt-8 sm:flex-row-reverse">
+           <footer className="mt-8 flex flex-col items-center justify-between gap-6 border-t border-[color-mix(in_srgb,var(--color-outline)_20%,transparent)] pt-8 sm:flex-row-reverse">
             <button type="button" onClick={onClose} className="text-label-md w-full bg-[#7A2E3A] px-8 py-4 uppercase tracking-wider text-white transition-colors duration-200 hover:bg-[#63222d] sm:w-auto">
               Volver
-            </button>
-            <a href="#" className="text-label-sm flex items-center gap-1 text-[var(--color-on-surface-variant)] transition-colors hover:text-[#1A1A1A]">
-              <Download size={16} strokeWidth={1.8} />
-              Descargar comprobante
-            </a>
+             </button>
+             {onCancel ? <div className="w-full sm:mr-auto sm:w-auto"><button type="button" disabled={isCancelling} onClick={onCancel} className="text-label-md border border-[var(--color-error)] px-5 py-3 uppercase tracking-wider text-[var(--color-error)] disabled:cursor-not-allowed disabled:opacity-60">{isCancelling ? 'Cancelando...' : 'Cancelar pedido'}</button>{cancelError ? <p role="alert" className="text-label-sm mt-2 text-[var(--color-error)]">{cancelError}</p> : null}</div> : null}
           </footer>
         </div>
       </div>
@@ -59,7 +53,7 @@ export function OrderDetailModal({ order, onClose, onReport, onReview }: OrderDe
   )
 }
 
-function SubOrderPanel({ subOrder, onReport, onReview }: { subOrder: ConsumerSubOrder; onReport: (subOrder: ConsumerSubOrder) => void; onReview: (subOrderId: string, product: ConsumerOrderProduct) => void }) {
+function SubOrderPanel({ subOrder, onReport }: { subOrder: ConsumerSubOrder; onReport: (subOrder: ConsumerSubOrder) => void }) {
   return (
     <section className="border border-[color-mix(in_srgb,var(--color-outline)_14%,transparent)] bg-[var(--color-surface)] p-5 md:p-6">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -68,46 +62,31 @@ function SubOrderPanel({ subOrder, onReport, onReview }: { subOrder: ConsumerSub
             <h3 className="text-headline-md text-[26px] text-[#1A1A1A]">{subOrder.producer}</h3>
             <StatusPill status={subOrder.status} />
           </div>
-          <p className="text-label-sm text-[var(--color-outline)]">{subOrder.id} · {subOrder.location}</p>
-        </div>
-        <div className="text-left lg:text-right">
-          <p className="text-label-sm uppercase tracking-wider text-[var(--color-outline)]">Total subpedido</p>
-          <p className="text-headline-md text-[28px] text-[#7A2E3A]">{subOrder.total}</p>
-        </div>
+            <p className="text-label-sm max-w-full break-all font-mono text-[var(--color-outline)]">ID técnico: {subOrder.id}</p>
+         </div>
+        {subOrder.total ? <div className="text-left lg:text-right">
+           <p className="text-label-sm uppercase tracking-wider text-[var(--color-outline)]">Total subpedido</p>
+           <p className="text-headline-md text-[28px] text-[#7A2E3A]">{subOrder.total}</p>
+        </div> : null}
       </div>
 
       <StatusTimeline status={subOrder.status} />
 
       <div className="mt-7 border-t border-[color-mix(in_srgb,var(--color-outline)_10%,transparent)] pt-4">
         {subOrder.products.map((product, index) => (
-          <div key={product.name} className={`flex flex-col items-start gap-5 py-4 sm:flex-row sm:items-center ${index > 0 ? 'border-t border-[color-mix(in_srgb,var(--color-outline)_10%,transparent)]' : ''}`}>
-            <div className="size-24 shrink-0 border border-[color-mix(in_srgb,var(--color-outline)_10%,transparent)] bg-[var(--color-surface-container-low)] p-1">
+          <div key={`${subOrder.id}-${index}`} className={`flex flex-col items-start gap-5 py-4 sm:flex-row sm:items-center ${index > 0 ? 'border-t border-[color-mix(in_srgb,var(--color-outline)_10%,transparent)]' : ''}`}>
+            {product.image ? <div className="size-24 shrink-0 border border-[color-mix(in_srgb,var(--color-outline)_10%,transparent)] bg-[var(--color-surface-container-low)] p-1">
               <img src={product.image} alt={product.name} className="size-full object-cover grayscale-[15%] mix-blend-multiply" />
-            </div>
+            </div> : null}
             <div className="w-full flex-1 space-y-1">
-              <h4 className="text-headline-md text-[22px] leading-7 text-[#1A1A1A]">{product.name}</h4>
-              <p className="text-label-sm text-[var(--color-on-surface-variant)]">{product.detail}</p>
+              <h4 className="text-headline-md text-[22px] leading-7 text-[#1A1A1A]">{product.name || `Línea ${index + 1}`}</h4>
+              {product.detail ? <p className="text-label-sm text-[var(--color-on-surface-variant)]">{product.detail}</p> : null}
               <div className="mt-2 flex items-center gap-4">
-                <span className="text-label-md text-[var(--color-outline)]">{product.quantity}</span>
-                <span className="text-body-md text-[#1A1A1A]">{product.unitPrice}</span>
+                <span className="text-label-md text-[var(--color-outline)]">Cantidad: {product.quantity}</span>
+                <span className="text-body-md text-[#1A1A1A]">Precio unitario: {product.unitPrice}</span>
               </div>
             </div>
-            <div className="mt-4 flex w-full flex-row items-center justify-between gap-2 sm:mt-0 sm:w-auto sm:flex-col sm:items-end">
-              <span className="text-body-lg font-medium text-[#1A1A1A]">{product.total}</span>
-              {subOrder.status === 'Entregado' ? (
-                product.reviewed ? (
-                  <span className="text-label-md inline-flex items-center gap-1 text-green-700">
-                    <Star size={18} strokeWidth={1.8} fill="currentColor" />
-                    Valorado
-                  </span>
-                ) : (
-                  <button type="button" onClick={() => onReview(subOrder.id, product)} className="text-label-md flex items-center gap-1 text-[var(--color-primary)] hover:underline">
-                    <Star size={18} strokeWidth={1.8} />
-                    Valorar
-                  </button>
-                )
-              ) : null}
-            </div>
+            {product.total ? <span className="text-body-lg font-medium text-[#1A1A1A]">{product.total}</span> : null}
           </div>
         ))}
       </div>
@@ -115,21 +94,26 @@ function SubOrderPanel({ subOrder, onReport, onReview }: { subOrder: ConsumerSub
       <div className="mt-6 grid gap-5 border-t border-[color-mix(in_srgb,var(--color-outline)_10%,transparent)] pt-6 md:grid-cols-[1fr_auto] md:items-end">
         <div className="grid gap-4 sm:grid-cols-3">
           <DetailField label="Método" value={subOrder.deliveryMethod} />
-          <TrackingField value={subOrder.tracking} />
-          <DetailField label="Dirección" value={subOrder.deliveryAddress} preserveLineBreaks />
+          <TrackingField value={subOrder.tracking || null} />
+          {subOrder.deliveryAddress ? <DetailField label="Dirección" value={subOrder.deliveryAddress} preserveLineBreaks /> : null}
         </div>
-        <button
-          type="button"
-          onClick={() => onReport(subOrder)}
-          className="text-label-md inline-flex items-center justify-center gap-2 border border-[#7A2E3A] px-5 py-3 uppercase tracking-wider text-[#7A2E3A] transition-colors hover:bg-[#7A2E3A] hover:text-white"
-        >
-          <Flag size={16} strokeWidth={1.8} />
-          Reportar
-        </button>
+        <div className="flex max-w-xs flex-col gap-2 md:items-end">
+          <button
+            type="button"
+            disabled={!subOrder.canReportIncident}
+            onClick={() => onReport(subOrder)}
+            title={subOrder.reportIncidentUnavailableReason ?? 'Reportar una incidencia sobre esta entrega'}
+            className="text-label-md inline-flex items-center justify-center gap-2 border border-[#7A2E3A] px-5 py-3 uppercase tracking-wider text-[#7A2E3A] transition-colors hover:bg-[#7A2E3A] hover:text-white disabled:cursor-not-allowed disabled:border-[var(--color-outline-variant)] disabled:text-[var(--color-outline)] disabled:hover:bg-transparent"
+          >
+            <Flag size={16} strokeWidth={1.8} />
+            Reportar
+          </button>
+          {subOrder.reportIncidentUnavailableReason ? <p className="text-label-sm text-[var(--color-outline)] md:text-right">{subOrder.reportIncidentUnavailableReason}</p> : null}
+        </div>
       </div>
 
       <div className="mt-5 flex justify-end gap-5 text-body-md text-[var(--color-on-surface-variant)]">
-        <span>Subtotal: {subOrder.subtotal}</span>
+        {subOrder.subtotal ? <span>Subtotal: {subOrder.subtotal}</span> : null}
         <span>Envío: {subOrder.shipping}</span>
       </div>
     </section>
@@ -169,64 +153,6 @@ function StatusPill({ status }: { status: ConsumerOrderStatus }) {
   )
 }
 
-export function ProductReviewModal({ product, onClose, onSubmit }: ProductReviewModalProps) {
-  const [rating, setRating] = useState(0)
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#1A1A1A]/40 p-4 backdrop-blur-[2px] sm:p-[var(--space-gutter)]" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
-      <div className="relative flex w-full max-w-[520px] flex-col border border-[var(--color-outline-variant)] bg-[#FAF7F0] shadow-[0_12px_40px_rgba(26,26,26,0.1)]">
-        <button type="button" aria-label="Cerrar modal" onClick={onClose} className="absolute top-4 right-4 z-10 p-2 text-[var(--color-on-surface-variant)] transition-colors hover:text-[#1A1A1A]">
-          <X size={24} strokeWidth={1.8} />
-        </button>
-
-        <div className="flex flex-col gap-8 p-8 sm:p-10">
-          <header className="flex flex-col gap-6">
-            <div className="flex items-start gap-4">
-              <div className="size-16 shrink-0 overflow-hidden border border-[var(--color-outline-variant)] bg-white">
-                <img src={product.image} alt={product.name} className="size-full object-cover" />
-              </div>
-              <div className="pt-1">
-                <p className="text-label-sm mb-1 uppercase tracking-wider text-[var(--color-on-surface-variant)]">Nueva valoración</p>
-                <h2 className="text-headline-md text-[24px] leading-tight text-[#1A1A1A]" id="review-modal-title">{product.name}</h2>
-              </div>
-            </div>
-          </header>
-
-          <form className="flex flex-col gap-8" onSubmit={(event) => { event.preventDefault(); onSubmit(); onClose() }}>
-            <div className="flex flex-col gap-3 border-t border-[var(--color-outline-variant)] pt-6">
-              <label className="text-label-md uppercase text-[#1A1A1A]">Puntuación</label>
-              <div className="flex w-fit gap-1" aria-label="Puntuación de 5 estrellas">
-                {Array.from({ length: 5 }, (_, index) => {
-                  const selected = index < rating
-                  return (
-                    <button key={index} type="button" onClick={() => setRating(index + 1)} aria-label={`${index + 1} estrellas`} className={`${selected ? 'text-[#7A2E3A]' : 'text-[var(--color-outline-variant)]'} transition-colors hover:text-[#7A2E3A] focus:text-[#7A2E3A] focus:outline-none`}>
-                      <Star size={32} strokeWidth={1.5} fill={selected ? 'currentColor' : 'none'} />
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <label className="text-label-md uppercase text-[#1A1A1A]" htmlFor="review-comment">Tu comentario (opcional)</label>
-              <textarea id="review-comment" name="comment" rows={4} placeholder="Comparte tu experiencia con este producto..." className="text-body-md w-full resize-none border border-[var(--color-outline-variant)] bg-transparent p-4 text-[#1A1A1A] placeholder:text-[var(--color-outline-variant)] transition-colors focus:border-[#7A2E3A] focus:ring-0 focus:outline-none" />
-            </div>
-
-            <div className="mt-2 flex items-center gap-4 border-t border-[var(--color-outline-variant)] pt-8">
-              <button type="submit" className="text-label-md flex-1 bg-[#7A2E3A] px-6 py-4 uppercase tracking-wider text-[#FAF7F0] transition-colors duration-300 hover:bg-[#1A1A1A]">
-                Valorar
-              </button>
-              <button type="reset" onClick={() => setRating(0)} className="text-label-md border border-transparent bg-transparent px-6 py-4 uppercase tracking-wider text-[var(--color-on-surface-variant)] transition-all duration-300 hover:border-[var(--color-outline-variant)]">
-                Limpiar
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function DetailField({ label, value, preserveLineBreaks = false, mono = false }: { label: string; value: string; preserveLineBreaks?: boolean; mono?: boolean }) {
   return (
     <div>
@@ -236,11 +162,11 @@ function DetailField({ label, value, preserveLineBreaks = false, mono = false }:
   )
 }
 
-function TrackingField({ value }: { value: string }) {
+function TrackingField({ value }: { value: string | null }) {
   return (
     <div className="border border-[color-mix(in_srgb,#7A2E3A_28%,transparent)] bg-[color-mix(in_srgb,#7A2E3A_8%,white)] p-4">
       <p className="text-label-sm mb-1 text-[var(--color-on-surface-variant)]">Seguimiento</p>
-      <p className="text-body-md font-mono text-[#1A1A1A]">{value}</p>
+      <p className={`text-body-md text-[#1A1A1A] ${value ? 'font-mono' : ''}`}>{value ?? 'Aún no disponible'}</p>
     </div>
   )
 }

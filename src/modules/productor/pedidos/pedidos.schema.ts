@@ -30,16 +30,10 @@ export type SubOrderStatus = z.infer<typeof SubOrderStatusSchema>
 // ---------------------------------------------------------------------------
 
 export type OrderLineDTO = {
-  id: string
-  subOrderId: string
   productId: string
   /** Immutable historical unit price at order time — Decimal string from Prisma. */
   unitPriceSnapshot: string
   quantity: number
-  /** Product name for display (denormalized by backend for convenience). */
-  productName?: string
-  /** Product image URL for display (may be null). */
-  productImageUrl?: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -51,14 +45,17 @@ export type OrderLineDTO = {
 
 export type SubOrderDTO = {
   id: string
+  subOrderNumber: number
   orderId: string
+  order: {
+    orderNumber: number
+  }
   producerId: string
   deliveryModeId: string | null
   /** Edge-parsed at hook boundary via SubOrderStatusSchema. */
   status: SubOrderStatus
   /** Decimal string — display via formatMoney; NEVER parse for math. */
   shippingCostSnapshot: string
-  /** Tracking number (always null in Cycle 2 — field exists for schema stability). */
   trackingNumber: string | null
   orderLines: OrderLineDTO[]
   createdAt: string
@@ -78,11 +75,16 @@ export type SubOrderDTO = {
 
 export type SubOrderListItemDTO = {
   id: string
+  subOrderNumber: number
   orderId: string
+  order: {
+    orderNumber: number
+  }
   producerId: string
   status: SubOrderStatus
   /** Decimal string from Prisma. */
   shippingCostSnapshot: string
+  trackingNumber: string | null
   orderLines: OrderLineDTO[]
   createdAt: string
   updatedAt: string
@@ -102,6 +104,7 @@ export type SubOrderListItemDTO = {
 export const updateSubOrderStatusSchema = z
   .object({
     status: SubOrderStatusSchema,
+    trackingNumber: z.string().min(1).optional(),
   })
   .strict()
 

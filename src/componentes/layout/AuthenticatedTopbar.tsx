@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { ChevronRight, Menu, ShoppingCart, UserCircle } from 'lucide-react'
 import { BandejaNotificaciones } from '../ui/BandejaNotificaciones'
+import { useCartQuery } from '../../modules/carrito/hooks/useCart'
 
 type AuthenticatedTopbarProps = {
   onMenuClick: () => void
@@ -34,6 +35,8 @@ const producerRouteMeta: RouteMeta[] = [
 
 export function AuthenticatedTopbar({ onMenuClick }: AuthenticatedTopbarProps) {
   const location = useLocation()
+  const cartQuery = useCartQuery()
+  const cartItemCount = cartQuery.data?.items.reduce((total, item) => total + item.quantity, 0) ?? 0
   const isProducerArea = location.pathname.startsWith('/productor')
   const routeMeta = isProducerArea ? producerRouteMeta : consumerRouteMeta
   const meta = routeMeta.find((item) => item.match(location.pathname)) ?? routeMeta[0]
@@ -102,9 +105,7 @@ export function AuthenticatedTopbar({ onMenuClick }: AuthenticatedTopbarProps) {
             className={`relative rounded-full p-2 transition-all duration-150 active:scale-95 ${actionIconClassName}`}
           >
             <ShoppingCart size={22} strokeWidth={1.8} />
-            <span className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-[var(--color-primary)] text-[10px] font-bold text-[var(--color-on-primary)] ring-2 ring-[var(--color-surface)]">
-              2
-            </span>
+            {cartItemCount > 0 ? <span className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-[var(--color-primary)] text-[10px] font-bold text-[var(--color-on-primary)] ring-2 ring-[var(--color-surface)]">{cartItemCount}</span> : null}
           </Link>
         ) : null}
         <Link

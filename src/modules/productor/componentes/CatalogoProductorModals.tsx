@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ChevronDown, ImagePlus, Loader2, Pencil, Trash2, TriangleAlert, Upload, X } from 'lucide-react'
 import { resolveErrorMessage } from '../../../lib/errorMessages'
-import { useCategoriesQuery } from '../productos/hooks/useCategoriesQuery'
+import { useCategoriesQuery } from '../../productos/hooks/useCategoriesQuery'
 import { useUploadProductoImageMutation } from '../productos/hooks/useUploadProductoImageMutation'
 import { createProductoFormSchema, updateProductoFormSchema } from '../productos/productos.schema'
 import type {
