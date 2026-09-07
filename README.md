@@ -18,3 +18,7 @@ npm run dev
 ```
 
 All `VITE_*` variables are injected at build time and are visible in the browser bundle. See `.env.example` for required Auth0/API values and the optional Stripe setting.
+
+## Deployment
+
+See [`deploy/tailscale-funnel.md`](deploy/tailscale-funnel.md) for the frontend-only Docker Compose deployment and host-managed Tailscale Funnel procedure.

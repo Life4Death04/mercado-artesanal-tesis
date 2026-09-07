@@ -1,0 +1,25 @@
+services:
+  frontend:
+    image: mercado-artesanal-tesis-frontend:docker-deployment
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_AUTH0_DOMAIN: ${VITE_AUTH0_DOMAIN:?VITE_AUTH0_DOMAIN is required}
+        VITE_AUTH0_CLIENT_ID: ${VITE_AUTH0_CLIENT_ID:?VITE_AUTH0_CLIENT_ID is required}
+        VITE_AUTH0_AUDIENCE: ${VITE_AUTH0_AUDIENCE:?VITE_AUTH0_AUDIENCE is required}
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL is required}
+        VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY:-}
+    ports:
+      - "127.0.0.1:18080:8080"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 100
+    cpus: 0.50
+    mem_limit: 128m
