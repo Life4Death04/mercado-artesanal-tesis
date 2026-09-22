@@ -21,4 +21,5 @@ All `VITE_*` variables are injected at build time and are visible in the browser
 
 ## Deployment
 
-See [`deploy/tailscale-funnel.md`](deploy/tailscale-funnel.md) for the frontend-only Docker Compose deployment and host-managed Tailscale Funnel procedure.
+- Railway (current production target): see [`deploy/railway.md`](deploy/railway.md).
+- Homelab / Tailscale Funnel: see [`deploy/tailscale-funnel.md`](deploy/tailscale-funnel.md) for the frontend-only Docker Compose deployment and host-managed Tailscale Funnel procedure.
