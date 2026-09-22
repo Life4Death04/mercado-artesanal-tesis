@@ -4,13 +4,16 @@ FROM node:22.23.2-alpine3.24 AS builder
 
 WORKDIR /app
 
-RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+# Cache mount id is namespaced to this Railway service (s/<service-id>-<target-path>)
+# per Railway's shared multi-tenant build fleet requirement. This repo now deploys
+# exclusively to Railway, so the id is intentionally not portable to another platform.
+RUN --mount=type=cache,id=s/8e27afcf-27b9-483d-88a1-b19f6a2a48db-/root/.npm,target=/root/.npm,sharing=locked \
     npm install --global npm@10.9.3 --no-audit --no-fund \
     && test "$(npm --version)" = "10.9.3"
 
 COPY package.json package-lock.json ./
 
-RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+RUN --mount=type=cache,id=s/8e27afcf-27b9-483d-88a1-b19f6a2a48db-/root/.npm,target=/root/.npm,sharing=locked \
     npm ci --no-audit --no-fund
 
 COPY . .

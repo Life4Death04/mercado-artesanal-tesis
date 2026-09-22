@@ -21,4 +21,4 @@ All `VITE_*` variables are injected at build time and are visible in the browser
 
 ## Deployment
 
-See [`deploy/tailscale-funnel.md`](deploy/tailscale-funnel.md) for the frontend-only Docker Compose deployment and host-managed Tailscale Funnel procedure.
+Deployed to Railway. See [`deploy/railway.md`](deploy/railway.md) for the service setup, required build Variables, and Auth0/CORS wiring procedure.
