@@ -4,13 +4,13 @@ FROM node:22.23.2-alpine3.24 AS builder
 
 WORKDIR /app
 
-RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+RUN --mount=type=cache,id=npm-global-install,target=/root/.npm,sharing=locked \
     npm install --global npm@10.9.3 --no-audit --no-fund \
     && test "$(npm --version)" = "10.9.3"
 
 COPY package.json package-lock.json ./
 
-RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+RUN --mount=type=cache,id=npm-ci,target=/root/.npm,sharing=locked \
     npm ci --no-audit --no-fund
 
 COPY . .
