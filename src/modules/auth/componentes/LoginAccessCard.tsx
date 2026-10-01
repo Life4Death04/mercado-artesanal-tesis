@@ -1,35 +1,12 @@
-import { useAuth0 } from '@auth0/auth0-react'
 import { LockKeyhole } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
 import { APP_NAME } from '../../../lib/branding'
-import { loginAuthorizationParams, safeReturnTo, signupAuthorizationParams } from '../authRedirect'
-import { GoogleIcon } from './GoogleIcon'
+import { DemoAccountsSection } from './DemoAccountsSection'
 
 export function LoginAccessCard() {
-  const { loginWithRedirect } = useAuth0()
-  const location = useLocation()
-
-  const locationState = location.state as { returnTo?: unknown } | null
-  const returnTo = safeReturnTo(locationState?.returnTo, '/login')
-
-  function login() {
-    void loginWithRedirect({
-      appState: { returnTo },
-      authorizationParams: loginAuthorizationParams,
-    })
-  }
-
-  function signUp() {
-    void loginWithRedirect({
-      appState: { returnTo: '/registro' },
-      authorizationParams: signupAuthorizationParams,
-    })
-  }
-
   return (
     <section className="flex flex-col justify-center bg-[var(--color-surface)] p-8 md:p-20">
       <div className="mx-auto w-full max-w-md">
-        <header className="mb-10 text-center md:text-left">
+        <header className="mb-4 text-center md:text-left">
           <h2 className="text-headline-lg mb-3 text-[var(--color-primary)]">
             Bienvenido a {APP_NAME}
           </h2>
@@ -39,41 +16,7 @@ export function LoginAccessCard() {
         </header>
 
         <div className="space-y-6">
-          <div className="space-y-4">
-            <button
-              type="button"
-              onClick={login}
-              className="text-label-md w-full rounded-[var(--radius-sm)] bg-[var(--color-primary-container)] px-6 py-4 text-[var(--color-on-primary)] shadow-sm transition duration-300 hover:bg-[var(--color-primary)] active:scale-[0.98]"
-            >
-              Iniciar sesión
-            </button>
-
-            <div className="relative flex items-center py-4">
-              <div className="h-px flex-grow bg-[color-mix(in_srgb,var(--color-outline-variant)_50%,transparent)]" />
-              <span className="text-label-sm mx-4 shrink-0 text-[var(--color-outline)]">o</span>
-              <div className="h-px flex-grow bg-[color-mix(in_srgb,var(--color-outline-variant)_50%,transparent)]" />
-            </div>
-
-            <button
-              type="button"
-              onClick={login}
-              className="text-label-md flex w-full items-center justify-center gap-3 rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--color-outline)_20%,transparent)] bg-transparent px-6 py-4 text-[var(--color-on-surface)] transition duration-300 hover:bg-[var(--color-surface-container)] active:scale-[0.98]"
-            >
-              <GoogleIcon />
-              Continuar con Google
-            </button>
-          </div>
-
-          <p className="text-label-md pt-4 text-center text-[var(--color-on-surface-variant)] md:text-left">
-            ¿No tienes cuenta?{' '}
-            <button
-              type="button"
-              onClick={signUp}
-              className="font-bold text-[var(--color-primary-container)] underline underline-offset-4 transition-colors hover:text-[var(--color-primary)]"
-            >
-              Regístrate
-            </button>
-          </p>
+          <DemoAccountsSection />
 
           <div className="border-t border-[color-mix(in_srgb,var(--color-outline-variant)_30%,transparent)] pt-8">
             <div className="flex flex-col items-center gap-2 md:items-start">
