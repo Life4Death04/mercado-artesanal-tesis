@@ -1,11 +1,41 @@
-import { Copy } from 'lucide-react'
+import { useAuth0 } from '@auth0/auth0-react'
+import { Check, Copy } from 'lucide-react'
+import { useState } from 'react'
+import { loginAuthorizationParams } from '../authRedirect'
 import type { DemoAccount } from '../demoAccounts'
 
 type DemoAccountCardProps = {
   account: DemoAccount
 }
 
+const COPY_FEEDBACK_MS = 1800
+
 export function DemoAccountCard({ account }: DemoAccountCardProps) {
+  const { loginWithRedirect } = useAuth0()
+  const [copied, setCopied] = useState(false)
+
+  async function copyPassword() {
+    try {
+      await navigator.clipboard.writeText(account.password)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), COPY_FEEDBACK_MS)
+    } catch {
+      // Clipboard API unavailable (insecure context, denied permission, etc).
+      // The password stays visible on screen as a manual fallback.
+    }
+  }
+
+  async function enterAsGuest() {
+    await copyPassword()
+    void loginWithRedirect({
+      appState: { returnTo: '/' },
+      authorizationParams: {
+        ...loginAuthorizationParams,
+        login_hint: account.email,
+      },
+    })
+  }
+
   return (
     <div className="flex flex-col gap-3 rounded-[var(--radius-sm)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -34,16 +64,21 @@ export function DemoAccountCard({ account }: DemoAccountCardProps) {
           </div>
           <button
             type="button"
-            aria-label="Copiar contraseña"
+            onClick={copyPassword}
+            aria-label={copied ? 'Contraseña copiada' : 'Copiar contraseña'}
             className="flex shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-2 text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary-fixed)]"
           >
-            <Copy size={16} strokeWidth={1.8} />
+            {copied ? <Check size={16} strokeWidth={1.8} /> : <Copy size={16} strokeWidth={1.8} />}
           </button>
+          <span className="sr-only" aria-live="polite">
+            {copied ? 'Contraseña copiada' : ''}
+          </span>
         </div>
       </div>
 
       <button
         type="button"
+        onClick={enterAsGuest}
         className="text-label-md w-full rounded-[var(--radius-sm)] border border-[var(--color-primary-container)] bg-transparent px-6 py-3 text-[var(--color-primary-container)] transition-colors hover:bg-[var(--color-primary-fixed)]"
       >
         {account.ctaLabel}
