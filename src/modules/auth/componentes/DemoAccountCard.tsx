@@ -28,7 +28,7 @@ export function DemoAccountCard({ account }: DemoAccountCardProps) {
   async function enterAsGuest() {
     await copyPassword()
     void loginWithRedirect({
-      appState: { returnTo: '/' },
+      appState: { returnTo: '/login' },
       authorizationParams: {
         ...loginAuthorizationParams,
         login_hint: account.email,

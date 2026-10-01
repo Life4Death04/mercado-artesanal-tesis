@@ -9,16 +9,16 @@ export type DemoAccount = {
 export const DEMO_ACCOUNTS: DemoAccount[] = [
   {
     role: 'Administrador',
-    scope: 'Acceso completo',
-    email: 'admin@demo.laboheme.com',
-    password: 'Demo1234',
+    scope: 'Panel de Administración',
+    email: 'demo-admin@mercado-artesanal.demo',
+    password: 'HireMeNow123!',
     ctaLabel: 'Entrar como Administrador →',
   },
   {
-    role: 'Productor',
-    scope: 'Catálogo y pedidos',
-    email: 'productor@demo.laboheme.com',
-    password: 'Demo5678',
+    role: 'Productor / Artesano',
+    scope: 'Panel de Productor / Artesano',
+    email: 'demo-producer@mercado-artesanal.demo',
+    password: 'HireMeNow123!',
     ctaLabel: 'Entrar como Productor →',
   },
 ]
